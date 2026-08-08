@@ -1,121 +1,99 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useRef, useState, type PointerEvent } from 'react'
+import { Header } from './components/layout/Header'
+import {
+  TabNavigation,
+  type AppTab,
+} from './components/layout/TabNavigation'
+import { ProfileModal } from './components/profile/ProfileModal'
+import { useAuth } from './hooks/useAuth'
+import { AuthPage } from './pages/auth/AuthPage'
+import { InitialSetup } from './pages/auth/InitialSetup'
+import { SplashScreen } from './pages/auth/SplashScreen'
+import { EventMainPage } from './pages/event/EventMainPage'
+import { MemoriesPage } from './pages/memories/MemoriesPage'
+import { PrivateCalendarPage } from './pages/private-calendar/PrivateCalendarPage'
+
+const TABS: AppTab[] = ['private', 'event', 'memories']
+const SWIPE_THRESHOLD = 56
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { user, phase, setPhase } = useAuth()
+  const [activeTab, setActiveTab] = useState<AppTab>('private')
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const pointerStartX = useRef<number | null>(null)
+
+  const goToTab = (tab: AppTab) => {
+    setActiveTab(tab)
+  }
+
+  const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
+    pointerStartX.current = event.clientX
+  }
+
+  const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
+    if (pointerStartX.current === null) return
+
+    const deltaX = event.clientX - pointerStartX.current
+    pointerStartX.current = null
+
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD) return
+
+    const currentIndex = TABS.indexOf(activeTab)
+    if (deltaX < 0 && currentIndex < TABS.length - 1) {
+      setActiveTab(TABS[currentIndex + 1])
+    }
+    if (deltaX > 0 && currentIndex > 0) {
+      setActiveTab(TABS[currentIndex - 1])
+    }
+  }
+
+  if (phase === 'splash') {
+    return <SplashScreen onFinished={() => setPhase('auth')} />
+  }
+
+  if (phase === 'auth') {
+    return (
+      <AuthPage
+        onAuthenticated={() => setPhase('setup')}
+        onBack={() => setPhase('splash')}
+      />
+    )
+  }
+
+  if (phase === 'setup') {
+    return (
+      <InitialSetup
+        onComplete={() => setPhase('app')}
+        onBack={() => setPhase('auth')}
+      />
+    )
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-shell">
+      <Header onOpenProfile={() => setIsProfileOpen(true)} />
 
-      <div className="ticks"></div>
+      <main
+        className="app-shell__main"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => {
+          pointerStartX.current = null
+        }}
+      >
+        {activeTab === 'private' ? <PrivateCalendarPage /> : null}
+        {activeTab === 'event' ? <EventMainPage /> : null}
+        {activeTab === 'memories' ? <MemoriesPage /> : null}
+      </main>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <TabNavigation activeTab={activeTab} onChange={goToTab} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <ProfileModal
+        isOpen={isProfileOpen}
+        user={user}
+        onClose={() => setIsProfileOpen(false)}
+      />
+    </div>
   )
 }
 
