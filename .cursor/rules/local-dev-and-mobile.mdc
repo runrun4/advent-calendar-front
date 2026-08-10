@@ -1,0 +1,35 @@
+---
+description: Mac/Windows/WSLでの起動手順とスマホ確認方法。セットアップ・Docker・実機確認の質問では必ずこのルールに従う。
+alwaysApply: true
+---
+
+# ローカル起動とスマホ確認
+
+詳細手順は [docs/team-setup-and-mobile.md](docs/team-setup-and-mobile.md) を正とする。セットアップやスマホ確認を案内するときは、そのファイルの内容に沿って回答・実行する。
+
+## 最短パス（推奨）
+
+1. Docker Desktop を入れる（Windows は WSL2 統合を有効化）
+2. Windows ではリポジトリを **WSL Linux FS**（`~/...`）に置く。`/mnt/c/...` は避ける
+3. プロジェクト直下で `docker compose up --build`
+4. PC ブラウザ: `https://localhost:5173`
+5. 同じ Wi-Fi のスマホ: `http://<PCのLAN-IP>:5173`（例: `http://192.168.1.10:5173`）
+
+本番相当確認は `docker compose -f docker-compose.prod.yml up --build` → `http://localhost:8080`（スマホは `:8080`）。
+
+## 制約（必ず伝える）
+
+- **別 Wi-Fi のチーム同士**は、ローカルIPでは互いに見えない。共有確認は GitHub + Vercel/Netlify 等の **HTTPS URL** を使う
+- **iOS の PWA**（Service Worker / ホーム画面追加）は **HTTPS 必須**。`http://192.168.x.x` では不完全になりやすい
+- `@vitejs/plugin-basic-ssl` は同一LAN向けの開発用。チーム横断の本確認にはデプロイを優先する
+
+## AI がやってよいこと
+
+- `docker compose up --build` / prod compose の実行案内
+- LAN IP の調べ方（Mac: `ipconfig getifaddr en0`、WSL: `hostname -I`、Windows: `ipconfig`）の案内
+- デプロイ前提の確認手順の案内
+
+## AI がやってはいけないこと
+
+- 別ネットワーク同士で `--host` や basic-ssl だけで共有できると断言しない
+- `/mnt/c` 配下での WSL 開発を推奨しない
