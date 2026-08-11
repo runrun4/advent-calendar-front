@@ -66,6 +66,15 @@ docker compose up --build
 docker compose down
 ```
 
+### ブランチ切り替え・依存変更後の注意
+
+`node_modules` は名前付きボリュームに保存され、**ブランチを切り替えたり `package.json` が変わっても自動では更新されない**。起動時に `failed to load config from /app/vite.config.ts` や `Cannot find module '...'` が出たら、ボリュームごと作り直す:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
 ### 本番ビルド相当の確認
 
 ```bash
