@@ -7,18 +7,17 @@
 - Node.js 22（ローカルで `npm` を使う場合）
 - Docker Desktop（推奨。Windows は **WSL2 バックエンド** を有効化）
 
-Mac / Linux / Windows(WSL2) では、Docker を使うと同じコマンドで起動できます。
+Windows PowerShell／CMD、Windows WSL2、Mac、LinuxからDocker開発環境を起動できます。
 
 **スマホ確認・チーム向けの詳細手順:** [docs/team-setup-and-mobile.md](docs/team-setup-and-mobile.md)
 
 ## Docker で開発する（推奨）
 
-### 準備（Windows / WSL）
+### 準備（Windows）
 
 1. [Docker Desktop](https://www.docker.com/products/docker-desktop/) をインストールし、WSL2 統合を有効にする
-2. リポジトリは **WSL の Linux ファイルシステム上**に置く（例: `~/projects/advent-calendar-front`）
-   - `/mnt/c/...` 配下だと遅延や HMR 不安定の原因になる
-3. WSL ターミナルで確認する:
+2. PowerShell／CMDを使う場合はWindows側、WSL2を使う場合はWSLのLinuxファイルシステムにリポジトリを置く
+3. 使用するターミナルで確認する:
 
 ```bash
 docker compose version
@@ -26,17 +25,31 @@ docker compose version
 
 ### 開発サーバー起動
 
+**Windows PowerShell／CMD:**
+
+```powershell
+.\scripts\docker-dev.cmd
+```
+
+**Windows WSL2／Mac／Linux:**
+
 ```bash
 ./scripts/docker-dev.sh
 ```
 
-スクリプトがホストPCのLAN IPv4を取得してコンテナへ渡すため、Viteの `Network` にはスマホから開ける `https://<PCのIPv4>:5173/` が表示されます。また、起動時に `npm ci` が実行され、`node_modules` は `package-lock.json` の内容に同期されます。
+Windowsでは物理NIC（Wi-Fi／Ethernet）のIPv4をPowerShellで取得します。取得したIPをコンテナへ渡すため、Viteの `Network` にはスマホから開ける `https://<PCのIPv4>:5173/` が表示されます。また、起動時に `npm ci` が実行され、`node_modules` は `package-lock.json` の内容に同期されます。
 
 IPv4を自動取得できない場合は明示して起動できます。
+
+```powershell
+.\scripts\docker-dev.cmd -HostLanIp 192.168.1.10
+```
 
 ```bash
 HOST_LAN_IP=192.168.1.10 ./scripts/docker-dev.sh
 ```
+
+`docker compose up --build` を直接実行すると、ホストIPv4を取得できないため起動を停止して専用コマンドを案内します。
 
 ブラウザで [https://localhost:5173](https://localhost:5173) を開く。
 

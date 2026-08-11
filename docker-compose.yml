@@ -12,7 +12,17 @@ services:
     environment:
       CHOKIDAR_USEPOLLING: "true"
       HOST_LAN_IP: "${HOST_LAN_IP:-}"
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    command:
+      - sh
+      - -c
+      - |
+        if [ -z "$$HOST_LAN_IP" ]; then
+          echo "HOST_LAN_IP is required."
+          echo "Windows: scripts\\docker-dev.cmd"
+          echo "Mac / Linux / WSL2: ./scripts/docker-dev.sh"
+          exit 1
+        fi
+        npm ci && npm run dev -- --host 0.0.0.0
     stdin_open: true
     tty: true
 

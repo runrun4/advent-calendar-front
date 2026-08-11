@@ -2,6 +2,9 @@
 
 set -eu
 
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(dirname "$script_dir")
+
 is_ipv4() {
   printf '%s\n' "$1" | awk -F. '
     NF == 4 {
@@ -38,15 +41,26 @@ detect_macos_ip() {
 
 detect_windows_ip_from_wsl() {
   powershell.exe -NoProfile -NonInteractive -Command '
-    $route = Get-NetRoute -DestinationPrefix "0.0.0.0/0" |
-      Where-Object { $_.NextHop -ne "0.0.0.0" -and $_.InterfaceAlias -notmatch "vEthernet|Loopback|WSL" } |
-      Sort-Object RouteMetric, InterfaceMetric |
-      Select-Object -First 1
-    if ($route) {
-      Get-NetIPAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 |
-        Where-Object { $_.IPAddress -notlike "169.254.*" } |
-        Select-Object -ExpandProperty IPAddress -First 1
+    $physicalIndexes = @(
+      Get-NetAdapter -Physical |
+        Where-Object Status -eq "Up" |
+        Select-Object -ExpandProperty ifIndex
+    )
+    $candidates = foreach ($config in Get-NetIPConfiguration) {
+      if ($physicalIndexes -contains $config.InterfaceIndex -and $config.IPv4DefaultGateway) {
+        foreach ($address in @($config.IPv4Address)) {
+          if ($address.IPAddress -and $address.IPAddress -notlike "169.254.*") {
+            [PSCustomObject]@{
+              IPAddress = $address.IPAddress
+              Metric = $config.NetIPv4Interface.InterfaceMetric
+            }
+          }
+        }
+      }
     }
+    $candidates |
+      Sort-Object Metric |
+      Select-Object -ExpandProperty IPAddress -First 1
   ' 2>/dev/null | tr -d '\r' || true
 }
 
@@ -71,8 +85,14 @@ if [ -z "$host_lan_ip" ]; then
       host_lan_ip=$(detect_macos_ip)
       ;;
     Linux)
-      if grep -qi microsoft /proc/version 2>/dev/null && command -v powershell.exe >/dev/null 2>&1; then
-        host_lan_ip=$(detect_windows_ip_from_wsl)
+      if grep -qi microsoft /proc/version 2>/dev/null; then
+        if command -v powershell.exe >/dev/null 2>&1; then
+          host_lan_ip=$(detect_windows_ip_from_wsl)
+        else
+          echo 'WSL interoperability is required to detect the Windows host IPv4.' >&2
+          echo 'Enable powershell.exe access or set HOST_LAN_IP manually.' >&2
+          exit 1
+        fi
       else
         host_lan_ip=$(detect_linux_ip)
       fi
@@ -87,4 +107,5 @@ if [ -z "$host_lan_ip" ] || ! is_ipv4 "$host_lan_ip"; then
 fi
 
 echo "スマホ確認URL: https://${host_lan_ip}:5173/"
+cd "$repo_root"
 HOST_LAN_IP="$host_lan_ip" docker compose up --build "$@"

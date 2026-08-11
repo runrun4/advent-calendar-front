@@ -1,6 +1,6 @@
 # チーム向け: PC起動からスマホ確認まで
 
-このドキュメントは **Mac / Windows(WSL2)** で開発サーバーを起動し、**スマホで画面確認**するまでの手順です。Cursor Agent もこのファイルを正として案内します。
+このドキュメントは **Windows PowerShell／CMD、Windows WSL2、Mac、Linux** で開発サーバーを起動し、**スマホで画面確認**するまでの手順です。Cursor Agent もこのファイルを正として案内します。
 
 ## 1. 前提
 
@@ -36,21 +36,28 @@ git pull
 docker compose version
 ```
 
-### 3.2 Windows（WSL2）
+### 3.2 Windows
 
 1. [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) をインストールする
-2. Settings → Resources → WSL Integration で使用するディストリを有効化する
-3. **リポジトリは WSL 内の Linux ファイルシステムに置く**（例: `~/projects/advent-calendar-front`）
-   - NG: `/mnt/c/Users/...`（遅い・HMRが不安定）
-4. **WSL ターミナル**で確認:
+2. Settings → GeneralでWSL2バックエンドを有効化する
+3. WSL2ターミナルを使う場合は、Settings → Resources → WSL Integrationで使用するディストリを有効化する
+4. 使用するターミナルで確認:
 
 ```bash
 docker compose version
 ```
 
-## 4. 開発サーバーを起動する（Mac / Windows 共通）
+## 4. 開発サーバーを起動する
 
 プロジェクト直下で:
+
+**Windows PowerShell／CMD:**
+
+```powershell
+.\scripts\docker-dev.cmd
+```
+
+**Windows WSL2／Mac／Linux:**
 
 ```bash
 ./scripts/docker-dev.sh
@@ -61,11 +68,17 @@ docker compose version
 - 開発: [https://localhost:5173](https://localhost:5173)
 - スマホ: 起動ログの `Network` に表示される `https://<PCのIPv4>:5173/`
 
-スクリプトがPCのLAN IPv4を自動取得できない場合は、`ipconfig` などで確認したIPv4を指定する:
+Windows用スクリプトは、起動中の物理NIC（Wi-Fi／Ethernet）からデフォルトゲートウェイを持つIPv4を選ぶ。自動取得できない場合は、`ipconfig` などで確認したIPv4を指定する:
+
+```powershell
+.\scripts\docker-dev.cmd -HostLanIp 192.168.1.10
+```
 
 ```bash
 HOST_LAN_IP=192.168.1.10 ./scripts/docker-dev.sh
 ```
+
+通常の `docker compose up --build` はホストIPv4を判定できないため、誤ったeth0 URLを表示せず停止する。必ずOS別の専用起動コマンドを使う。
 
 停止:
 
@@ -81,6 +94,17 @@ docker compose down
 
 ```bash
 docker compose down -v
+```
+
+**Windows PowerShell／CMD:**
+
+```powershell
+.\scripts\docker-dev.cmd
+```
+
+**Windows WSL2／Mac／Linux:**
+
+```bash
 ./scripts/docker-dev.sh
 ```
 
@@ -98,9 +122,9 @@ docker compose -f docker-compose.prod.yml up --build
 
 ### 5.1 PC の LAN IP を調べる
 
-> **Windows(WSL2)の注意:** 必ず `./scripts/docker-dev.sh` で起動する。
+> **Windowsの注意:** PowerShell／CMDでは `.\scripts\docker-dev.cmd`、WSL2では `./scripts/docker-dev.sh` で起動する。
 >
-> スクリプトがWindowsホストのLAN IPv4をコンテナへ渡すため、Viteの `Network` にはスマホから開けるURLが表示される。通常の `docker compose up` で表示される `172.x.x.x` はコンテナ内部のIPであり、スマホからは開けない。
+> Windows用スクリプトが物理NICのLAN IPv4をコンテナへ渡すため、Viteの `Network` にはスマホから開けるURLが表示される。通常の `docker compose up` は正しいホストIPv4を渡せないため使用しない。
 
 **Mac:**
 
@@ -118,13 +142,13 @@ ipconfig
 
 `IPv4 アドレス`（例: `192.168.1.10`）を使う。Docker Desktop 利用時も、基本はこの Windows 側の LAN IP でアクセスする。
 
-**WSL 内のみで調べる場合:**
+**WSL2ターミナルからWindows側を調べる場合:**
 
 ```bash
-hostname -I | awk '{print $1}'
+powershell.exe -NoProfile -Command "ipconfig"
 ```
 
-Docker Desktop 経由でポート公開しているときは、多くの場合 **Windows ホストの IPv4** をスマホに入力する。
+`hostname -I` で表示されるWSL2のeth0アドレスは使用しない。Docker Desktop経由でポート公開しているため、**WindowsホストのIPv4**をスマホに入力する。
 
 ### 5.2 スマホのブラウザで開く
 
@@ -162,7 +186,7 @@ Docker Desktop 経由でポート公開しているときは、多くの場合 *
 
 | やり方 | できること | できないこと |
 |--------|------------|--------------|
-| 各自 `docker compose up` | 自分のPC・同じWi-Fiの自分のスマホ | 別ネットワークの相手の画面を直接見る |
+| 各自OS別ランチャーで起動 | 自分のPC・同じWi-Fiの自分のスマホ | 別ネットワークの相手の画面を直接見る |
 | Vercel / Netlify 等へデプロイ | 発行された `https://...` を共有すれば誰でも・どの回線でも確認 | （無料枠の制限に注意） |
 
 **おすすめ:** `main`（または検証用ブランチ）を GitHub に push → Vercel/Netlify 連携で HTTPS URL を自動発行 → チームは URL をスマホで開くだけ。
@@ -187,8 +211,8 @@ npm run dev
 ## 9. チェックリスト
 
 - [ ] Docker Desktop が起動している（または Node 22 が入っている）
-- [ ] Windows ならリポジトリが WSL の `~/...` 配下
-- [ ] `./scripts/docker-dev.sh` が成功し、PC で `localhost:5173` が開く
+- [ ] Windowsでは使用するターミナルと同じ側にリポジトリがある（PowerShell/CMDはWindows側、WSL2はLinux側）
+- [ ] OS別の専用起動コマンドが成功し、PCで `localhost:5173` が開く
 - [ ] 同じ Wi-Fi のスマホで `https://<LAN-IP>:5173` が開く
 - [ ] （任意）チーム共有・iOS PWA 確認用に HTTPS デプロイ URL がある
 
@@ -199,5 +223,7 @@ npm run dev
 | `docker-compose.yml` | 開発用 |
 | `docker-compose.prod.yml` | 本番相当 |
 | `Dockerfile.dev` / `Dockerfile` | 各イメージ定義 |
+| `scripts/docker-dev.cmd` / `docker-dev.ps1` | Windows PowerShell／CMD用ランチャー |
+| `scripts/docker-dev.sh` | Windows WSL2／Mac／Linux用ランチャー |
 | `vite.config.ts` | `host` / `usePolling`（WSL・コンテナ向け） |
 | `.cursor/rules/local-dev-and-mobile.mdc` | Cursor Agent 向け要約ルール |

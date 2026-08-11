@@ -10,10 +10,10 @@ alwaysApply: true
 ## 最短パス（推奨）
 
 1. Docker Desktop を入れる（Windows は WSL2 統合を有効化）
-2. Windows ではリポジトリを **WSL Linux FS**（`~/...`）に置く。`/mnt/c/...` は避ける
-3. プロジェクト直下で `./scripts/docker-dev.sh`
+2. WindowsではPowerShell/CMDならWindows側、WSL2ならLinux FS（`~/...`）にリポジトリを置く。WSL2から`/mnt/c/...`は使わない
+3. Windows PowerShell／CMDは `.\\scripts\\docker-dev.cmd`、WSL2／Mac／Linuxは `./scripts/docker-dev.sh`
 4. PC ブラウザ: `https://localhost:5173`
-5. 同じ Wi-Fi のスマホ: `http://<PCのLAN-IP>:5173`（例: `http://192.168.1.10:5173`）
+5. 同じ Wi-Fi のスマホ: `https://<PCのLAN-IP>:5173`（例: `https://192.168.1.10:5173`）
 
 本番相当確認は `docker compose -f docker-compose.prod.yml up --build` → `http://localhost:8080`（スマホは `:8080`）。
 
@@ -25,8 +25,8 @@ alwaysApply: true
 
 ## AI がやってよいこと
 
-- `./scripts/docker-dev.sh` / prod compose の実行案内
-- LAN IP の調べ方（Mac: `ipconfig getifaddr en0`、WSL: `hostname -I`、Windows: `ipconfig`）の案内
+- OS別Dockerランチャー / prod compose の実行案内
+- LAN IP の調べ方（Mac: `ipconfig getifaddr en0`、Windows: `ipconfig`、WSL2からは `powershell.exe ... ipconfig`）の案内
 - デプロイ前提の確認手順の案内
 
 ## AI がやってはいけないこと
