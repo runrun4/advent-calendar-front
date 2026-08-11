@@ -1,11 +1,38 @@
-import { defineConfig } from 'vite'
+import { createLogger, defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl' 
 
+const hostLanIp = process.env.HOST_LAN_IP
+const logger = createLogger()
+const logInfo = logger.info
+
+logger.info = (message, options) => {
+  const displayedMessage = hostLanIp && message.includes('Network')
+    ? message.replace(/eth0/g, 'PC IPv4')
+    : message
+
+  logInfo(displayedMessage, options)
+}
+
 // https://vite.dev/config/
 export default defineConfig({
+  customLogger: logger,
   plugins: [
+    {
+      name: 'display-host-lan-ip',
+      configureServer(server) {
+        if (!hostLanIp) return
+
+        const printUrls = server.printUrls
+        server.printUrls = () => {
+          if (server.resolvedUrls) {
+            server.resolvedUrls.network = [`https://${hostLanIp}:5173/`]
+          }
+          printUrls()
+        }
+      },
+    },
     react(),
     basicSsl(), 
     VitePWA({

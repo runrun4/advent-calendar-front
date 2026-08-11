@@ -53,12 +53,19 @@ docker compose version
 プロジェクト直下で:
 
 ```bash
-docker compose up --build
+./scripts/docker-dev.sh
 ```
 
 成功したら PC のブラウザで開く:
 
 - 開発: [https://localhost:5173](https://localhost:5173)
+- スマホ: 起動ログの `Network` に表示される `https://<PCのIPv4>:5173/`
+
+スクリプトがPCのLAN IPv4を自動取得できない場合は、`ipconfig` などで確認したIPv4を指定する:
+
+```bash
+HOST_LAN_IP=192.168.1.10 ./scripts/docker-dev.sh
+```
 
 停止:
 
@@ -68,11 +75,13 @@ docker compose down
 
 ### ブランチ切り替え・依存変更後の注意
 
-`node_modules` は名前付きボリュームに保存され、**ブランチを切り替えたり `package.json` が変わっても自動では更新されない**。起動時に `failed to load config from /app/vite.config.ts` や `Cannot find module '...'` が出たら、ボリュームごと作り直す:
+コンテナの起動時に `npm ci` が実行されるため、名前付きボリュームの `node_modules` は `package-lock.json` の内容に自動で同期される。通常は依存変更後もそのまま起動できる。
+
+起動時に `failed to load config from /app/vite.config.ts` や `Cannot find module '...'` が出るなど、ボリュームの破損が疑われる場合はボリュームごと作り直す:
 
 ```bash
 docker compose down -v
-docker compose up --build
+./scripts/docker-dev.sh
 ```
 
 ### 本番ビルド相当の確認
@@ -89,9 +98,9 @@ docker compose -f docker-compose.prod.yml up --build
 
 ### 5.1 PC の LAN IP を調べる
 
-> **⚠️ Windows(WSL2)の注意: ターミナルに表示される「Network:」の URL は使わない**
+> **Windows(WSL2)の注意:** 必ず `./scripts/docker-dev.sh` で起動する。
 >
-> Vite は起動時に `Network: https://172.x.x.x:5173` のような URL を表示するが、これは WSL / Docker コンテナ内部の仮想ネットワークの IP であり、**スマホから開くと必ずタイムアウトする**。スマホに入力するのは、必ず下記の手順で調べた **Windows ホストの LAN IP**（`192.168.x.x` など）。`hostname -I` や `ip addr` で見える eth0 の IP も同様に使えない。
+> スクリプトがWindowsホストのLAN IPv4をコンテナへ渡すため、Viteの `Network` にはスマホから開けるURLが表示される。通常の `docker compose up` で表示される `172.x.x.x` はコンテナ内部のIPであり、スマホからは開けない。
 
 **Mac:**
 
@@ -179,7 +188,7 @@ npm run dev
 
 - [ ] Docker Desktop が起動している（または Node 22 が入っている）
 - [ ] Windows ならリポジトリが WSL の `~/...` 配下
-- [ ] `docker compose up --build` が成功し、PC で `localhost:5173` が開く
+- [ ] `./scripts/docker-dev.sh` が成功し、PC で `localhost:5173` が開く
 - [ ] 同じ Wi-Fi のスマホで `https://<LAN-IP>:5173` が開く
 - [ ] （任意）チーム共有・iOS PWA 確認用に HTTPS デプロイ URL がある
 

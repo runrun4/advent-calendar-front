@@ -27,7 +27,15 @@ docker compose version
 ### 開発サーバー起動
 
 ```bash
-docker compose up --build
+./scripts/docker-dev.sh
+```
+
+スクリプトがホストPCのLAN IPv4を取得してコンテナへ渡すため、Viteの `Network` にはスマホから開ける `https://<PCのIPv4>:5173/` が表示されます。また、起動時に `npm ci` が実行され、`node_modules` は `package-lock.json` の内容に同期されます。
+
+IPv4を自動取得できない場合は明示して起動できます。
+
+```bash
+HOST_LAN_IP=192.168.1.10 ./scripts/docker-dev.sh
 ```
 
 ブラウザで [https://localhost:5173](https://localhost:5173) を開く。

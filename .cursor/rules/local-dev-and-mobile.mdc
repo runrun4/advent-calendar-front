@@ -11,7 +11,7 @@ alwaysApply: true
 
 1. Docker Desktop を入れる（Windows は WSL2 統合を有効化）
 2. Windows ではリポジトリを **WSL Linux FS**（`~/...`）に置く。`/mnt/c/...` は避ける
-3. プロジェクト直下で `docker compose up --build`
+3. プロジェクト直下で `./scripts/docker-dev.sh`
 4. PC ブラウザ: `https://localhost:5173`
 5. 同じ Wi-Fi のスマホ: `http://<PCのLAN-IP>:5173`（例: `http://192.168.1.10:5173`）
 
@@ -25,7 +25,7 @@ alwaysApply: true
 
 ## AI がやってよいこと
 
-- `docker compose up --build` / prod compose の実行案内
+- `./scripts/docker-dev.sh` / prod compose の実行案内
 - LAN IP の調べ方（Mac: `ipconfig getifaddr en0`、WSL: `hostname -I`、Windows: `ipconfig`）の案内
 - デプロイ前提の確認手順の案内
 
