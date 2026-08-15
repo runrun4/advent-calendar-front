@@ -225,3 +225,16 @@ input {
 .page-indicator__dot.is-active {
   background: #fff;
 }
+
+.page-slider {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.page-slider__page {
+  flex: 0 0 50%;
+  min-width: 0;
+  height: 100%;
+}

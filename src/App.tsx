@@ -78,8 +78,20 @@ const goToTab = (tab: AppTab) => {
     pointerStartX.current = null
   }}
 >
-  {activeTab === 'private' ? <PrivateCalendarPage /> : null}
-  {activeTab === 'event' ? <EventMainPage /> : null}
+  <div
+    className="page-slider"
+    style={{
+      transform: `translateX(-${TABS.indexOf(activeTab) * 50}%)`,
+    }}
+  >
+    <div className="page-slider__page">
+      <PrivateCalendarPage />
+    </div>
+
+    <div className="page-slider__page">
+      <EventMainPage />
+    </div>
+  </div>
 
   <div className="page-indicator" aria-label="ページ位置">
     {TABS.map((tab) => (
