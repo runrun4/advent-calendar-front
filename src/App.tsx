@@ -1,19 +1,16 @@
 import { useRef, useState, type PointerEvent } from 'react'
 import { Header } from './components/layout/Header'
-import {
-  TabNavigation,
-  type AppTab,
-} from './components/layout/TabNavigation'
+import type { AppTab } from './components/layout/TabNavigation'
 import { ProfileModal } from './components/profile/ProfileModal'
 import { useAuth } from './hooks/useAuth'
 import { AuthPage } from './pages/auth/AuthPage'
 import { InitialSetup } from './pages/auth/InitialSetup'
 import { SplashScreen } from './pages/auth/SplashScreen'
 import { EventMainPage } from './pages/event/EventMainPage'
-import { MemoriesPage } from './pages/memories/MemoriesPage'
+
 import { PrivateCalendarPage } from './pages/private-calendar/PrivateCalendarPage'
 
-const TABS: AppTab[] = ['private', 'event', 'memories']
+const TABS: AppTab[] = ['private', 'event']
 const SWIPE_THRESHOLD = 56
 
 function App() {
@@ -22,9 +19,9 @@ function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const pointerStartX = useRef<number | null>(null)
 
-  const goToTab = (tab: AppTab) => {
-    setActiveTab(tab)
-  }
+const goToTab = (tab: AppTab) => {
+  setActiveTab(tab)
+}
 
   const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
     pointerStartX.current = event.clientX
@@ -74,19 +71,31 @@ function App() {
       <Header onOpenProfile={() => setIsProfileOpen(true)} />
 
       <main
-        className="app-shell__main"
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={() => {
-          pointerStartX.current = null
-        }}
-      >
-        {activeTab === 'private' ? <PrivateCalendarPage /> : null}
-        {activeTab === 'event' ? <EventMainPage /> : null}
-        {activeTab === 'memories' ? <MemoriesPage /> : null}
-      </main>
+  className="app-shell__main"
+  onPointerDown={handlePointerDown}
+  onPointerUp={handlePointerUp}
+  onPointerCancel={() => {
+    pointerStartX.current = null
+  }}
+>
+  {activeTab === 'private' ? <PrivateCalendarPage /> : null}
+  {activeTab === 'event' ? <EventMainPage /> : null}
 
-      <TabNavigation activeTab={activeTab} onChange={goToTab} />
+  <div className="page-indicator" aria-label="ページ位置">
+    {TABS.map((tab) => (
+      <span
+        key={tab}
+        className={
+          activeTab === tab
+            ? 'page-indicator__dot is-active'
+            : 'page-indicator__dot'
+        }
+      />
+    ))}
+  </div>
+</main>
+
+
 
       <ProfileModal
         isOpen={isProfileOpen}
