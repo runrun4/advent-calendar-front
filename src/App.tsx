@@ -11,38 +11,67 @@ import { EventMainPage } from './pages/event/EventMainPage'
 import { PrivateCalendarPage } from './pages/private-calendar/PrivateCalendarPage'
 
 const TABS: AppTab[] = ['private', 'event']
-const SWIPE_THRESHOLD = 56
+const SWIPE_THRESHOLD = 100
 
 function App() {
   const { user, phase, setPhase } = useAuth()
   const [activeTab, setActiveTab] = useState<AppTab>('private')
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const pointerStartX = useRef<number | null>(null)
 
-const goToTab = (tab: AppTab) => {
-  setActiveTab(tab)
+  const pointerStartX = useRef<number | null>(null)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+
+
+
+const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
+  pointerStartX.current = event.clientX
+  setIsDragging(true)
+
+  event.currentTarget.setPointerCapture(event.pointerId)
 }
 
-  const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
-    pointerStartX.current = event.clientX
+const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
+  if (pointerStartX.current === null) return
+
+  const deltaX = event.clientX - pointerStartX.current
+  const currentIndex = TABS.indexOf(activeTab)
+
+  if (
+    (currentIndex === 0 && deltaX > 0) ||
+    (currentIndex === TABS.length - 1 && deltaX < 0)
+  ) {
+    setDragOffset(deltaX * 0.2)
+    return
   }
 
-  const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
-    if (pointerStartX.current === null) return
+  setDragOffset(deltaX)
+}
 
-    const deltaX = event.clientX - pointerStartX.current
-    pointerStartX.current = null
+ const handlePointerUp = (event: PointerEvent<HTMLElement>) => {
+  if (pointerStartX.current === null) return
 
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD) return
+  const deltaX = event.clientX - pointerStartX.current
+  const currentIndex = TABS.indexOf(activeTab)
 
-    const currentIndex = TABS.indexOf(activeTab)
-    if (deltaX < 0 && currentIndex < TABS.length - 1) {
-      setActiveTab(TABS[currentIndex + 1])
-    }
-    if (deltaX > 0 && currentIndex > 0) {
-      setActiveTab(TABS[currentIndex - 1])
-    }
+  pointerStartX.current = null
+  setIsDragging(false)
+
+  if (Math.abs(deltaX) < SWIPE_THRESHOLD) {
+    setDragOffset(0)
+    return
   }
+
+  if (deltaX < 0 && currentIndex < TABS.length - 1) {
+    setActiveTab(TABS[currentIndex + 1])
+  }
+
+  if (deltaX > 0 && currentIndex > 0) {
+    setActiveTab(TABS[currentIndex - 1])
+  }
+
+  setDragOffset(0)
+}
 
   if (phase === 'splash') {
     return <SplashScreen onFinished={() => setPhase('auth')} />
@@ -73,17 +102,23 @@ const goToTab = (tab: AppTab) => {
       <main
   className="app-shell__main"
   onPointerDown={handlePointerDown}
+  onPointerMove={handlePointerMove}
   onPointerUp={handlePointerUp}
-  onPointerCancel={() => {
-    pointerStartX.current = null
+onPointerCancel={() => {
+  pointerStartX.current = null
+  setIsDragging(false)
+  setDragOffset(0)
+}}
+>
+<div
+  className="page-slider"
+  style={{
+    transform: `translateX(calc(-${
+      TABS.indexOf(activeTab) * 50
+    }% + ${dragOffset}px))`,
+    transition: isDragging ? 'none' : 'transform 0.3s ease',
   }}
 >
-  <div
-    className="page-slider"
-    style={{
-      transform: `translateX(-${TABS.indexOf(activeTab) * 50}%)`,
-    }}
-  >
     <div className="page-slider__page">
       <PrivateCalendarPage />
     </div>
