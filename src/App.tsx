@@ -5,6 +5,7 @@ import { ProfileModal } from './components/profile/ProfileModal'
 import { useAuth } from './hooks/useAuth'
 import { AuthPage } from './pages/auth/AuthPage'
 import { InitialSetup } from './pages/auth/InitialSetup'
+import { RegisterPage } from './pages/auth/RegisterPage'
 import { SplashScreen } from './pages/auth/SplashScreen'
 import { EventMainPage } from './pages/event/EventMainPage'
 
@@ -13,8 +14,11 @@ type AppTab = 'private' | 'event'
 const TABS: AppTab[] = ['private', 'event']
 const SWIPE_THRESHOLD = 100
 
+type AuthView = 'login' | 'register'
+
 function App() {
   const { user, phase, setPhase } = useAuth()
+  const [authView, setAuthView] = useState<AuthView>('login')
   const [activeTab, setActiveTab] = useState<AppTab>('private')
   const [isProfileOpen, setIsProfileOpen] = useState(false)
 
@@ -77,11 +81,20 @@ const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     return <SplashScreen onFinished={() => setPhase('auth')} />
   }
 
-  if (phase === 'auth') {
+  if (phase === 'auth' && authView === 'login') {
     return (
       <AuthPage
-        onAuthenticated={() => setPhase('setup')}
-        onBack={() => setPhase('splash')}
+        onAuthenticated={() => setPhase('app')}
+        onGoRegister={() => setAuthView('register')}
+      />
+    )
+  }
+
+  if (phase === 'auth' && authView === 'register') {
+    return (
+      <RegisterPage
+        onRegistered={() => setPhase('setup')}
+        onGoLogin={() => setAuthView('login')}
       />
     )
   }
@@ -90,7 +103,10 @@ const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     return (
       <InitialSetup
         onComplete={() => setPhase('app')}
-        onBack={() => setPhase('auth')}
+        onBack={() => {
+          setAuthView('register')
+          setPhase('auth')
+        }}
       />
     )
   }

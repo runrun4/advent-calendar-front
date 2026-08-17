@@ -20,6 +20,11 @@ body {
   background: #000;
 }
 
+body:has(.auth-page) {
+  overflow: hidden;
+  background: #fff;
+}
+
 #root {
   min-height: 100svh;
 }
