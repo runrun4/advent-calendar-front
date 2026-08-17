@@ -20,6 +20,11 @@ body {
   background: #000;
 }
 
+body:has(.auth-page) {
+  overflow: hidden;
+  background: #fff;
+}
+
 #root {
   min-height: 100svh;
 }
@@ -87,6 +92,7 @@ input {
 }
 
 .app-shell__main {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -200,4 +206,39 @@ input {
   cursor: pointer;
   font-size: 1.4rem;
   line-height: 1;
+}
+
+.page-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.page-indicator__dot {
+  width:10px;
+  height:10px; 
+  border-radius: 50%;
+  background: #666;
+}
+
+.page-indicator__dot.is-active {
+  background: #fff;
+}
+
+.page-slider {
+  display: flex;
+  width: 200%;
+  height: 100%;
+}
+
+.page-slider__page {
+  flex: 0 0 50%;
+  min-width: 0;
+  height: 100%;
 }
