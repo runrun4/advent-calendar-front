@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent } from 'react'
 import { Header } from './components/layout/Header'
-import type { AppTab } from './components/layout/TabNavigation'
+
 import { ProfileModal } from './components/profile/ProfileModal'
 import { useAuth } from './hooks/useAuth'
 import { AuthPage } from './pages/auth/AuthPage'
@@ -9,7 +9,7 @@ import { SplashScreen } from './pages/auth/SplashScreen'
 import { EventMainPage } from './pages/event/EventMainPage'
 
 import { PrivateCalendarPage } from './pages/private-calendar/PrivateCalendarPage'
-
+type AppTab = 'private' | 'event'
 const TABS: AppTab[] = ['private', 'event']
 const SWIPE_THRESHOLD = 100
 

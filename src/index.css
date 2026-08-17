@@ -216,8 +216,8 @@ input {
 }
 
 .page-indicator__dot {
-  width: 5px;
-  height: 5px;
+  width:10px;
+  height:10px; 
   border-radius: 50%;
   background: #666;
 }
