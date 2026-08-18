@@ -34,12 +34,19 @@ input {
   font: inherit;
 }
 
+/* =========================
+   ScreenShell
+========================= */
+
 .screen-shell {
   position: relative;
+
   display: grid;
   place-items: center;
+
   min-height: 100svh;
   width: 100%;
+
   background: #000;
   color: #f5f5f5;
 }
@@ -51,14 +58,20 @@ input {
 
 .screen-shell__back {
   position: absolute;
+
   top: 1rem;
   left: 1rem;
+
   z-index: 1;
+
   padding: 0.5rem 0.75rem;
+
   border: 1px solid #555;
   border-radius: 6px;
+
   background: transparent;
   color: inherit;
+
   cursor: pointer;
 }
 
@@ -69,10 +82,13 @@ input {
 .screen-shell__next,
 .screen-shell__label {
   padding: 1rem 1.5rem;
+
   border: 1px solid #fff;
   border-radius: 8px;
+
   background: transparent;
   color: inherit;
+
   margin: 0;
 }
 
@@ -84,51 +100,84 @@ input {
   background: #111;
 }
 
+/* =========================
+   App
+========================= */
+
 .app-shell {
   display: flex;
   flex-direction: column;
+
+  width: 100%;
+  height: 100svh;
   min-height: 100svh;
-  background: #000000;
+
+  background: #000;
 }
 
 .app-shell__main {
   position: relative;
-  flex: 1;
+
+  flex: 1 1 auto;
   min-height: 0;
+
+  width: 100%;
+
   overflow: hidden;
+
   touch-action: pan-y;
+
   background: #fff;
 }
 
+/* =========================
+   Header
+========================= */
+
 .app-header {
   display: flex;
+
   justify-content: flex-end;
   align-items: center;
+
   padding: 0.75rem 1rem;
+
   border-bottom: 1px solid #222;
 }
 
 .app-header__profile {
   padding: 0.45rem 0.8rem;
+
   border: 1px solid #555;
   border-radius: 999px;
+
   background: transparent;
   color: inherit;
+
   cursor: pointer;
 }
+
+/* =========================
+   Tab Navigation
+========================= */
 
 .tab-navigation {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+
   border-top: 1px solid #222;
+
   background: #000;
 }
 
 .tab-navigation__item {
   padding: 0.9rem 0.5rem;
+
   border: 0;
+
   background: transparent;
   color: #888;
+
   cursor: pointer;
 }
 
@@ -136,25 +185,37 @@ input {
   color: #fff;
 }
 
+/* =========================
+   Event
+========================= */
+
 .event-main {
   display: flex;
+
   flex-direction: column;
+
   height: 100%;
 }
 
 .event-main__panels {
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
+
   gap: 0.5rem;
+
   padding: 0.75rem 1rem 0;
 }
 
 .event-main__panel {
   padding: 0.55rem 0.4rem;
+
   border: 1px solid #444;
   border-radius: 999px;
+
   background: transparent;
   color: #aaa;
+
   cursor: pointer;
 }
 
@@ -168,63 +229,95 @@ input {
   min-height: 0;
 }
 
+/* =========================
+   Modal
+========================= */
+
 .modal-backdrop {
   position: fixed;
+
   inset: 0;
+
   z-index: 20;
+
   display: grid;
   place-items: center;
+
   background: rgba(0, 0, 0, 0.7);
+
   padding: 1rem;
 }
 
 .modal-panel {
   width: min(100%, 22rem);
+
   padding: 1rem;
+
   border: 1px solid #444;
   border-radius: 12px;
+
   background: #111;
 }
 
 .modal-panel__header {
   display: flex;
+
   align-items: center;
   justify-content: space-between;
+
   gap: 0.75rem;
+
   margin-bottom: 0.75rem;
 }
 
 .modal-panel__header h2 {
   margin: 0;
+
   font-size: 1.1rem;
   font-weight: 600;
 }
 
 .modal-panel__header button {
   border: 0;
+
   background: transparent;
   color: inherit;
+
   cursor: pointer;
+
   font-size: 1.4rem;
   line-height: 1;
 }
 
+/* =========================
+   Page Indicator
+========================= */
+
 .page-indicator {
   position: absolute;
+
   left: 50%;
   bottom: 0.75rem;
+
   transform: translateX(-50%);
+
   display: flex;
+
   align-items: center;
+
   gap: 0.7rem;
+
   z-index: 5;
+
   pointer-events: none;
 }
 
 .page-indicator__dot {
-  width:10px;
-  height:10px; 
+  width: 10px;
+  height: 10px;
+
   border-radius: 50%;
+
   background: #666;
 }
 
@@ -232,42 +325,87 @@ input {
   background: #fff;
 }
 
+/* =========================
+   Page Slider
+========================= */
+
 .page-slider {
   display: flex;
+
   width: 200%;
   height: 100%;
+  min-height: 0;
 }
 
 .page-slider__page {
+  position: relative;
+
   flex: 0 0 50%;
-  min-width: 0;
+
+  width: 50%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
+/* =========================
+   Private Calendar Page
+========================= */
+
 .private-calendar-page {
-  position: relative;
+  display: grid;
+
+  grid-template-rows: minmax(0, 1fr) 5rem 2rem;
 
   width: 100%;
   height: 100%;
+  min-width: 0;
   min-height: 0;
 
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
 
   background: #fff;
   color: #000;
 }
 
+/* =========================
+   Calendar Area
+========================= */
+
+.private-calendar-page-calendar-area {
+  grid-row: 1;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+}
+
+.private-calendar-page-calendar {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+}
 
 /* =========================
-   ヘッダー
+   Calendar Header
 ========================= */
 
 .private-calendar-page-header {
   position: relative;
+
   z-index: 10;
 
   display: flex;
+
   justify-content: space-between;
   align-items: center;
 
@@ -278,6 +416,7 @@ input {
   padding: 0.75rem 1rem;
 
   background: #fff;
+
   border-bottom: 1px solid #ddd;
 }
 
@@ -290,6 +429,7 @@ input {
 
 .private-calendar-page-header-navigation {
   display: flex;
+
   flex-direction: column;
 
   align-items: flex-end;
@@ -328,29 +468,8 @@ input {
   font-size: 0.9rem;
 }
 
-
 /* =========================
-   カレンダー本体
-========================= */
-
-.private-calendar-page-calendar {
-  flex: 1;
-
-  min-height: 0;
-
-  overflow: hidden;
-
-  background: #fff;
-
-  /*
-   * スマホで縦スワイプを有効にする
-   */
-  touch-action: pan-y;
-}
-
-
-/* =========================
-   曜日
+   Weekdays
 ========================= */
 
 .private-calendar-weekdays {
@@ -379,9 +498,8 @@ input {
   color: #666;
 }
 
-
 /* =========================
-   日付
+   Calendar Days
 ========================= */
 
 .private-calendar-days {
@@ -419,36 +537,42 @@ input {
   cursor: default;
 }
 
-
 /* =========================
-   今日
+   Today
 ========================= */
 
 .private-calendar-day.is-today {
   background: #000;
+
   color: #fff;
 
   font-weight: 600;
 }
 
-
 /* =========================
-   ＋ボタン
+   Add Button Area
 ========================= */
 
-.private-calendar-page-addbutton {
-  position: absolute;
+.private-calendar-page-addbutton-area {
+  grid-row: 2;
 
-  right: 1rem;
-  bottom: 1rem;
+  display: flex;
 
-  z-index: 20;
+  justify-content: flex-end;
+  align-items: center;
 
-  width: 4rem;
-  height: 4rem;
+  width: 100%;
+  height: 5rem;
+  min-height: 5rem;
 
-  pointer-events: none;
+  padding: 0 1rem;
+
+  background: #fff;
 }
+
+/* =========================
+   Add Button
+========================= */
 
 .private-calendar-page-addbutton-button {
   display: flex;
@@ -472,7 +596,21 @@ input {
 
   cursor: pointer;
 
-  pointer-events: auto;
+  flex-shrink: 0;
 
   box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+/* =========================
+   Bottom Area
+========================= */
+
+.private-calendar-page-bottom {
+  grid-row: 3;
+
+  width: 100%;
+  height: 2rem;
+  min-height: 2rem;
+
+  background: #fff;
 }

@@ -58,6 +58,10 @@ function getDays(
   month: number,
 ): Array<number | null> {
   // その月の1日が何曜日か
+  // 0 = SUN
+  // 1 = MON
+  // ...
+  // 6 = SAT
   const firstDay = new Date(
     year,
     month,
@@ -91,11 +95,20 @@ function getDays(
 }
 
 export function PrivateCalendarPage() {
+  /*
+   * カレンダーに使用する月一覧
+   *
+   * 現在月を中心に
+   * 前60か月 + 現在月 + 後60か月
+   */
   const months = useMemo(
     () => createMonthList(),
     [],
   )
 
+  /*
+   * 今日の日付
+   */
   const today = useMemo(() => {
     const date = new Date()
 
@@ -106,39 +119,51 @@ export function PrivateCalendarPage() {
     }
   }, [])
 
-  // 現在の月
-  // MONTH_RANGE の位置が今日の月
+  /*
+   * 現在月のインデックス
+   */
   const currentMonthIndex = MONTH_RANGE
 
   const [monthIndex, setMonthIndex] =
     useState(currentMonthIndex)
 
-  // スワイプ開始位置
+  /*
+   * スワイプ開始位置
+   */
   const touchStartY =
     useRef<number | null>(null)
 
-  // 現在表示している月
+  /*
+   * 現在表示している月
+   */
   const currentMonth = months[monthIndex]
 
-  // 前の月
+  /*
+   * 前の月
+   */
   const previousMonth =
     monthIndex > 0
       ? months[monthIndex - 1]
       : null
 
-  // 次の月
+  /*
+   * 次の月
+   */
   const nextMonth =
     monthIndex < months.length - 1
       ? months[monthIndex + 1]
       : null
 
+  /*
+   * 現在の月の日付
+   */
   const days = getDays(
     currentMonth.year,
     currentMonth.month,
   )
 
   /*
-   * 前の月へ
+   * 前の月へ移動
    */
   const goToPreviousMonth = () => {
     if (monthIndex <= 0) {
@@ -149,7 +174,7 @@ export function PrivateCalendarPage() {
   }
 
   /*
-   * 次の月へ
+   * 次の月へ移動
    */
   const goToNextMonth = () => {
     if (monthIndex >= months.length - 1) {
@@ -203,98 +228,107 @@ export function PrivateCalendarPage() {
   return (
     <div className="private-calendar-page">
 
-      {/* =========================
-          ヘッダー
-      ========================== */}
+      {/* =================================
+          カレンダー領域
+      ================================= */}
 
-      <header className="private-calendar-page-header">
+      <div className="private-calendar-page-calendar-area">
 
-        {/* 現在の月 */}
+        <div className="private-calendar-page-calendar">
 
-        <div className="private-calendar-page-header-current">
-          {formatMonth(
-            currentMonth.year,
-            currentMonth.month,
-          )}
-        </div>
+          {/* -------------------------
+              ヘッダー
+          -------------------------- */}
 
-        {/* 前後の月 */}
+          <header className="private-calendar-page-header">
 
-        <div className="private-calendar-page-header-navigation">
+            {/* 現在の月 */}
 
-          <button
-            type="button"
-            className="private-calendar-page-header-navigation-button"
-            onClick={goToNextMonth}
-            disabled={nextMonth === null}
-            aria-label="次の月"
-          >
-            <span className="private-calendar-page-header-navigation-arrow">
-              ↑
-            </span>
-
-            <span>
-              {nextMonth
-                ? formatShortMonth(
-                    nextMonth.year,
-                    nextMonth.month,
-                  )
-                : ''}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="private-calendar-page-header-navigation-button"
-            onClick={goToPreviousMonth}
-            disabled={previousMonth === null}
-            aria-label="前の月"
-          >
-            <span className="private-calendar-page-header-navigation-arrow">
-              ↓
-            </span>
-
-            <span>
-              {previousMonth
-                ? formatShortMonth(
-                    previousMonth.year,
-                    previousMonth.month,
-                  )
-                : ''}
-            </span>
-          </button>
-
-        </div>
-      </header>
-
-      {/* =========================
-          カレンダー
-      ========================== */}
-
-      <div
-        className="private-calendar-page-calendar"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-
-        {/* 曜日 */}
-
-        <div className="private-calendar-weekdays">
-          {WEEKDAYS.map((weekday) => (
-            <div
-              key={weekday}
-              className="private-calendar-weekday"
-            >
-              {weekday}
+            <div className="private-calendar-page-header-current">
+              {formatMonth(
+                currentMonth.year,
+                currentMonth.month,
+              )}
             </div>
-          ))}
-        </div>
 
-        {/* 日付 */}
+            {/* 前後の月 */}
 
-        <div className="private-calendar-days">
-          {days.map(
-            (day, index) => {
+            <div className="private-calendar-page-header-navigation">
+
+              {/* 次の月 */}
+
+              <button
+                type="button"
+                className="private-calendar-page-header-navigation-button"
+                onClick={goToNextMonth}
+                disabled={nextMonth === null}
+                aria-label="次の月"
+              >
+                <span className="private-calendar-page-header-navigation-arrow">
+                  ↑
+                </span>
+
+                <span>
+                  {nextMonth
+                    ? formatShortMonth(
+                        nextMonth.year,
+                        nextMonth.month,
+                      )
+                    : ''}
+                </span>
+              </button>
+
+              {/* 前の月 */}
+
+              <button
+                type="button"
+                className="private-calendar-page-header-navigation-button"
+                onClick={goToPreviousMonth}
+                disabled={previousMonth === null}
+                aria-label="前の月"
+              >
+                <span className="private-calendar-page-header-navigation-arrow">
+                  ↓
+                </span>
+
+                <span>
+                  {previousMonth
+                    ? formatShortMonth(
+                        previousMonth.year,
+                        previousMonth.month,
+                      )
+                    : ''}
+                </span>
+              </button>
+
+            </div>
+          </header>
+
+          {/* -------------------------
+              曜日
+          -------------------------- */}
+
+          <div className="private-calendar-weekdays">
+            {WEEKDAYS.map((weekday) => (
+              <div
+                key={weekday}
+                className="private-calendar-weekday"
+              >
+                {weekday}
+              </div>
+            ))}
+          </div>
+
+          {/* -------------------------
+              日付
+          -------------------------- */}
+
+          <div
+            className="private-calendar-days"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {days.map((day, index) => {
               const isToday =
                 day !== null &&
                 currentMonth.year === today.year &&
@@ -315,17 +349,17 @@ export function PrivateCalendarPage() {
                   {day}
                 </button>
               )
-            },
-          )}
-        </div>
+            })}
+          </div>
 
+        </div>
       </div>
 
-      {/* =========================
-          ＋ボタン
-      ========================== */}
+      {/* =================================
+          ＋ボタン領域
+      ================================= */}
 
-      <div className="private-calendar-page-addbutton">
+      <div className="private-calendar-page-addbutton-area">
         <button
           type="button"
           className="private-calendar-page-addbutton-button"
@@ -334,6 +368,12 @@ export function PrivateCalendarPage() {
           +
         </button>
       </div>
+
+      {/* =================================
+          下部領域
+      ================================= */}
+
+      <div className="private-calendar-page-bottom" />
 
     </div>
   )
