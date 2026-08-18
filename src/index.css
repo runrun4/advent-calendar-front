@@ -88,7 +88,7 @@ input {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  background: #000;
+  background: #000000;
 }
 
 .app-shell__main {
@@ -97,6 +97,7 @@ input {
   min-height: 0;
   overflow: hidden;
   touch-action: pan-y;
+  background: #fff;
 }
 
 .app-header {
@@ -241,4 +242,237 @@ input {
   flex: 0 0 50%;
   min-width: 0;
   height: 100%;
+}
+
+.private-calendar-page {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #fff;
+  color: #000;
+}
+
+
+/* =========================
+   ヘッダー
+========================= */
+
+.private-calendar-page-header {
+  position: relative;
+  z-index: 10;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  flex-shrink: 0;
+
+  height: 4.5rem;
+
+  padding: 0.75rem 1rem;
+
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+
+.private-calendar-page-header-current {
+  font-size: 1.4rem;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.private-calendar-page-header-navigation {
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 0.15rem;
+}
+
+.private-calendar-page-header-navigation-button {
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 0.3rem;
+
+  min-width: 4.5rem;
+
+  padding: 0.1rem 0;
+
+  border: 0;
+
+  background: transparent;
+  color: #555;
+
+  font-size: 0.8rem;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.private-calendar-page-header-navigation-button:disabled {
+  visibility: hidden;
+}
+
+.private-calendar-page-header-navigation-arrow {
+  font-size: 0.9rem;
+}
+
+
+/* =========================
+   カレンダー本体
+========================= */
+
+.private-calendar-page-calendar {
+  flex: 1;
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+
+  /*
+   * スマホで縦スワイプを有効にする
+   */
+  touch-action: pan-y;
+}
+
+
+/* =========================
+   曜日
+========================= */
+
+.private-calendar-weekdays {
+  display: grid;
+
+  grid-template-columns: repeat(7, 1fr);
+
+  padding: 0 0.5rem;
+
+  border-bottom: 1px solid #eee;
+}
+
+.private-calendar-weekday {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  height: 2.5rem;
+
+  font-size: 0.7rem;
+  font-weight: 600;
+
+  letter-spacing: 0.03em;
+
+  color: #666;
+}
+
+
+/* =========================
+   日付
+========================= */
+
+.private-calendar-days {
+  display: grid;
+
+  grid-template-columns: repeat(7, 1fr);
+
+  padding: 0 0.5rem;
+}
+
+.private-calendar-day {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 100%;
+
+  aspect-ratio: 1;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #000;
+
+  font-size: 0.95rem;
+
+  cursor: pointer;
+}
+
+.private-calendar-day:disabled {
+  cursor: default;
+}
+
+
+/* =========================
+   今日
+========================= */
+
+.private-calendar-day.is-today {
+  background: #000;
+  color: #fff;
+
+  font-weight: 600;
+}
+
+
+/* =========================
+   ＋ボタン
+========================= */
+
+.private-calendar-page-addbutton {
+  position: absolute;
+
+  right: 1rem;
+  bottom: 1rem;
+
+  z-index: 20;
+
+  width: 4rem;
+  height: 4rem;
+
+  pointer-events: none;
+}
+
+.private-calendar-page-addbutton-button {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 4rem;
+  height: 4rem;
+
+  padding: 0;
+
+  border: 1px solid #000;
+  border-radius: 50%;
+
+  background: #fff;
+  color: #000;
+
+  font-size: 2rem;
+  line-height: 1;
+
+  cursor: pointer;
+
+  pointer-events: auto;
+
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
 }
