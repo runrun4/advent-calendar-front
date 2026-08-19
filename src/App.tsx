@@ -1,6 +1,4 @@
 import { useRef, useState, type PointerEvent } from 'react'
-import { Header } from './components/layout/Header'
-
 import { ProfileModal } from './components/profile/ProfileModal'
 import { useAuth } from './hooks/useAuth'
 import { AuthPage } from './pages/auth/AuthPage'
@@ -113,7 +111,7 @@ const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
 
   return (
     <div className="app-shell">
-      <Header onOpenProfile={() => setIsProfileOpen(true)} />
+      <div className="app-shell__top" aria-hidden="true" />
 
       <main
   className="app-shell__main"
@@ -140,7 +138,7 @@ onPointerCancel={() => {
     </div>
 
     <div className="page-slider__page">
-      <EventMainPage />
+      <EventMainPage onOpenProfile={() => setIsProfileOpen(true)} />
     </div>
   </div>
 
