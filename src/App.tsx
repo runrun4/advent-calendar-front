@@ -113,6 +113,7 @@ const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
 
   return (
     <div className="app-shell">
+      <div className="app-shell__top" aria-hidden="true" />
       <Header onOpenProfile={() => setIsProfileOpen(true)} />
 
       <main
