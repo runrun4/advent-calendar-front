@@ -399,7 +399,7 @@ const handleTouchEnd = (
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {days.map((calendarDay, index) => {
+{days.map((calendarDay, index) => {
   const isToday =
     calendarDay !== null &&
     calendarDay.isCurrentMonth &&
@@ -410,6 +410,15 @@ const handleTouchEnd = (
   const isNextMonth =
     calendarDay !== null &&
     !calendarDay.isCurrentMonth
+
+  // 0 = SUN
+  // 1 = MON
+  // ...
+  // 6 = SAT
+  const weekdayIndex = index % 7
+
+  const isSunday = weekdayIndex === 0
+  const isSaturday = weekdayIndex === 6
 
   return (
     <div
@@ -422,17 +431,21 @@ const handleTouchEnd = (
         isNextMonth
           ? ' is-next-month'
           : ''
+      }${
+        isSunday
+          ? ' is-sunday'
+          : ''
+      }${
+        isSaturday
+          ? ' is-saturday'
+          : ''
       }`}
     >
-      {/* 日付 */}
-
       {calendarDay !== null && (
         <div className="private-calendar-day-number">
           {calendarDay.day}
         </div>
       )}
-
-      {/* 将来ここに予定を表示 */}
 
       <div className="private-calendar-events">
       </div>

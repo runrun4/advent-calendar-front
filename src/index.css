@@ -652,6 +652,17 @@ input {
   overflow: hidden;
 }
 
+
+.private-calendar-day-cell.is-sunday
+  .private-calendar-day-number {
+  color: #e53935;
+}
+
+.private-calendar-day-cell.is-saturday
+  .private-calendar-day-number {
+  color: #1976d2;
+}
+
 .private-calendar-day-cell.is-next-month
   .private-calendar-day-number {
   color: #c8c8c8;
