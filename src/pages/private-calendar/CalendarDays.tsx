@@ -3,7 +3,7 @@ import type { CalendarDay, CalendarMonth, CalendarToday } from './calendarTypes'
 import { CalendarDayCell } from './CalendarDayCell'
 
 type CalendarDaysProps = {
-  days: Array<CalendarDay | null>
+  days: CalendarDay[]
   currentMonth: CalendarMonth
   today: CalendarToday
   onTouchStart: (event: TouchEvent<HTMLDivElement>) => void

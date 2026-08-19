@@ -24,13 +24,17 @@ export function formatShortMonth(_year: number, month: number) {
   return `${month + 1}${MONTH_NAMES[month]}`
 }
 
-export function getDays(year: number, month: number): Array<CalendarDay | null> {
+export function getDays(year: number, month: number): CalendarDay[] {
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const days: Array<CalendarDay | null> = []
+  const prevMonthDays = new Date(year, month, 0).getDate()
+  const days: CalendarDay[] = []
 
   for (let i = 0; i < firstDay; i++) {
-    days.push(null)
+    days.push({
+      day: prevMonthDays - firstDay + 1 + i,
+      isCurrentMonth: false,
+    })
   }
 
   for (let day = 1; day <= daysInMonth; day++) {

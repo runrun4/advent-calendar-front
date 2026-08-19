@@ -20,7 +20,7 @@ export function AuthFlow({
   setAuthView,
 }: AuthFlowProps) {
   if (phase === 'splash') {
-    return <SplashScreen onFinished={() => setPhase('app')} />
+    return <SplashScreen onFinished={() => setPhase('auth')} />
   }
 
   if (phase === 'auth' && authView === 'login') {

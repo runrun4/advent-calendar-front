@@ -1,14 +1,14 @@
 import type { CalendarDay, CalendarMonth, CalendarToday } from './calendarTypes'
 
 type CalendarDayCellProps = {
-  calendarDay: CalendarDay | null
+  calendarDay: CalendarDay
   index: number
   currentMonth: CalendarMonth
   today: CalendarToday
 }
 
 function getDayCellClassName(
-  calendarDay: CalendarDay | null,
+  calendarDay: CalendarDay,
   index: number,
   currentMonth: CalendarMonth,
   today: CalendarToday,
@@ -17,17 +17,15 @@ function getDayCellClassName(
   const isSunday = weekdayIndex === 0
   const isSaturday = weekdayIndex === 6
   const isToday =
-    calendarDay !== null &&
     calendarDay.isCurrentMonth &&
     currentMonth.year === today.year &&
     currentMonth.month === today.month &&
     calendarDay.day === today.day
-  const isNextMonth = calendarDay !== null && !calendarDay.isCurrentMonth
 
   return [
     'private-calendar-day-cell',
     isToday ? 'is-today' : '',
-    isNextMonth ? 'is-next-month' : '',
+    calendarDay.isCurrentMonth ? '' : 'is-outside-month',
     isSunday ? 'is-sunday' : '',
     isSaturday ? 'is-saturday' : '',
   ]
@@ -50,9 +48,7 @@ export function CalendarDayCell({
         today,
       )}
     >
-      {calendarDay !== null ? (
-        <div className="private-calendar-day-number">{calendarDay.day}</div>
-      ) : null}
+      <div className="private-calendar-day-number">{calendarDay.day}</div>
       <div className="private-calendar-events" />
     </div>
   )
