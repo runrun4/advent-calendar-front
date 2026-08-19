@@ -355,10 +355,14 @@ input {
 .private-calendar-page {
   display: grid;
 
-  grid-template-rows: minmax(0, 1fr) 5rem 2rem;
+  grid-template-rows:
+    minmax(0, 1fr)
+    5rem
+    2rem;
 
   width: 100%;
   height: 100%;
+
   min-width: 0;
   min-height: 0;
 
@@ -367,6 +371,7 @@ input {
   background: #fff;
   color: #000;
 }
+
 
 /* =========================
    Calendar Area
@@ -385,15 +390,26 @@ input {
 }
 
 .private-calendar-page-calendar {
+  display: flex;
+
+  flex-direction: column;
+
   width: 100%;
   height: 100%;
+
   min-width: 0;
   min-height: 0;
 
   overflow: hidden;
 
   background: #fff;
+
+  /*
+   * 縦方向のスワイプを許可
+   */
+  touch-action: pan-y;
 }
+
 
 /* =========================
    Calendar Header
@@ -421,10 +437,24 @@ input {
 }
 
 .private-calendar-page-header-current {
-  font-size: 1.4rem;
-  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
 
   white-space: nowrap;
+}
+
+.private-calendar-page-header-day {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.private-calendar-page-header-month {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
 }
 
 .private-calendar-page-header-navigation {
@@ -455,6 +485,7 @@ input {
   color: #555;
 
   font-size: 0.8rem;
+
   line-height: 1;
 
   cursor: pointer;
@@ -468,6 +499,7 @@ input {
   font-size: 0.9rem;
 }
 
+
 /* =========================
    Weekdays
 ========================= */
@@ -475,11 +507,19 @@ input {
 .private-calendar-weekdays {
   display: grid;
 
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns:
+    repeat(7, 1fr);
 
-  padding: 0 0.5rem;
+  flex-shrink: 0;
 
-  border-bottom: 1px solid #eee;
+  width: 100%;
+
+  padding: 0;
+
+  background: #fff;
+
+  border-top: 1px solid #ccc;
+  border-left: 1px solid #ccc;
 }
 
 .private-calendar-weekday {
@@ -490,13 +530,18 @@ input {
 
   height: 2.5rem;
 
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+
   font-size: 0.7rem;
+
   font-weight: 600;
 
   letter-spacing: 0.03em;
 
   color: #666;
 }
+
 
 /* =========================
    Calendar Days
@@ -505,49 +550,95 @@ input {
 .private-calendar-days {
   display: grid;
 
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr));
 
-  padding: 0 0.5rem;
-}
+  grid-template-rows:
+    repeat(6, minmax(0, 1fr));
 
-.private-calendar-day {
-  display: flex;
+  flex: 1;
 
-  justify-content: center;
-  align-items: center;
+  min-width: 0;
+  min-height: 0;
 
   width: 100%;
 
-  aspect-ratio: 1;
-
   padding: 0;
 
-  border: 0;
-  border-radius: 50%;
+  border-left: 1px solid #ccc;
 
-  background: transparent;
+  background: #fff;
+}
+
+
+/* =========================
+   Day Cell
+========================= */
+
+.private-calendar-day-cell {
+  position: relative;
+
+  min-width: 0;
+  min-height: 0;
+
+  padding: 0.4rem;
+
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+
+  background: #fff;
+
+  overflow: hidden;
+}
+
+
+/* =========================
+   Day Number
+========================= */
+
+.private-calendar-day-number {
+  display: flex;
+
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  width: 100%;
+
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  line-height: 1;
+
   color: #000;
-
-  font-size: 0.95rem;
-
-  cursor: pointer;
 }
 
-.private-calendar-day:disabled {
-  cursor: default;
-}
 
 /* =========================
    Today
 ========================= */
 
-.private-calendar-day.is-today {
-  background: #000;
-
-  color: #fff;
-
-  font-weight: 600;
+.private-calendar-day-cell.is-today
+  .private-calendar-day-number {
+  font-weight: 700;
 }
+
+
+/* =========================
+   Event Area
+========================= */
+
+.private-calendar-events {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.2rem;
+
+  width: 100%;
+
+  margin-top: 0.4rem;
+}
+
 
 /* =========================
    Add Button Area
@@ -563,12 +654,16 @@ input {
 
   width: 100%;
   height: 5rem;
+
   min-height: 5rem;
 
   padding: 0 1rem;
 
   background: #fff;
+
+  border-top: 1px solid #ccc;
 }
+
 
 /* =========================
    Add Button
@@ -592,14 +687,17 @@ input {
   color: #000;
 
   font-size: 2rem;
+
   line-height: 1;
 
   cursor: pointer;
 
   flex-shrink: 0;
 
-  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+  box-shadow:
+    0 2px 8px rgb(0 0 0 / 15%);
 }
+
 
 /* =========================
    Bottom Area
@@ -609,6 +707,7 @@ input {
   grid-row: 3;
 
   width: 100%;
+
   height: 2rem;
   min-height: 2rem;
 

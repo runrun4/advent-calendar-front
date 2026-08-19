@@ -42,9 +42,6 @@ function createMonthList(): CalendarMonth[] {
   )
 }
 
-function formatMonth(year: number, month: number) {
-  return `${year}年${month + 1}月`
-}
 
 function formatShortMonth(
   year: number,
@@ -53,11 +50,17 @@ function formatShortMonth(
   return `${month + 1}月`
 }
 
+/*
+ * 1か月分の日付を作成する
+ *
+ * 7列 × 6行 = 42マスに固定する。
+ * その月に存在しない部分は null にする。
+ */
 function getDays(
   year: number,
   month: number,
 ): Array<number | null> {
-  // その月の1日が何曜日か
+  // 1日の曜日
   // 0 = SUN
   // 1 = MON
   // ...
@@ -89,6 +92,11 @@ function getDays(
     day++
   ) {
     days.push(day)
+  }
+
+  // 必ず42マスにする
+  while (days.length < 42) {
+    days.push(null)
   }
 
   return days
@@ -156,6 +164,8 @@ export function PrivateCalendarPage() {
 
   /*
    * 現在の月の日付
+   *
+   * 必ず42マス
    */
   const days = getDays(
     currentMonth.year,
@@ -197,33 +207,36 @@ export function PrivateCalendarPage() {
   /*
    * 指を離した位置
    */
-  const handleTouchEnd = (
-    event: React.TouchEvent<HTMLDivElement>,
-  ) => {
-    if (touchStartY.current === null) {
-      return
-    }
-
-    const touchEndY =
-      event.changedTouches[0].clientY
-
-    const difference =
-      touchStartY.current - touchEndY
-
-    const SWIPE_THRESHOLD = 50
-
-    // 上方向へスワイプ
-    if (difference > SWIPE_THRESHOLD) {
-      goToNextMonth()
-    }
-
-    // 下方向へスワイプ
-    if (difference < -SWIPE_THRESHOLD) {
-      goToPreviousMonth()
-    }
-
-    touchStartY.current = null
+const handleTouchEnd = (
+  event: React.TouchEvent<HTMLDivElement>,
+) => {
+  if (touchStartY.current === null) {
+    return
   }
+
+  const touchEndY =
+    event.changedTouches[0].clientY
+
+  const SWIPE_THRESHOLD = 50
+
+  // 上へスワイプ → 次の月
+  if (
+    touchEndY <
+    touchStartY.current - SWIPE_THRESHOLD
+  ) {
+    goToNextMonth()
+  }
+
+  // 下へスワイプ → 前の月
+  if (
+    touchEndY >
+    touchStartY.current + SWIPE_THRESHOLD
+  ) {
+    goToPreviousMonth()
+  }
+
+  touchStartY.current = null
+}
 
   return (
     <div className="private-calendar-page">
@@ -244,64 +257,81 @@ export function PrivateCalendarPage() {
 
             {/* 現在の月 */}
 
-            <div className="private-calendar-page-header-current">
-              {formatMonth(
-                currentMonth.year,
-                currentMonth.month,
-              )}
-            </div>
+<div className="private-calendar-page-header-current">
+  <span className="private-calendar-page-header-day">
+    {currentMonth.month + 1}
+  </span>
+
+  <span className="private-calendar-page-header-month">
+    {[
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ][currentMonth.month]}
+  </span>
+</div>
 
             {/* 前後の月 */}
 
             <div className="private-calendar-page-header-navigation">
 
-              {/* 次の月 */}
-
-              <button
-                type="button"
-                className="private-calendar-page-header-navigation-button"
-                onClick={goToNextMonth}
-                disabled={nextMonth === null}
-                aria-label="次の月"
-              >
-                <span className="private-calendar-page-header-navigation-arrow">
-                  ↑
-                </span>
-
-                <span>
-                  {nextMonth
-                    ? formatShortMonth(
-                        nextMonth.year,
-                        nextMonth.month,
-                      )
-                    : ''}
-                </span>
-              </button>
-
               {/* 前の月 */}
 
-              <button
-                type="button"
-                className="private-calendar-page-header-navigation-button"
-                onClick={goToPreviousMonth}
-                disabled={previousMonth === null}
-                aria-label="前の月"
-              >
-                <span className="private-calendar-page-header-navigation-arrow">
-                  ↓
-                </span>
+<button
+  type="button"
+  className="private-calendar-page-header-navigation-button"
+  onClick={goToPreviousMonth}
+  disabled={previousMonth === null}
+  aria-label="前の月"
+>
+  <span className="private-calendar-page-header-navigation-arrow">
+    ↑
+  </span>
 
-                <span>
-                  {previousMonth
-                    ? formatShortMonth(
-                        previousMonth.year,
-                        previousMonth.month,
-                      )
-                    : ''}
-                </span>
-              </button>
+  <span>
+    {previousMonth
+      ? formatShortMonth(
+          previousMonth.year,
+          previousMonth.month,
+        )
+      : ''}
+  </span>
+</button>
+
+              {/* 次の月 */}
+
+<button
+  type="button"
+  className="private-calendar-page-header-navigation-button"
+  onClick={goToNextMonth}
+  disabled={nextMonth === null}
+  aria-label="次の月"
+>
+  <span className="private-calendar-page-header-navigation-arrow">
+    ↓
+  </span>
+
+  <span>
+    {nextMonth
+      ? formatShortMonth(
+          nextMonth.year,
+          nextMonth.month,
+        )
+      : ''}
+  </span>
+</button>
 
             </div>
+
           </header>
 
           {/* -------------------------
@@ -336,18 +366,27 @@ export function PrivateCalendarPage() {
                 day === today.day
 
               return (
-                <button
-                  key={index}
-                  type="button"
-                  className={`private-calendar-day${
+                <div
+                  key={`${currentMonth.year}-${currentMonth.month}-${index}`}
+                  className={`private-calendar-day-cell${
                     isToday
                       ? ' is-today'
                       : ''
                   }`}
-                  disabled={day === null}
                 >
-                  {day}
-                </button>
+                  {/* 日付 */}
+
+                  {day !== null && (
+                    <div className="private-calendar-day-number">
+                      {day}
+                    </div>
+                  )}
+
+                  {/* 将来ここに予定を表示 */}
+
+                  <div className="private-calendar-events">
+                  </div>
+                </div>
               )
             })}
           </div>
