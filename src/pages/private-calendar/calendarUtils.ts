@@ -20,7 +20,7 @@ export function createMonthList(): CalendarMonth[] {
   })
 }
 
-export function formatShortMonth(year: number, month: number) {
+export function formatShortMonth(_year: number, month: number) {
   return `${month + 1}${MONTH_NAMES[month]}`
 }
 

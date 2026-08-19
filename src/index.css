@@ -152,7 +152,11 @@ input {
   overflow: hidden;
   overscroll-behavior: none;
 
-  touch-action: pan-x;
+  /*
+   * ページ切替は JS で軸ロックする。
+   * pan-x だと子の pan-y と交差して none になり、縦横が同時に反応する。
+   */
+  touch-action: none;
 
   background: #fff;
 }
@@ -431,11 +435,6 @@ input {
   overflow: hidden;
 
   background: #fff;
-
-  /*
-   * 縦方向のスワイプを許可
-   */
-  touch-action: pan-y;
 }
 
 

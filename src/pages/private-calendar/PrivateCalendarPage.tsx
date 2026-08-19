@@ -20,7 +20,7 @@ export function PrivateCalendarPage() {
   }, [])
 
   const [monthIndex, setMonthIndex] = useState(MONTH_RANGE)
-  const touchStartY = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   const currentMonth = months[monthIndex]
   const previousMonth = monthIndex > 0 ? months[monthIndex - 1] : null
@@ -39,23 +39,28 @@ export function PrivateCalendarPage() {
   }
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    touchStartY.current = event.touches[0].clientY
+    touchStart.current = {
+      x: event.touches[0].clientX,
+      y: event.touches[0].clientY,
+    }
   }
 
   const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
-    if (touchStartY.current === null) return
+    if (touchStart.current === null) return
 
-    const touchEndY = event.changedTouches[0].clientY
+    const deltaX = event.changedTouches[0].clientX - touchStart.current.x
+    const deltaY = event.changedTouches[0].clientY - touchStart.current.y
+    touchStart.current = null
 
-    if (touchEndY < touchStartY.current - SWIPE_THRESHOLD) {
+    if (Math.abs(deltaY) <= Math.abs(deltaX)) return
+    if (Math.abs(deltaY) < SWIPE_THRESHOLD) return
+
+    if (deltaY < 0) {
       goToNextMonth()
+      return
     }
 
-    if (touchEndY > touchStartY.current + SWIPE_THRESHOLD) {
-      goToPreviousMonth()
-    }
-
-    touchStartY.current = null
+    goToPreviousMonth()
   }
 
   return (
