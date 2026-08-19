@@ -17,6 +17,11 @@ type CalendarMonth = {
   month: number
 }
 
+type CalendarDay = {
+  day: number
+  isCurrentMonth: boolean
+}
+
 function createMonthList(): CalendarMonth[] {
   const today = new Date()
 
@@ -47,7 +52,22 @@ function formatShortMonth(
   year: number,
   month: number,
 ) {
-  return `${month + 1}月`
+  const monthNames = [
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
+  ]
+
+  return `${month + 1}${monthNames[month]}`
 }
 
 /*
@@ -59,7 +79,7 @@ function formatShortMonth(
 function getDays(
   year: number,
   month: number,
-): Array<number | null> {
+): Array<CalendarDay | null> {
   // 1日の曜日
   // 0 = SUN
   // 1 = MON
@@ -71,32 +91,42 @@ function getDays(
     1,
   ).getDay()
 
-  // その月の日数
+  // 現在の月の日数
   const daysInMonth = new Date(
     year,
     month + 1,
     0,
   ).getDate()
 
-  const days: Array<number | null> = []
+  const days: Array<CalendarDay | null> = []
 
   // 月初までの空白
   for (let i = 0; i < firstDay; i++) {
     days.push(null)
   }
 
-  // 日付
+  // 現在の月の日付
   for (
     let day = 1;
     day <= daysInMonth;
     day++
   ) {
-    days.push(day)
+    days.push({
+      day,
+      isCurrentMonth: true,
+    })
   }
 
-  // 必ず42マスにする
+  // 現在の月の最終日以降を次の月の日付で埋める
+  let nextMonthDay = 1
+
   while (days.length < 42) {
-    days.push(null)
+    days.push({
+      day: nextMonthDay,
+      isCurrentMonth: false,
+    })
+
+    nextMonthDay++
   }
 
   return days
@@ -262,24 +292,29 @@ const handleTouchEnd = (
     {currentMonth.month + 1}
   </span>
 
-  <span className="private-calendar-page-header-month">
-    {[
-      'JAN',
-      'FEB',
-      'MAR',
-      'APR',
-      'MAY',
-      'JUN',
-      'JUL',
-      'AUG',
-      'SEP',
-      'OCT',
-      'NOV',
-      'DEC',
-    ][currentMonth.month]}
-  </span>
-</div>
+  <div className="private-calendar-page-header-month-info">
+    <span className="private-calendar-page-header-year">
+      {currentMonth.year}
+    </span>
 
+    <span className="private-calendar-page-header-month">
+      {[
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC',
+      ][currentMonth.month]}
+    </span>
+  </div>
+</div>
             {/* 前後の月 */}
 
             <div className="private-calendar-page-header-navigation">
@@ -293,10 +328,6 @@ const handleTouchEnd = (
   disabled={previousMonth === null}
   aria-label="前の月"
 >
-  <span className="private-calendar-page-header-navigation-arrow">
-    ↑
-  </span>
-
   <span>
     {previousMonth
       ? formatShortMonth(
@@ -304,6 +335,10 @@ const handleTouchEnd = (
           previousMonth.month,
         )
       : ''}
+  </span>
+
+  <span className="private-calendar-page-header-navigation-arrow">
+    ↑
   </span>
 </button>
 
@@ -316,10 +351,6 @@ const handleTouchEnd = (
   disabled={nextMonth === null}
   aria-label="次の月"
 >
-  <span className="private-calendar-page-header-navigation-arrow">
-    ↓
-  </span>
-
   <span>
     {nextMonth
       ? formatShortMonth(
@@ -327,6 +358,10 @@ const handleTouchEnd = (
           nextMonth.month,
         )
       : ''}
+  </span>
+
+  <span className="private-calendar-page-header-navigation-arrow">
+    ↓
   </span>
 </button>
 
@@ -338,16 +373,22 @@ const handleTouchEnd = (
               曜日
           -------------------------- */}
 
-          <div className="private-calendar-weekdays">
-            {WEEKDAYS.map((weekday) => (
-              <div
-                key={weekday}
-                className="private-calendar-weekday"
-              >
-                {weekday}
-              </div>
-            ))}
-          </div>
+<div className="private-calendar-weekdays">
+  {WEEKDAYS.map((weekday) => (
+    <div
+      key={weekday}
+      className={`private-calendar-weekday ${
+        weekday === 'SUN'
+          ? 'is-sunday'
+          : weekday === 'SAT'
+            ? 'is-saturday'
+            : ''
+      }`}
+    >
+      {weekday}
+    </div>
+  ))}
+</div>
 
           {/* -------------------------
               日付
@@ -358,37 +399,46 @@ const handleTouchEnd = (
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {days.map((day, index) => {
-              const isToday =
-                day !== null &&
-                currentMonth.year === today.year &&
-                currentMonth.month === today.month &&
-                day === today.day
+            {days.map((calendarDay, index) => {
+  const isToday =
+    calendarDay !== null &&
+    calendarDay.isCurrentMonth &&
+    currentMonth.year === today.year &&
+    currentMonth.month === today.month &&
+    calendarDay.day === today.day
 
-              return (
-                <div
-                  key={`${currentMonth.year}-${currentMonth.month}-${index}`}
-                  className={`private-calendar-day-cell${
-                    isToday
-                      ? ' is-today'
-                      : ''
-                  }`}
-                >
-                  {/* 日付 */}
+  const isNextMonth =
+    calendarDay !== null &&
+    !calendarDay.isCurrentMonth
 
-                  {day !== null && (
-                    <div className="private-calendar-day-number">
-                      {day}
-                    </div>
-                  )}
+  return (
+    <div
+      key={`${currentMonth.year}-${currentMonth.month}-${index}`}
+      className={`private-calendar-day-cell${
+        isToday
+          ? ' is-today'
+          : ''
+      }${
+        isNextMonth
+          ? ' is-next-month'
+          : ''
+      }`}
+    >
+      {/* 日付 */}
 
-                  {/* 将来ここに予定を表示 */}
+      {calendarDay !== null && (
+        <div className="private-calendar-day-number">
+          {calendarDay.day}
+        </div>
+      )}
 
-                  <div className="private-calendar-events">
-                  </div>
-                </div>
-              )
-            })}
+      {/* 将来ここに予定を表示 */}
+
+      <div className="private-calendar-events">
+      </div>
+    </div>
+  )
+})}
           </div>
 
         </div>

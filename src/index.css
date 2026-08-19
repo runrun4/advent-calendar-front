@@ -346,11 +346,11 @@ input {
 
   border-radius: 50%;
 
-  background: #666;
+  background: #ccc;
 }
 
 .page-indicator__dot.is-active {
-  background: #fff;
+  background: #000;
 }
 
 /* =========================
@@ -466,33 +466,54 @@ input {
 
 .private-calendar-page-header-current {
   display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
+  align-items: center;
+
+  gap: 0.6rem;
 
   white-space: nowrap;
 }
 
 .private-calendar-page-header-day {
-  font-size: 2rem;
+  font-size: 3.8rem;
   font-weight: 700;
+
+  line-height: 0.85;
+}
+
+.private-calendar-page-header-month-info {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: flex-start;
+
+  gap: 0.15rem;
+}
+
+.private-calendar-page-header-year {
+  font-size: 1.2rem;
+  font-weight: 600;
+
   line-height: 1;
+  letter-spacing: 0.03em;
 }
 
 .private-calendar-page-header-month {
   font-size: 1rem;
   font-weight: 600;
+
   letter-spacing: 0.08em;
+
   line-height: 1;
 }
 
 .private-calendar-page-header-navigation {
   display: flex;
-
   flex-direction: column;
-
   align-items: flex-end;
-
   gap: 0.15rem;
+
+  margin-left: auto;
 }
 
 .private-calendar-page-header-navigation-button {
@@ -510,9 +531,10 @@ input {
   border: 0;
 
   background: transparent;
-  color: #555;
+  color: #222;
 
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
 
   line-height: 1;
 
@@ -524,7 +546,10 @@ input {
 }
 
 .private-calendar-page-header-navigation-arrow {
-  font-size: 0.9rem;
+   color: #111;
+
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 
@@ -548,6 +573,14 @@ input {
 
   border-top: 1px solid #ccc;
   border-left: 1px solid #ccc;
+}
+
+.private-calendar-weekday.is-sunday {
+  color: #e53935;
+}
+
+.private-calendar-weekday.is-saturday {
+  color: #1976d2;
 }
 
 .private-calendar-weekday {
@@ -617,6 +650,11 @@ input {
   background: #fff;
 
   overflow: hidden;
+}
+
+.private-calendar-day-cell.is-next-month
+  .private-calendar-day-number {
+  color: #c8c8c8;
 }
 
 
