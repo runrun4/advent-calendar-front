@@ -25,8 +25,8 @@ const events: EventItem[] = [
   {
     id: 4,
     title: 'イベント4',
-    color: '#BDE0FE',
-  },
+    color: '#B5EAD7',
+  }
 ]
 
 export function EventList() {
@@ -46,6 +46,13 @@ export function EventList() {
           >
             <span className="event-list__item-title">
               {event.title}
+            </span>
+
+            <span
+              className="event-list__item-arrow"
+              aria-hidden="true"
+            >
+              »
             </span>
           </button>
         )

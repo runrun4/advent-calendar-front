@@ -22,6 +22,11 @@ const memories: MemoryItem[] = [
     title: '思い出3',
     color: '#E4C1F9',
   },
+  {
+    id: 4,
+    title: '思い出4',
+    color: '#F9C7BE',
+  }
 ]
 
 export function MemoriesPage() {
@@ -42,6 +47,13 @@ export function MemoriesPage() {
             <span className="memories-list__item-title">
               {memory.title}
             </span>
+
+ <span
+  className="memories-list__item-arrow"
+  aria-hidden="true"
+>
+  »
+</span>
           </button>
         )
       })}

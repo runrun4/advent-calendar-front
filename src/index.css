@@ -906,9 +906,10 @@ input {
 
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  width: 100%;
-  min-height: 3rem;
+  width: min(100%, 22rem);
+  min-height: 3.8rem;
 
   flex-shrink: 0;
 
@@ -925,15 +926,15 @@ input {
   cursor: pointer;
 }
 
+/* イベント：内側の色付きの縁 */
 .event-list__item::before {
   content: '';
 
   position: absolute;
 
-  inset: 0rem;
+  inset: 0;
 
   border: 0.35rem solid var(--event-color, #777);
-
   border-radius: 999px;
 
   pointer-events: none;
@@ -943,7 +944,9 @@ input {
   position: relative;
   z-index: 1;
 
-  width: 100%;
+  flex: 1;
+
+  min-width: 0;
 
   padding: 0 0.5rem;
 
@@ -952,6 +955,30 @@ input {
 
   text-align: left;
 }
+
+.event-list__item-arrow {
+  position: relative;
+  z-index: 1;
+
+  flex-shrink: 0;
+
+  margin-left: 0.75rem;
+
+  padding-right: 0.5rem;
+
+  font-size: 1.75rem;
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #333;
+
+  letter-spacing: -0.1em;
+}
+
+/* =========================
+   Event Add Button
+========================= */
 
 .event-list__add-button {
   display: flex;
@@ -980,6 +1007,7 @@ input {
   cursor: pointer;
 }
 
+
 /* =========================
    Memories
 ========================= */
@@ -1000,9 +1028,10 @@ input {
 
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  width: 100%;
-  min-height: 3rem;
+  width: min(100%, 22rem);
+  min-height: 3.8rem;
 
   flex-shrink: 0;
 
@@ -1019,13 +1048,13 @@ input {
   cursor: pointer;
 }
 
-/* 思い出の内側の色付きの縁 */
+/* 思い出：内側の色付きの縁 */
 .memories-list__item::before {
   content: '';
 
   position: absolute;
 
-  inset: 0rem;
+  inset: 0;
 
   border: 0.35rem solid var(--memory-color, #777);
   border-radius: 999px;
@@ -1037,7 +1066,9 @@ input {
   position: relative;
   z-index: 1;
 
-  width: 100%;
+  flex: 1;
+
+  min-width: 0;
 
   padding: 0 0.5rem;
 
@@ -1045,6 +1076,26 @@ input {
   font-weight: 600;
 
   text-align: left;
+}
+
+.memories-list__item-arrow {
+  position: relative;
+  z-index: 1;
+
+  flex-shrink: 0;
+
+  margin-left: 0.75rem;
+
+  padding-right: 0.5rem;
+
+  font-size: 1.75rem;
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #333;
+
+  letter-spacing: -0.1em;
 }
 
 .memories-list__add-button {
