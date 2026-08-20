@@ -902,17 +902,55 @@ input {
 }
 
 .event-list__item {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
   width: 100%;
+  min-height: 3rem;
 
   flex-shrink: 0;
 
-  padding: 1rem;
+  padding: 0.75rem 1rem;
 
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  border: 1.75px solid #1b1b1b;
+  border-radius: 999px;
 
   background: #fff;
   color: #000;
+
+  overflow: hidden;
+
+  cursor: pointer;
+}
+
+.event-list__item::before {
+  content: '';
+
+  position: absolute;
+
+  inset: 0rem;
+
+  border: 0.35rem solid var(--event-color, #777);
+
+  border-radius: 999px;
+
+  pointer-events: none;
+}
+
+.event-list__item-title {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+
+  padding: 0 0.5rem;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  text-align: left;
 }
 
 .event-list__add-button {
@@ -958,17 +996,55 @@ input {
 }
 
 .memories-list__item {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
   width: 100%;
+  min-height: 3rem;
 
   flex-shrink: 0;
 
-  padding: 1rem;
+  padding: 0.75rem 1rem;
 
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  border: 1.75px solid #1b1b1b;
+  border-radius: 999px;
 
   background: #fff;
   color: #000;
+
+  overflow: hidden;
+
+  cursor: pointer;
+}
+
+/* 思い出の内側の色付きの縁 */
+.memories-list__item::before {
+  content: '';
+
+  position: absolute;
+
+  inset: 0rem;
+
+  border: 0.35rem solid var(--memory-color, #777);
+  border-radius: 999px;
+
+  pointer-events: none;
+}
+
+.memories-list__item-title {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+
+  padding: 0 0.5rem;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  text-align: left;
 }
 
 .memories-list__add-button {
