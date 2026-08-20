@@ -1,20 +1,16 @@
-import { useState } from 'react'
-import { ScreenShell } from '../../components/layout/ScreenShell'
-import { MemoryDetail } from './MemoryDetail'
-
 export function MemoriesPage() {
-  const [isDetailOpen, setIsDetailOpen] = useState(false)
-
-  if (isDetailOpen) {
-    return <MemoryDetail onBack={() => setIsDetailOpen(false)} />
-  }
-
   return (
-    <ScreenShell
-      title="思い出の画面です"
-      showBack={false}
-      embedded
-      onNext={() => setIsDetailOpen(true)}
-    />
+    <div className="memories-list">
+      <div className="memories-list__item">思い出1</div>
+      <div className="memories-list__item">思い出2</div>
+
+      <button
+        type="button"
+        className="memories-list__add-button"
+        aria-label="思い出を追加"
+      >
+        ＋
+      </button>
+    </div>
   )
 }

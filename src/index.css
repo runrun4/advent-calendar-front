@@ -143,10 +143,15 @@ input {
 
 .app-shell__top {
   flex-shrink: 0;
+
   width: 100%;
+
   box-sizing: content-box;
+
   height: 0.5rem;
+
   padding-top: env(safe-area-inset-top, 0px);
+
   background: #b7e8a7;
 }
 
@@ -154,6 +159,7 @@ input {
   position: relative;
 
   flex: 1 1 auto;
+
   min-height: 0;
 
   width: 100%;
@@ -163,7 +169,8 @@ input {
 
   /*
    * ページ切替は JS で軸ロックする。
-   * pan-x だと子の pan-y と交差して none になり、縦横が同時に反応する。
+   * pan-x だと子の pan-y と交差して none になり、
+   * 縦横が同時に反応する。
    */
   touch-action: none;
 
@@ -177,7 +184,7 @@ input {
 .app-header {
   display: flex;
 
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
 
   padding: 0.75rem 1rem;
@@ -186,16 +193,49 @@ input {
   border-bottom: 1px solid #ddd;
 }
 
+.app-header__title {
+  margin: 0;
+}
+
 .app-header__profile {
-  padding: 0.45rem 0.8rem;
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 2.75rem;
+  height: 2.75rem;
+
+  padding: 0;
 
   border: 1px solid #555;
-  border-radius: 999px;
+  border-radius: 50%;
 
-  background: transparent;
-  color: inherit;
+  background: #fff;
+  color: #000;
 
   cursor: pointer;
+}
+
+.app-header__profile-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+/* =========================
+   Common Page Title
+========================= */
+
+.page-title {
+  margin: 0;
+
+  color: #000;
+
+  font-size: 1.4rem;
+  font-weight: 700;
+
+  line-height: 1;
+  letter-spacing: 0.08em;
 }
 
 /* =========================
@@ -204,6 +244,7 @@ input {
 
 .tab-navigation {
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
 
   border-top: 1px solid #222;
@@ -235,39 +276,73 @@ input {
 
   flex-direction: column;
 
+  width: 100%;
   height: 100%;
-}
 
-.event-main__panels {
-  display: grid;
+  min-width: 0;
+  min-height: 0;
 
-  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
 
-  gap: 0.5rem;
-
-  padding: 0.75rem 1rem 0;
-}
-
-.event-main__panel {
-  padding: 0.55rem 0.4rem;
-
-  border: 1px solid #444;
-  border-radius: 999px;
-
-  background: transparent;
-  color: #aaa;
-
-  cursor: pointer;
-}
-
-.event-main__panel.is-active {
-  border-color: #fff;
-  color: #fff;
+  background: #fff;
+  color: #000;
 }
 
 .event-main__content {
-  flex: 1;
+  display: grid;
+
+  grid-template-rows: 1.5fr 1fr;
+
+  flex: 1 1 auto;
+
+  width: 100%;
+
+  min-width: 0;
   min-height: 0;
+
+  padding-bottom: 3rem;
+
+  overflow: hidden;
+
+  background: #fff;
+}
+
+/* =========================
+   Event Sections
+========================= */
+
+.event-main__section {
+  display: flex;
+
+  flex-direction: column;
+
+  min-width: 0;
+  min-height: 0;
+
+  background: #fff;
+}
+
+/* =========================
+   Section Title
+========================= */
+
+.event-main__section-title {
+  flex-shrink: 0;
+
+  margin: 0;
+
+  padding: 0.75rem 0.9rem;
+
+  background: #fff;
+  color: #000;
+
+  font-size: 1.6rem;
+  font-weight: 700;
+
+  line-height: 1;
+  letter-spacing: 0.08em;
+
+  border-bottom: 1px solid #ddd;
 }
 
 /* =========================
@@ -375,6 +450,7 @@ input {
 
   width: 200%;
   height: 100%;
+
   min-height: 0;
 }
 
@@ -385,6 +461,7 @@ input {
 
   width: 50%;
   height: 100%;
+
   min-width: 0;
   min-height: 0;
 }
@@ -413,7 +490,6 @@ input {
   color: #000;
 }
 
-
 /* =========================
    Calendar Area
 ========================= */
@@ -422,6 +498,7 @@ input {
   grid-row: 1;
 
   width: 100%;
+
   min-width: 0;
   min-height: 0;
 
@@ -445,7 +522,6 @@ input {
 
   background: #fff;
 }
-
 
 /* =========================
    Calendar Header
@@ -503,6 +579,7 @@ input {
   font-weight: 600;
 
   line-height: 1;
+
   letter-spacing: 0.03em;
 }
 
@@ -517,8 +594,11 @@ input {
 
 .private-calendar-page-header-navigation {
   display: flex;
+
   flex-direction: column;
+
   align-items: flex-end;
+
   gap: 0.15rem;
 
   margin-left: auto;
@@ -554,12 +634,11 @@ input {
 }
 
 .private-calendar-page-header-navigation-arrow {
-   color: #111;
+  color: #111;
 
   font-size: 1rem;
   font-weight: 700;
 }
-
 
 /* =========================
    Weekdays
@@ -568,8 +647,7 @@ input {
 .private-calendar-weekdays {
   display: grid;
 
-  grid-template-columns:
-    repeat(7, 1fr);
+  grid-template-columns: repeat(7, 1fr);
 
   flex-shrink: 0;
 
@@ -603,14 +681,12 @@ input {
   border-bottom: 1px solid #ccc;
 
   font-size: 0.7rem;
-
   font-weight: 600;
 
   letter-spacing: 0.03em;
 
   color: #666;
 }
-
 
 /* =========================
    Calendar Days
@@ -639,7 +715,6 @@ input {
   background: #fff;
 }
 
-
 /* =========================
    Day Cell
 ========================= */
@@ -660,7 +735,6 @@ input {
   overflow: hidden;
 }
 
-
 .private-calendar-day-cell.is-sunday
   .private-calendar-day-number {
   color: #e53935;
@@ -675,7 +749,6 @@ input {
   .private-calendar-day-number {
   color: #c8c8c8;
 }
-
 
 /* =========================
    Day Number
@@ -697,7 +770,6 @@ input {
   color: #000;
 }
 
-
 /* =========================
    Today
 ========================= */
@@ -706,7 +778,6 @@ input {
   .private-calendar-day-number {
   font-weight: 700;
 }
-
 
 /* =========================
    Event Area
@@ -723,7 +794,6 @@ input {
 
   margin-top: 0.4rem;
 }
-
 
 /* =========================
    Add Button Area
@@ -749,7 +819,6 @@ input {
   border-top: 1px solid #ccc;
 }
 
-
 /* =========================
    Add Button
 ========================= */
@@ -766,6 +835,7 @@ input {
   padding: 0;
 
   border: 1px solid #000;
+
   border-radius: 50%;
 
   background: #fff;
@@ -783,7 +853,6 @@ input {
     0 2px 8px rgb(0 0 0 / 15%);
 }
 
-
 /* =========================
    Bottom Area
 ========================= */
@@ -797,4 +866,134 @@ input {
   min-height: 2rem;
 
   background: #fff;
+}
+
+/* =========================
+   Scroll Area
+========================= */
+
+.event-main__scroll-area {
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  overscroll-behavior: contain;
+
+  background: #fff;
+}
+
+/* =========================
+   Event List
+========================= */
+
+.event-list {
+  display: flex;
+
+  flex-direction: column;
+  align-items: center;
+
+  gap: 0.75rem;
+
+  padding: 0.75rem 1rem 1.5rem;
+}
+
+.event-list__item {
+  width: 100%;
+
+  flex-shrink: 0;
+
+  padding: 1rem;
+
+  border: 1px solid #ccc;
+  border-radius: 10px;
+
+  background: #fff;
+  color: #000;
+}
+
+.event-list__add-button {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 3.5rem;
+  height: 3.5rem;
+
+  flex-shrink: 0;
+
+  margin-top: 0.25rem;
+
+  padding: 0;
+
+  border: 1px solid #000;
+  border-radius: 10px;
+
+  background: #eeeeee;
+  color: #000;
+
+  font-size: 1.8rem;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+/* =========================
+   Memories
+========================= */
+
+.memories-list {
+  display: flex;
+
+  flex-direction: column;
+  align-items: center;
+
+  gap: 0.75rem;
+
+  padding: 0.75rem 1rem 1.5rem;
+}
+
+.memories-list__item {
+  width: 100%;
+
+  flex-shrink: 0;
+
+  padding: 1rem;
+
+  border: 1px solid #ccc;
+  border-radius: 10px;
+
+  background: #fff;
+  color: #000;
+}
+
+.memories-list__add-button {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 3.5rem;
+  height: 3.5rem;
+
+  flex-shrink: 0;
+
+  margin-top: 0.25rem;
+
+  padding: 0;
+
+  border: 1px solid #000;
+  border-radius: 10px;
+
+  background: #eeeeee;
+  color: #000;
+
+  font-size: 1.8rem;
+  line-height: 1;
+
+  cursor: pointer;
 }
