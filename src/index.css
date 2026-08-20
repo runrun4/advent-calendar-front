@@ -1227,3 +1227,80 @@ input {
 
   cursor: pointer;
 }
+
+/* =========================
+   Advent Calendar Page
+========================= */
+
+.advent-calendar-page {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+  color: #000;
+}
+
+.advent-calendar-page__header {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.advent-calendar-page__back {
+  position: absolute;
+  left: 1rem;
+
+  padding: 0.4rem 0.65rem;
+
+  border: 1px solid #000;
+  border-radius: 6px;
+
+  background: #fff;
+  color: #000;
+
+  cursor: pointer;
+}
+
+.advent-calendar-page__title {
+  margin: 0;
+
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.advent-calendar-page__body {
+  flex: 1 1 auto;
+
+  display: grid;
+  place-items: center;
+
+  min-height: 0;
+  padding: 1.5rem;
+
+  background: #fff;
+}
+
+.advent-calendar-page__label {
+  margin: 0;
+
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.6;
+}

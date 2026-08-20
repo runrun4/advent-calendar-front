@@ -26,14 +26,15 @@ const events: EventItem[] = [
     id: 4,
     title: 'イベント4',
     color: '#B5EAD7',
-  }
+  },
 ]
 
 type EventListProps = {
   onOpenEventAdd?: () => void
+  onSelectEvent?: (event: EventItem) => void
 }
 
-export function EventList({ onOpenEventAdd }: EventListProps) {
+export function EventList({ onOpenEventAdd, onSelectEvent }: EventListProps) {
   return (
     <div className="event-list">
       {events.map((event) => {
@@ -47,6 +48,7 @@ export function EventList({ onOpenEventAdd }: EventListProps) {
             type="button"
             className="event-list__item"
             style={style}
+            onClick={() => onSelectEvent?.(event)}
           >
             <span className="event-list__item-title">
               {event.title}
