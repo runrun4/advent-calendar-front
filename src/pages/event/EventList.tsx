@@ -29,7 +29,11 @@ const events: EventItem[] = [
   }
 ]
 
-export function EventList() {
+type EventListProps = {
+  onOpenEventAdd?: () => void
+}
+
+export function EventList({ onOpenEventAdd }: EventListProps) {
   return (
     <div className="event-list">
       {events.map((event) => {
@@ -62,6 +66,7 @@ export function EventList() {
         type="button"
         className="event-list__add-button"
         aria-label="イベントを追加"
+        onClick={onOpenEventAdd}
       >
         ＋
       </button>

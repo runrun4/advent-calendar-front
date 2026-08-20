@@ -47,13 +47,12 @@ export function MemoriesPage() {
             <span className="memories-list__item-title">
               {memory.title}
             </span>
-
- <span
-  className="memories-list__item-arrow"
-  aria-hidden="true"
->
-  »
-</span>
+          <span
+            className="memories-list__item-arrow"
+            aria-hidden="true"
+          >
+          »
+        </span>
           </button>
         )
       })}

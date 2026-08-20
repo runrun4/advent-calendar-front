@@ -4,9 +4,13 @@ import { MemoriesPage } from '../memories/MemoriesPage'
 
 type EventMainPageProps = {
   onOpenProfile?: () => void
+  onOpenEventAdd?: () => void
 }
 
-export function EventMainPage({ onOpenProfile }: EventMainPageProps) {
+export function EventMainPage({
+  onOpenProfile,
+  onOpenEventAdd,
+}: EventMainPageProps) {
   return (
     <div className="event-main">
       <Header onOpenProfile={onOpenProfile} />
@@ -14,7 +18,7 @@ export function EventMainPage({ onOpenProfile }: EventMainPageProps) {
       <main className="event-main__content">
         <section className="event-main__section event-main__section--events">
           <div className="event-main__scroll-area">
-            <EventList />
+            <EventList onOpenEventAdd={onOpenEventAdd} />
           </div>
         </section>
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ProfileModal } from '../../components/profile/ProfileModal'
 import { usePageSwipe } from '../../hooks/usePageSwipe'
 import type { User } from '../../types/user'
+import { EventAddModal } from '../event/EventAddModal'
 import { EventMainPage } from '../event/EventMainPage'
 import { PrivateCalendarPage } from '../private-calendar/PrivateCalendarPage'
 
@@ -15,6 +16,7 @@ type AppHomeProps = {
 
 export function AppHome({ user }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isEventAddOpen, setIsEventAddOpen] = useState(false)
   const {
     activeTab,
     currentIndex,
@@ -22,6 +24,8 @@ export function AppHome({ user }: AppHomeProps) {
     isDragging,
     pointerHandlers,
   } = usePageSwipe(TABS, 'private')
+
+  const openEventAdd = () => setIsEventAddOpen(true)
 
   return (
     <div className="app-shell">
@@ -36,10 +40,13 @@ export function AppHome({ user }: AppHomeProps) {
           }}
         >
           <div className="page-slider__page">
-            <PrivateCalendarPage />
+            <PrivateCalendarPage onOpenEventAdd={openEventAdd} />
           </div>
           <div className="page-slider__page">
-            <EventMainPage onOpenProfile={() => setIsProfileOpen(true)} />
+            <EventMainPage
+              onOpenProfile={() => setIsProfileOpen(true)}
+              onOpenEventAdd={openEventAdd}
+            />
           </div>
         </div>
 
@@ -61,6 +68,11 @@ export function AppHome({ user }: AppHomeProps) {
         isOpen={isProfileOpen}
         user={user}
         onClose={() => setIsProfileOpen(false)}
+      />
+
+      <EventAddModal
+        isOpen={isEventAddOpen}
+        onClose={() => setIsEventAddOpen(false)}
       />
     </div>
   )
