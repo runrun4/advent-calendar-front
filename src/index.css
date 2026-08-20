@@ -14,10 +14,26 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   min-height: 100svh;
   background: #000;
+}
+
+html:has(.app-shell),
+html:has(.app-shell) body,
+html:has(.app-shell) #root {
+  background: #b7e8a7;
+  color-scheme: light;
 }
 
 body:has(.auth-page) {
@@ -25,21 +41,24 @@ body:has(.auth-page) {
   background: #fff;
 }
 
-#root {
-  min-height: 100svh;
-}
-
 button,
 input {
   font: inherit;
 }
 
+/* =========================
+   ScreenShell
+========================= */
+
 .screen-shell {
   position: relative;
+
   display: grid;
   place-items: center;
+
   min-height: 100svh;
   width: 100%;
+
   background: #000;
   color: #f5f5f5;
 }
@@ -51,14 +70,20 @@ input {
 
 .screen-shell__back {
   position: absolute;
+
   top: 1rem;
   left: 1rem;
+
   z-index: 1;
+
   padding: 0.5rem 0.75rem;
+
   border: 1px solid #555;
   border-radius: 6px;
+
   background: transparent;
   color: inherit;
+
   cursor: pointer;
 }
 
@@ -69,10 +94,13 @@ input {
 .screen-shell__next,
 .screen-shell__label {
   padding: 1rem 1.5rem;
+
   border: 1px solid #fff;
   border-radius: 8px;
+
   background: transparent;
   color: inherit;
+
   margin: 0;
 }
 
@@ -84,50 +112,104 @@ input {
   background: #111;
 }
 
+/* =========================
+   App
+========================= */
+
 .app-shell {
+  position: fixed;
+  inset: 0;
+
   display: flex;
   flex-direction: column;
-  min-height: 100svh;
-  background: #000;
+
+  width: 100%;
+  height: 100dvh;
+
+  overflow: hidden;
+  overscroll-behavior: none;
+
+  background: #b7e8a7;
+}
+
+.app-shell__top {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: content-box;
+  height: 0.5rem;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: #b7e8a7;
 }
 
 .app-shell__main {
   position: relative;
-  flex: 1;
+
+  flex: 1 1 auto;
   min-height: 0;
+
+  width: 100%;
+
   overflow: hidden;
-  touch-action: pan-y;
+  overscroll-behavior: none;
+
+  /*
+   * ページ切替は JS で軸ロックする。
+   * pan-x だと子の pan-y と交差して none になり、縦横が同時に反応する。
+   */
+  touch-action: none;
+
+  background: #fff;
 }
+
+/* =========================
+   Header
+========================= */
 
 .app-header {
   display: flex;
+
   justify-content: flex-end;
   align-items: center;
+
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #222;
+
+  background: #fff;
+  border-bottom: 1px solid #ddd;
 }
 
 .app-header__profile {
   padding: 0.45rem 0.8rem;
+
   border: 1px solid #555;
   border-radius: 999px;
+
   background: transparent;
   color: inherit;
+
   cursor: pointer;
 }
+
+/* =========================
+   Tab Navigation
+========================= */
 
 .tab-navigation {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+
   border-top: 1px solid #222;
+
   background: #000;
 }
 
 .tab-navigation__item {
   padding: 0.9rem 0.5rem;
+
   border: 0;
+
   background: transparent;
   color: #888;
+
   cursor: pointer;
 }
 
@@ -135,25 +217,37 @@ input {
   color: #fff;
 }
 
+/* =========================
+   Event
+========================= */
+
 .event-main {
   display: flex;
+
   flex-direction: column;
+
   height: 100%;
 }
 
 .event-main__panels {
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
+
   gap: 0.5rem;
+
   padding: 0.75rem 1rem 0;
 }
 
 .event-main__panel {
   padding: 0.55rem 0.4rem;
+
   border: 1px solid #444;
   border-radius: 999px;
+
   background: transparent;
   color: #aaa;
+
   cursor: pointer;
 }
 
@@ -167,78 +261,531 @@ input {
   min-height: 0;
 }
 
+/* =========================
+   Modal
+========================= */
+
 .modal-backdrop {
   position: fixed;
+
   inset: 0;
+
   z-index: 20;
+
   display: grid;
   place-items: center;
+
   background: rgba(0, 0, 0, 0.7);
+
   padding: 1rem;
 }
 
 .modal-panel {
   width: min(100%, 22rem);
+
   padding: 1rem;
+
   border: 1px solid #444;
   border-radius: 12px;
+
   background: #111;
 }
 
 .modal-panel__header {
   display: flex;
+
   align-items: center;
   justify-content: space-between;
+
   gap: 0.75rem;
+
   margin-bottom: 0.75rem;
 }
 
 .modal-panel__header h2 {
   margin: 0;
+
   font-size: 1.1rem;
   font-weight: 600;
 }
 
 .modal-panel__header button {
   border: 0;
+
   background: transparent;
   color: inherit;
+
   cursor: pointer;
+
   font-size: 1.4rem;
   line-height: 1;
 }
 
+/* =========================
+   Page Indicator
+========================= */
+
 .page-indicator {
   position: absolute;
+
   left: 50%;
   bottom: 0.75rem;
+
   transform: translateX(-50%);
+
   display: flex;
+
   align-items: center;
+
   gap: 0.7rem;
+
   z-index: 5;
+
   pointer-events: none;
 }
 
 .page-indicator__dot {
-  width:10px;
-  height:10px; 
+  width: 10px;
+  height: 10px;
+
   border-radius: 50%;
-  background: #666;
+
+  background: #ccc;
 }
 
 .page-indicator__dot.is-active {
-  background: #fff;
+  background: #000;
 }
+
+/* =========================
+   Page Slider
+========================= */
 
 .page-slider {
   display: flex;
+
   width: 200%;
   height: 100%;
+  min-height: 0;
 }
 
 .page-slider__page {
+  position: relative;
+
   flex: 0 0 50%;
-  min-width: 0;
+
+  width: 50%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* =========================
+   Private Calendar Page
+========================= */
+
+.private-calendar-page {
+  display: grid;
+
+  grid-template-rows:
+    minmax(0, 1fr)
+    5rem
+    2rem;
+
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+  color: #000;
+}
+
+
+/* =========================
+   Calendar Area
+========================= */
+
+.private-calendar-page-calendar-area {
+  grid-row: 1;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+}
+
+.private-calendar-page-calendar {
+  display: flex;
+
+  flex-direction: column;
+
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+}
+
+
+/* =========================
+   Calendar Header
+========================= */
+
+.private-calendar-page-header {
+  position: relative;
+
+  z-index: 10;
+
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  flex-shrink: 0;
+
+  height: 4.5rem;
+
+  padding: 0.75rem 1rem;
+
+  background: #fff;
+
+  border-bottom: 1px solid #ddd;
+}
+
+.private-calendar-page-header-current {
+  display: flex;
+  align-items: center;
+
+  gap: 0.6rem;
+
+  white-space: nowrap;
+}
+
+.private-calendar-page-header-day {
+  font-size: 3.8rem;
+  font-weight: 700;
+
+  line-height: 0.85;
+}
+
+.private-calendar-page-header-month-info {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: flex-start;
+
+  gap: 0.15rem;
+}
+
+.private-calendar-page-header-year {
+  font-size: 1.2rem;
+  font-weight: 600;
+
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+.private-calendar-page-header-month {
+  font-size: 1rem;
+  font-weight: 600;
+
+  letter-spacing: 0.08em;
+
+  line-height: 1;
+}
+
+.private-calendar-page-header-navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+
+  margin-left: auto;
+}
+
+.private-calendar-page-header-navigation-button {
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 0.3rem;
+
+  min-width: 4.5rem;
+
+  padding: 0.1rem 0;
+
+  border: 0;
+
+  background: transparent;
+  color: #222;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.private-calendar-page-header-navigation-button:disabled {
+  visibility: hidden;
+}
+
+.private-calendar-page-header-navigation-arrow {
+   color: #111;
+
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+
+/* =========================
+   Weekdays
+========================= */
+
+.private-calendar-weekdays {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  flex-shrink: 0;
+
+  width: 100%;
+
+  padding: 0;
+
+  background: #fff;
+
+  border-top: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+}
+
+.private-calendar-weekday.is-sunday {
+  color: #e53935;
+}
+
+.private-calendar-weekday.is-saturday {
+  color: #1976d2;
+}
+
+.private-calendar-weekday {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  height: 2.5rem;
+
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+
+  font-size: 0.7rem;
+
+  font-weight: 600;
+
+  letter-spacing: 0.03em;
+
+  color: #666;
+}
+
+
+/* =========================
+   Calendar Days
+========================= */
+
+.private-calendar-days {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr));
+
+  grid-template-rows:
+    repeat(6, minmax(0, 1fr));
+
+  flex: 1;
+
+  min-width: 0;
+  min-height: 0;
+
+  width: 100%;
+
+  padding: 0;
+
+  border-left: 1px solid #ccc;
+
+  background: #fff;
+}
+
+
+/* =========================
+   Day Cell
+========================= */
+
+.private-calendar-day-cell {
+  position: relative;
+
+  min-width: 0;
+  min-height: 0;
+
+  padding: 0.4rem;
+
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+
+  background: #fff;
+
+  overflow: hidden;
+}
+
+
+.private-calendar-day-cell.is-sunday
+  .private-calendar-day-number {
+  color: #e53935;
+}
+
+.private-calendar-day-cell.is-saturday
+  .private-calendar-day-number {
+  color: #1976d2;
+}
+
+.private-calendar-day-cell.is-outside-month
+  .private-calendar-day-number {
+  color: #c8c8c8;
+}
+
+
+/* =========================
+   Day Number
+========================= */
+
+.private-calendar-day-number {
+  display: flex;
+
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  width: 100%;
+
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  line-height: 1;
+
+  color: #000;
+}
+
+
+/* =========================
+   Today
+========================= */
+
+.private-calendar-day-cell.is-today
+  .private-calendar-day-number {
+  font-weight: 700;
+}
+
+
+/* =========================
+   Event Area
+========================= */
+
+.private-calendar-events {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.2rem;
+
+  width: 100%;
+
+  margin-top: 0.4rem;
+}
+
+
+/* =========================
+   Add Button Area
+========================= */
+
+.private-calendar-page-addbutton-area {
+  grid-row: 2;
+
+  display: flex;
+
+  justify-content: flex-end;
+  align-items: center;
+
+  width: 100%;
+  height: 5rem;
+
+  min-height: 5rem;
+
+  padding: 0 1rem;
+
+  background: #fff;
+
+  border-top: 1px solid #ccc;
+}
+
+
+/* =========================
+   Add Button
+========================= */
+
+.private-calendar-page-addbutton-button {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 4rem;
+  height: 4rem;
+
+  padding: 0;
+
+  border: 1px solid #000;
+  border-radius: 50%;
+
+  background: #fff;
+  color: #000;
+
+  font-size: 2rem;
+
+  line-height: 1;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+
+  box-shadow:
+    0 2px 8px rgb(0 0 0 / 15%);
+}
+
+
+/* =========================
+   Bottom Area
+========================= */
+
+.private-calendar-page-bottom {
+  grid-row: 3;
+
+  width: 100%;
+
+  height: 2rem;
+  min-height: 2rem;
+
+  background: #fff;
 }
