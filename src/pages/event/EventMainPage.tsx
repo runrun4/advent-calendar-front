@@ -1,12 +1,35 @@
+import { useState } from 'react'
 import { Header } from '../../components/layout/Header'
+import { AdventCalendar } from './AdventCalendar'
 import { EventList } from './EventList'
 import { MemoriesPage } from '../memories/MemoriesPage'
 
 type EventMainPageProps = {
   onOpenProfile?: () => void
+  onOpenEventAdd?: () => void
 }
 
-export function EventMainPage({ onOpenProfile }: EventMainPageProps) {
+type AdventTarget = {
+  id: number
+  title: string
+  source: 'event' | 'memory'
+}
+
+export function EventMainPage({
+  onOpenProfile,
+  onOpenEventAdd,
+}: EventMainPageProps) {
+  const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
+
+  if (adventTarget !== null) {
+    return (
+      <AdventCalendar
+        title={adventTarget.title}
+        onBack={() => setAdventTarget(null)}
+      />
+    )
+  }
+
   return (
     <div className="event-main">
       <Header onOpenProfile={onOpenProfile} />
@@ -14,7 +37,16 @@ export function EventMainPage({ onOpenProfile }: EventMainPageProps) {
       <main className="event-main__content">
         <section className="event-main__section event-main__section--events">
           <div className="event-main__scroll-area">
-            <EventList />
+            <EventList
+              onOpenEventAdd={onOpenEventAdd}
+              onSelectEvent={(event) =>
+                setAdventTarget({
+                  id: event.id,
+                  title: event.title,
+                  source: 'event',
+                })
+              }
+            />
           </div>
         </section>
 
@@ -24,7 +56,15 @@ export function EventMainPage({ onOpenProfile }: EventMainPageProps) {
           </h2>
 
           <div className="event-main__scroll-area">
-            <MemoriesPage />
+            <MemoriesPage
+              onSelectMemory={(memory) =>
+                setAdventTarget({
+                  id: memory.id,
+                  title: memory.title,
+                  source: 'memory',
+                })
+              }
+            />
           </div>
         </section>
       </main>

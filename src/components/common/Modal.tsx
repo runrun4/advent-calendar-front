@@ -1,21 +1,235 @@
-import type { ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type AnimationEvent,
+  type CSSProperties,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+  type TransitionEvent,
+} from 'react'
+
+type ModalVariant = 'dark' | 'light' | 'sheet'
 
 type ModalProps = {
   isOpen: boolean
   title?: string
   onClose: () => void
   children: ReactNode
+  variant?: ModalVariant
 }
 
-export function Modal({ isOpen, title, onClose, children }: ModalProps) {
-  if (!isOpen) return null
+const SHEET_EXIT_MS = 280
+const DRAG_CLOSE_THRESHOLD = 100
+
+function getBackdropClassName(variant: ModalVariant, isClosing: boolean) {
+  const classes = ['modal-backdrop']
+  if (variant === 'sheet') classes.push('modal-backdrop--sheet')
+  if (isClosing) classes.push('is-closing')
+  return classes.join(' ')
+}
+
+function getPanelClassName(
+  variant: ModalVariant,
+  isClosing: boolean,
+  isDragging: boolean,
+) {
+  const classes = ['modal-panel']
+  if (variant === 'sheet') classes.push('modal-panel--sheet')
+  if (variant === 'light') classes.push('modal-panel--light')
+  if (isClosing) classes.push('is-closing')
+  if (isDragging) classes.push('is-dragging')
+  return classes.join(' ')
+}
+
+function releaseCapture(target: HTMLElement, pointerId: number) {
+  if (target.hasPointerCapture(pointerId)) {
+    target.releasePointerCapture(pointerId)
+  }
+}
+
+export function Modal({
+  isOpen,
+  title,
+  onClose,
+  children,
+  variant = 'dark',
+}: ModalProps) {
+  const [isRendered, setIsRendered] = useState(isOpen)
+  const [isClosing, setIsClosing] = useState(false)
+  const [dragY, setDragY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isSnapping, setIsSnapping] = useState(false)
+
+  const dragStartY = useRef<number | null>(null)
+  const dragFromGesture = useRef(false)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendered(true)
+      setIsClosing(false)
+      setDragY(0)
+      setIsDragging(false)
+      setIsSnapping(false)
+      dragFromGesture.current = false
+      return
+    }
+
+    if (!isRendered) return
+
+    if (variant !== 'sheet') {
+      setIsRendered(false)
+      return
+    }
+
+    setIsClosing(true)
+  }, [isOpen, isRendered, variant])
+
+  useEffect(() => {
+    if (!isClosing || variant !== 'sheet') return
+    if (dragFromGesture.current) return
+
+    const timer = window.setTimeout(() => {
+      setIsRendered(false)
+      setIsClosing(false)
+      setDragY(0)
+    }, SHEET_EXIT_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [isClosing, variant])
+
+  useEffect(() => {
+    if (!isClosing || !dragFromGesture.current) return
+
+    const panelHeight = panelRef.current?.offsetHeight ?? window.innerHeight
+    const frame = window.requestAnimationFrame(() => {
+      setDragY(panelHeight)
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [isClosing])
+
+  if (!isRendered) return null
+
+  const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (isClosing || isDragging) return
+    if (event.target === event.currentTarget) {
+      onClose()
+    }
+  }
+
+  const finishClose = () => {
+    setIsRendered(false)
+    setIsClosing(false)
+    setDragY(0)
+    setIsDragging(false)
+    setIsSnapping(false)
+    dragFromGesture.current = false
+  }
+
+  const handlePanelAnimationEnd = (event: AnimationEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (!isClosing || dragFromGesture.current) return
+    finishClose()
+  }
+
+  const handlePanelTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (event.propertyName !== 'transform') return
+
+    if (isSnapping) {
+      setIsSnapping(false)
+      return
+    }
+
+    if (!isClosing || !dragFromGesture.current) return
+    finishClose()
+  }
+
+  const handleSheetPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (variant !== 'sheet' || isClosing) return
+    if ((event.target as HTMLElement).closest('button, a, input, textarea')) {
+      return
+    }
+
+    dragStartY.current = event.clientY
+    setIsDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handleSheetPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragStartY.current === null || !isDragging) return
+
+    const nextDragY = Math.max(0, event.clientY - dragStartY.current)
+    setDragY(nextDragY)
+  }
+
+  const handleSheetPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragStartY.current === null) return
+
+    releaseCapture(event.currentTarget, event.pointerId)
+    dragStartY.current = null
+    setIsDragging(false)
+
+    if (dragY >= DRAG_CLOSE_THRESHOLD) {
+      dragFromGesture.current = true
+      onClose()
+      return
+    }
+
+    setIsSnapping(true)
+    setDragY(0)
+  }
+
+  const sheetStyle: CSSProperties | undefined =
+    variant === 'sheet' &&
+    (isDragging || dragY > 0 || isSnapping || dragFromGesture.current)
+      ? {
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.28s ease',
+          animation: 'none',
+        }
+      : undefined
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="modal-panel">
+    <div
+      className={getBackdropClassName(variant, isClosing)}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={panelRef}
+        className={getPanelClassName(variant, isClosing, isDragging)}
+        style={sheetStyle}
+        onAnimationEnd={handlePanelAnimationEnd}
+        onTransitionEnd={handlePanelTransitionEnd}
+        onPointerDown={
+          variant === 'sheet' ? handleSheetPointerDown : undefined
+        }
+        onPointerMove={
+          variant === 'sheet' ? handleSheetPointerMove : undefined
+        }
+        onPointerUp={variant === 'sheet' ? handleSheetPointerUp : undefined}
+        onPointerCancel={
+          variant === 'sheet' ? handleSheetPointerUp : undefined
+        }
+      >
+        {variant === 'sheet' ? (
+          <div className="modal-panel__handle" aria-hidden="true" />
+        ) : null}
+
         <div className="modal-panel__header">
           {title ? <h2>{title}</h2> : null}
-          <button type="button" onClick={onClose} aria-label="閉じる">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="閉じる"
+            disabled={isClosing}
+          >
             ×
           </button>
         </div>

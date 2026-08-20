@@ -26,10 +26,14 @@ const memories: MemoryItem[] = [
     id: 4,
     title: '思い出4',
     color: '#F9C7BE',
-  }
+  },
 ]
 
-export function MemoriesPage() {
+type MemoriesPageProps = {
+  onSelectMemory?: (memory: MemoryItem) => void
+}
+
+export function MemoriesPage({ onSelectMemory }: MemoriesPageProps) {
   return (
     <div className="memories-list">
       {memories.map((memory) => {
@@ -43,17 +47,17 @@ export function MemoriesPage() {
             type="button"
             className="memories-list__item"
             style={style}
+            onClick={() => onSelectMemory?.(memory)}
           >
             <span className="memories-list__item-title">
               {memory.title}
             </span>
-
- <span
-  className="memories-list__item-arrow"
-  aria-hidden="true"
->
-  »
-</span>
+            <span
+              className="memories-list__item-arrow"
+              aria-hidden="true"
+            >
+              »
+            </span>
           </button>
         )
       })}

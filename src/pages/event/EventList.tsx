@@ -26,10 +26,15 @@ const events: EventItem[] = [
     id: 4,
     title: 'イベント4',
     color: '#B5EAD7',
-  }
+  },
 ]
 
-export function EventList() {
+type EventListProps = {
+  onOpenEventAdd?: () => void
+  onSelectEvent?: (event: EventItem) => void
+}
+
+export function EventList({ onOpenEventAdd, onSelectEvent }: EventListProps) {
   return (
     <div className="event-list">
       {events.map((event) => {
@@ -43,6 +48,7 @@ export function EventList() {
             type="button"
             className="event-list__item"
             style={style}
+            onClick={() => onSelectEvent?.(event)}
           >
             <span className="event-list__item-title">
               {event.title}
@@ -62,6 +68,7 @@ export function EventList() {
         type="button"
         className="event-list__add-button"
         aria-label="イベントを追加"
+        onClick={onOpenEventAdd}
       >
         ＋
       </button>
