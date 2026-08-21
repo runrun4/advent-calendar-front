@@ -10,12 +10,6 @@ import { supabase } from '../services/supabase'
 
 export type AuthPhase = 'splash' | 'auth' | 'setup' | 'app'
 
-function phaseFromUser(user: User | null): AuthPhase {
-  if (!user) return 'auth'
-  if (!user.isSetupComplete) return 'setup'
-  return 'app'
-}
-
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [phase, setPhase] = useState<AuthPhase>('splash')
@@ -34,11 +28,12 @@ export function useAuth() {
           const current = await getCurrentUser()
           if (cancelled) return
           setUser(current)
-          setPhase(phaseFromUser(current))
         } else {
           setUser(null)
-          setPhase('splash')
         }
+
+        // ログイン有無に関わらず、起動時は必ずスプラッシュから
+        setPhase('splash')
       } catch {
         if (!cancelled) {
           setUser(null)

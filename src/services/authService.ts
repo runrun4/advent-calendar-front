@@ -74,4 +74,19 @@ export async function logout(): Promise<void> {
   if (error) throw error
 }
 
+/** 個人情報（初回セットアップ）完了をユーザーメタデータに保存 */
+export async function completeInitialSetup(
+  displayName: string,
+): Promise<User> {
+  const { data, error } = await supabase.auth.updateUser({
+    data: {
+      display_name: displayName,
+      is_setup_complete: true,
+    },
+  })
+  if (error) throw error
+  if (!data.user) throw new Error('セットアップの保存に失敗しました')
+  return mapUser(data.user)
+}
+
 export { mapUser }
