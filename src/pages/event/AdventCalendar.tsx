@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import './AdventCalendar.css'
 
-export const AdventCalendar = () => {
+type AdventCalendarProps = {
+  title: string
+  onBack: () => void
+}
+
+export const AdventCalendar = ({
+  title,
+  onBack,
+}: AdventCalendarProps) => {
   // 現在解放されている日数
   const unlockedDays = 8
 
@@ -166,16 +174,18 @@ export const AdventCalendar = () => {
           左上：戻るボタン
           ========================= */}
 
-      <button
-        className="
-          advent-calendar__icon-button
-          advent-calendar__back-button
-        "
-      >
-        <span className="advent-calendar__icon">
-          ←
-        </span>
-      </button>
+<button
+  type="button"
+  className="
+    advent-calendar__icon-button
+    advent-calendar__back-button
+  "
+  onClick={onBack}
+>
+  <span className="advent-calendar__icon">
+    ←
+  </span>
+</button>
 
       {/* =========================
           右上：設定・チャット
@@ -209,15 +219,15 @@ export const AdventCalendar = () => {
         </p>
 
         {/* 題名 */}
-        <h1
-          ref={titleRef}
-          className="advent-calendar__event-title"
-          style={{
-            fontSize: `${titleFontSize}px`,
-          }}
-        >
-          ライブ
-        </h1>
+<h1
+  ref={titleRef}
+  className="advent-calendar__event-title"
+  style={{
+    fontSize: `${titleFontSize}px`,
+  }}
+>
+  {title}
+</h1>
 
       </div>
 
