@@ -641,6 +641,8 @@ input {
 ========================= */
 
 .private-calendar-page {
+  position: relative;
+
   display: grid;
 
   grid-template-rows:
@@ -992,6 +994,13 @@ input {
 ========================= */
 
 .private-calendar-page-addbutton-button {
+  position: absolute;
+
+  right: 1rem;
+  bottom: 5rem;
+
+  z-index: 20;
+
   display: flex;
 
   justify-content: center;
@@ -1014,8 +1023,6 @@ input {
   line-height: 1;
 
   cursor: pointer;
-
-  flex-shrink: 0;
 
   box-shadow:
     0 2px 8px rgb(0 0 0 / 15%);
