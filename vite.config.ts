@@ -43,6 +43,7 @@ export default defineConfig({
         short_name: 'アドベント',
         description: 'カレンダー・チャット・思い出共有PWA',
         theme_color: '#ffffff',
+        background_color: '#ffffff',
         icons: [
           {
             src: 'pwa-192x192.png',

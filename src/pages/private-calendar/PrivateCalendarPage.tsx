@@ -92,7 +92,6 @@ export function PrivateCalendarPage({
       </div>
 
       <CalendarAddButton onClick={onOpenEventAdd} />
-      <div className="private-calendar-page-bottom" />
     </div>
   )
 }
