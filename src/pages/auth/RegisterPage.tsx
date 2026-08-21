@@ -8,15 +8,38 @@ type RegisterPageProps = {
   onGoLogin?: () => void
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    setErrorMessage(null)
+    setFormError(null)
+
+    const nextEmailError = !email.trim()
+      ? 'このフィールドに入力してください'
+      : !isValidEmail(email.trim())
+        ? '有効なメールアドレスを入力してください'
+        : null
+    const nextPasswordError = !password
+      ? 'このフィールドに入力してください'
+      : password.length < 6
+        ? 'パスワードは6文字以上にしてください'
+        : null
+
+    setEmailError(nextEmailError)
+    setPasswordError(nextPasswordError)
+
+    if (nextEmailError || nextPasswordError) return
+
     setIsSubmitting(true)
 
     try {
@@ -25,7 +48,7 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : '新規作成に失敗しました'
-      setErrorMessage(message)
+      setFormError(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -34,18 +57,12 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
   return (
     <div className="auth-page auth-page--register">
       <main className="auth-page__main">
-        <form className="auth-page__form" onSubmit={handleSubmit}>
+        <form className="auth-page__form" onSubmit={handleSubmit} noValidate>
           <h1 className="auth-page__title">
             いっしょに
             <br />
             るんるんしましょう！
           </h1>
-
-          {errorMessage ? (
-            <p className="auth-page__error" role="alert">
-              {errorMessage}
-            </p>
-          ) : null}
 
           <div className="auth-page__fields">
             <div className="auth-page__field">
@@ -57,11 +74,20 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
                 className="auth-page__input"
                 type="email"
                 autoComplete="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setEmailError(null)
+                  setFormError(null)
+                }}
                 placeholder="メールアドレス"
+                aria-invalid={emailError != null}
               />
+              {emailError ? (
+                <p className="auth-page__field-error" role="alert">
+                  {emailError}
+                </p>
+              ) : null}
             </div>
 
             <div className="auth-page__field">
@@ -73,12 +99,25 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
                 className="auth-page__input"
                 type="password"
                 autoComplete="new-password"
-                required
-                minLength={6}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  setPasswordError(null)
+                  setFormError(null)
+                }}
                 placeholder="パスワード(6文字以上)"
+                aria-invalid={passwordError != null}
               />
+              {passwordError ? (
+                <p className="auth-page__field-error" role="alert">
+                  {passwordError}
+                </p>
+              ) : null}
+              {formError ? (
+                <p className="auth-page__field-error" role="alert">
+                  {formError}
+                </p>
+              ) : null}
             </div>
           </div>
 
