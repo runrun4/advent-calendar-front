@@ -497,7 +497,9 @@ input {
   background: #fff;
   color: #000;
 
-  touch-action: none;
+  overflow: hidden;
+  /* pan-y を許可しないと、子孫の overflow スクロールが効かない */
+  touch-action: pan-y;
   animation: modal-sheet-up 0.28s ease;
 }
 
@@ -552,9 +554,21 @@ input {
   align-items: center;
   justify-content: space-between;
 
+  flex-shrink: 0;
+
   gap: 0.75rem;
 
   margin-bottom: 0.75rem;
+}
+
+.modal-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .modal-panel__header h2 {

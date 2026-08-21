@@ -96,20 +96,180 @@
    日付
    ======================================== */
 
-.event-add-modal__date-inputs {
+.event-add-modal__date-section {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
 }
 
-.event-add-modal__date-inputs .event-add-modal__input {
-  flex: 1;
+.event-add-modal__date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.event-add-modal__date-note {
-  margin: 0;
-  font-size: 11px;
-  color: #888;
+.event-add-modal__date-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000;
+}
+
+.event-add-modal__date-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 999px;
+  background: #d9d9d9;
+}
+
+.event-add-modal__date-toggle-option {
+  min-width: 4.4rem;
+  padding: 0.35rem 0.85rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #000;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.event-add-modal__date-toggle-option--selected {
+  background: #36be09;
+  color: #fff;
+}
+
+.event-add-modal__date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.event-add-modal__date-row-label {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000;
+}
+
+.event-add-modal__date-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8.5rem;
+  padding: 0.45rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: #eeffef;
+  color: #000;
+  cursor: pointer;
+}
+
+.event-add-modal__date-pill--active {
+  background: #36be09;
+  color: #fff;
+}
+
+.event-add-modal__date-pill-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.event-add-modal__calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.35rem 0 0.5rem;
+}
+
+.event-add-modal__calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.event-add-modal__calendar-month {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.event-add-modal__calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.event-add-modal__calendar-nav-button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #36be09;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.event-add-modal__calendar-weekdays,
+.event-add-modal__calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.2rem;
+  width: 100%;
+}
+
+.event-add-modal__calendar-weekdays span {
+  display: grid;
+  place-items: center;
+  padding: 0.2rem 0;
+  color: #8a8a8a;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.event-add-modal__calendar-cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 2.5rem;
+  margin: 0 auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #000;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.event-add-modal__calendar-cell--empty {
+  pointer-events: none;
+}
+
+.event-add-modal__calendar-cell--selected {
+  background: #36be09;
+  color: #fff;
+  font-weight: 700;
+}
+
+.event-add-modal__calendar-cell:disabled {
+  color: #c0c0c0;
+  cursor: not-allowed;
 }
 
 /* ========================================
@@ -127,43 +287,99 @@
 .event-add-modal__countdown-picker {
   width: 100%;
   overflow: hidden;
-  touch-action: pan-y;
+  touch-action: none;
+  cursor: grab;
   user-select: none;
+  perspective: 720px;
+}
+
+.event-add-modal__countdown-picker:active {
+  cursor: grabbing;
 }
 
 .event-add-modal__countdown-list {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  min-height: 56px;
+  gap: 0.3rem;
+  min-height: 5.5rem;
+  padding-top: 0.85rem;
+  transform-style: preserve-3d;
 }
 
 .event-add-modal__countdown-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 48px;
-  padding: 0 8px;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  color: #000000;
-  font-size: 22px;
-  font-weight: 500;
   flex-shrink: 0;
+  min-width: 2.1rem;
+  height: 2.75rem;
+  padding: 0 0.1rem;
+  border: 2px solid transparent;
+  border-radius: 0.55rem;
+  background: transparent;
+  font-weight: 600;
+  line-height: 1;
+  transform-origin: center center;
   transition:
-    opacity 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+    color 0.22s ease,
+    font-size 0.22s ease,
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    opacity 0.22s ease;
 }
 
-.event-add-modal__countdown-item--selected {
-  border-color: #78c878;
-  color: #4caf50;
+.event-add-modal__countdown-item--distance-0 {
+  min-width: 3.5rem;
+  height: 3.6rem;
+  border-color: #36be09;
+  color: #000;
+  font-size: 2.6rem;
   font-weight: 700;
-  transform: scale(1.05);
+  transform: translateZ(28px) scale(1.1);
+}
+
+.event-add-modal__countdown-item--distance-1 {
+  color: #767676;
+  font-size: 1.35rem;
+}
+
+.event-add-modal__countdown-item--distance-1.is-left {
+  transform: rotateY(28deg) translateX(0.15rem) translateY(-0.22rem) translateZ(-6px) scale(0.92);
+}
+
+.event-add-modal__countdown-item--distance-1.is-right {
+  transform: rotateY(-28deg) translateX(-0.15rem) translateY(-0.22rem) translateZ(-6px) scale(0.92);
+}
+
+.event-add-modal__countdown-item--distance-2 {
+  min-width: 1.55rem;
+  color: #959595;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.event-add-modal__countdown-item--distance-2.is-left {
+  transform: rotateY(36deg) translateX(0.45rem) translateY(-0.55rem) translateZ(-10px) scale(0.82);
+}
+
+.event-add-modal__countdown-item--distance-2.is-right {
+  transform: rotateY(-36deg) translateX(-0.45rem) translateY(-0.55rem) translateZ(-10px) scale(0.82);
+}
+
+.event-add-modal__countdown-item--distance-3 {
+  min-width: 1.35rem;
+  color: #959595;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+.event-add-modal__countdown-item--distance-3.is-left {
+  transform: rotateY(42deg) translateX(0.7rem) translateY(-0.95rem) translateZ(-16px) scale(0.72);
+}
+
+.event-add-modal__countdown-item--distance-3.is-right {
+  transform: rotateY(-42deg) translateX(-0.7rem) translateY(-0.95rem) translateZ(-16px) scale(0.72);
 }
 
 .event-add-modal__unit {
@@ -198,4 +414,61 @@
 
 .event-add-modal__submit-button:active {
   transform: scale(0.98);
+}
+
+/* ========================================
+   破棄確認
+   ======================================== */
+
+.event-add-modal__confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.event-add-modal__confirm {
+  width: min(100%, 18.5rem);
+  padding: 1.35rem 1.2rem 1.1rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.event-add-modal__confirm-message {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.event-add-modal__confirm-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1.2rem;
+}
+
+.event-add-modal__confirm-button {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-add-modal__confirm-button--cancel {
+  background: #ececec;
+  color: #333;
+}
+
+.event-add-modal__confirm-button--discard {
+  background: #36be09;
+  color: #fff;
 }

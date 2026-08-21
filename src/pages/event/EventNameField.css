@@ -1,0 +1,92 @@
+.event-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.event-name-field__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  border-bottom: 2px solid #78c878;
+}
+
+.event-name-field__icon-button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1.5px solid #111;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+}
+
+.event-name-field__icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.event-name-field__input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #333;
+  font-size: 16px;
+  outline: none;
+}
+
+.event-name-field__input::placeholder {
+  color: #999;
+  font-size: 16px;
+}
+
+.event-name-field__row:focus-within {
+  border-bottom-color: #4caf50;
+}
+
+.event-name-field__picker {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.4rem;
+  height: min(18rem, 45vh);
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 0.65rem;
+  border: 1px solid #d8d8d8;
+  border-radius: 0.85rem;
+  background: #fafafa;
+}
+
+.event-name-field__picker-option {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+}
+
+.event-name-field__picker-option--selected {
+  border-color: #111;
+  background: #f0f0f0;
+}
+
+.event-name-field__picker-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
