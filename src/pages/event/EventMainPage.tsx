@@ -62,9 +62,13 @@ export function EventMainPage({
               aria-expanded={isReflectionOpen}
               aria-controls="reflection-list"
             >
-              <h2 className="page-title event-main__section-title">
+              <span
+                className="page-title event-main__section-title"
+                role="heading"
+                aria-level={2}
+              >
                 Reflection
-              </h2>
+              </span>
               <span
                 className={`event-main__section-chevron${
                   isReflectionOpen ? ' is-open' : ''
