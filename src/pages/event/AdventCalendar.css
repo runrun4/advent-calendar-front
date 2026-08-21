@@ -177,8 +177,8 @@
 }
 
 .advent-calendar__collection-button {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  z-index: 3;
+  position: fixed;
+
+  right: 30px;
+  bottom: 30px;
 }
