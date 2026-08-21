@@ -18,6 +18,8 @@ type ModalProps = {
   onClose: () => void
   children: ReactNode
   variant?: ModalVariant
+  /** true のときシートの下スワイプで閉じない */
+  disableSwipeClose?: boolean
 }
 
 const SHEET_EXIT_MS = 280
@@ -82,6 +84,7 @@ export function Modal({
   onClose,
   children,
   variant = 'dark',
+  disableSwipeClose = false,
 }: ModalProps) {
   const [isRendered, setIsRendered] = useState(isOpen)
   const [isClosing, setIsClosing] = useState(false)
@@ -279,17 +282,18 @@ export function Modal({
   const handleSheetPointerDown = (
     event: PointerEvent<HTMLDivElement>,
   ) => {
-    if (variant !== 'sheet' || isClosing) {
+    if (variant !== 'sheet' || isClosing || disableSwipeClose) {
       return
     }
 
     /*
-     * 入力欄・ボタンなどを操作している場合は、
-     * モーダルのスワイプ処理を開始しない。
+     * 入力欄・ボタン・本文スクロール領域では、
+     * モーダルのスワイプ閉じを開始しない。
+     * （ハンドル／ヘッダーからのみ閉じられる）
      */
     if (
       (event.target as HTMLElement).closest(
-        'button, a, input, textarea, select',
+        'button, a, input, textarea, select, .modal-panel__body',
       )
     ) {
       return
@@ -463,7 +467,11 @@ export function Modal({
           </button>
         </div>
 
-        {children}
+        {variant === 'sheet' ? (
+          <div className="modal-panel__body">{children}</div>
+        ) : (
+          children
+        )}
       </div>
     </div>
   )
