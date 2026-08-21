@@ -14,7 +14,7 @@ const events: EventItem[] = [
   },
   {
     id: 2,
-    title: 'イベント2',
+    title: 'あああああああああああああああああああああああああああ',
     color: '#8ECAE6',
   },
   {

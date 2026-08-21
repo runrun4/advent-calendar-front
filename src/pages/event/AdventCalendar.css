@@ -118,13 +118,15 @@
 }
 
 .advent-calendar__calendar-wrapper {
-  position: relative;
+  position: absolute;
 
-  width: min(var(--advent-frame-max), 100%);
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+
   width: min(
     var(--advent-frame-max),
-    100cqi,
-    calc(100cqh * 5 / 6.5)
+    90vw
   );
 }
 
@@ -137,12 +139,12 @@
   width: 100%;
   aspect-ratio: 5 / 6;
 
-  padding: 4.56cqw;
+  padding: 3.9cqw;
 
   border: 2.85cqw solid #b7e8a7;
   border-radius: 14.2cqw;
 
-  gap: 2.85cqw;
+  gap: 1.05cqw;
 
   background-color: #ffffff;
 }
@@ -177,8 +179,8 @@
 }
 
 .advent-calendar__collection-button {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  z-index: 3;
+  position: fixed;
+
+  right: 30px;
+  bottom: 30px;
 }
