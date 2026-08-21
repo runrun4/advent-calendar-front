@@ -253,7 +253,7 @@ export const AdventCalendar = ({
 
         {/* 解放数 */}
         <div className="advent-calendar__progress">
-          {unlockedDays} / {cells.length}
+          {unlockedDays} / {cells.length} opened
         </div>
 
       </div>
