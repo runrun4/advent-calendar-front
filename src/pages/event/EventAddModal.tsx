@@ -12,29 +12,62 @@ type EventAddModalProps = {
 const MIN_COUNTDOWN_DAYS = 0
 const MAX_COUNTDOWN_DAYS = 30
 
-export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
-  const [eventType, setEventType] = useState<EventType>('public')
+export function EventAddModal({
+  isOpen,
+  onClose,
+}: EventAddModalProps) {
+  const [eventType, setEventType] =
+    useState<EventType>('public')
 
+  // ========================================
   // パブリックイベント
-  const [publicEventName, setPublicEventName] = useState('')
-  const [publicEventStartDate, setPublicEventStartDate] = useState('')
-  const [publicEventEndDate, setPublicEventEndDate] = useState('')
-  const [publicEventLocation, setPublicEventLocation] = useState('')
-  const [publicCountdownDays, setPublicCountdownDays] = useState(15)
+  // ========================================
 
+  const [publicEventName, setPublicEventName] =
+    useState('')
+
+  const [publicEventStartDate, setPublicEventStartDate] =
+    useState('')
+
+  const [publicEventEndDate, setPublicEventEndDate] =
+    useState('')
+
+  const [publicEventLocation, setPublicEventLocation] =
+    useState('')
+
+  const [publicCountdownDays, setPublicCountdownDays] =
+    useState(15)
+
+  // ========================================
   // プライベートイベント
-  const [privateEventName, setPrivateEventName] = useState('')
-  const [privateEventStartDate, setPrivateEventStartDate] = useState('')
-  const [privateEventEndDate, setPrivateEventEndDate] = useState('')
-  const [privateEventLocation, setPrivateEventLocation] = useState('')
-  const [privateCountdownDays, setPrivateCountdownDays] = useState(15)
+  // ========================================
 
-  const [countdownTouchStartX, setCountdownTouchStartX] = useState<
-    number | null
-  >(null)
+  const [privateEventName, setPrivateEventName] =
+    useState('')
+
+  const [privateEventStartDate, setPrivateEventStartDate] =
+    useState('')
+
+  const [privateEventEndDate, setPrivateEventEndDate] =
+    useState('')
+
+  const [privateEventLocation, setPrivateEventLocation] =
+    useState('')
+
+  const [privateCountdownDays, setPrivateCountdownDays] =
+    useState(15)
+
+  // ========================================
+  // カウントダウンのスワイプ
+  // ========================================
+
+  const [countdownTouchStartX, setCountdownTouchStartX] =
+    useState<number | null>(null)
 
   const currentCountdownDays =
-    eventType === 'public' ? publicCountdownDays : privateCountdownDays
+    eventType === 'public'
+      ? publicCountdownDays
+      : privateCountdownDays
 
   const setCurrentCountdownDays = (value: number) => {
     if (eventType === 'public') {
@@ -47,7 +80,9 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
   const handleCountdownTouchStart = (
     event: React.TouchEvent<HTMLDivElement>,
   ) => {
-    setCountdownTouchStartX(event.touches[0].clientX)
+    setCountdownTouchStartX(
+      event.touches[0].clientX,
+    )
   }
 
   const handleCountdownTouchEnd = (
@@ -57,8 +92,11 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
       return
     }
 
-    const touchEndX = event.changedTouches[0].clientX
-    const difference = touchEndX - countdownTouchStartX
+    const touchEndX =
+      event.changedTouches[0].clientX
+
+    const difference =
+      touchEndX - countdownTouchStartX
 
     if (Math.abs(difference) < 30) {
       setCountdownTouchStartX(null)
@@ -67,16 +105,38 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
 
     if (difference > 0) {
       setCurrentCountdownDays(
-        Math.max(MIN_COUNTDOWN_DAYS, currentCountdownDays - 1),
+        Math.max(
+          MIN_COUNTDOWN_DAYS,
+          currentCountdownDays - 1,
+        ),
       )
     } else {
       setCurrentCountdownDays(
-        Math.min(MAX_COUNTDOWN_DAYS, currentCountdownDays + 1),
+        Math.min(
+          MAX_COUNTDOWN_DAYS,
+          currentCountdownDays + 1,
+        ),
       )
     }
 
     setCountdownTouchStartX(null)
   }
+
+  // ========================================
+  // スマホキーボードの決定キー
+  // ========================================
+
+  const handleInputKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === 'Enter') {
+      event.currentTarget.blur()
+    }
+  }
+
+  // ========================================
+  // カウントダウン表示用の日数
+  // ========================================
 
   const countdownNumbers = []
 
@@ -85,7 +145,10 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
     day <= currentCountdownDays + 3;
     day += 1
   ) {
-    if (day >= MIN_COUNTDOWN_DAYS && day <= MAX_COUNTDOWN_DAYS) {
+    if (
+      day >= MIN_COUNTDOWN_DAYS &&
+      day <= MAX_COUNTDOWN_DAYS
+    ) {
       countdownNumbers.push(day)
     }
   }
@@ -98,7 +161,11 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
       variant="sheet"
     >
       <div className="event-add-modal">
-        {/* イベント種類選択 */}
+
+        {/* ========================================
+            イベント種類選択
+            ======================================== */}
+
         <div className="event-add-modal__type-selector">
           <button
             type="button"
@@ -125,10 +192,14 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
           </button>
         </div>
 
-        {/* 選択したイベント種類に応じた内容 */}
+        {/* ========================================
+            パブリックイベント
+            ======================================== */}
+
         <div className="event-add-modal__content">
           {eventType === 'public' ? (
             <div className="event-add-modal__questionnaire">
+
               {/* イベント名 */}
               <div className="event-add-modal__question">
                 <input
@@ -136,9 +207,16 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                   type="text"
                   className="event-add-modal__input"
                   value={publicEventName}
-                  onChange={(e) => setPublicEventName(e.target.value)}
+                  onChange={(e) =>
+                    setPublicEventName(
+                      e.target.value,
+                    )
+                  }
+                  onKeyDown={handleInputKeyDown}
                   placeholder="イベント名(最大10文字)"
                   maxLength={10}
+                  inputMode="text"
+                  enterKeyHint="done"
                 />
               </div>
 
@@ -149,24 +227,34 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                 </label>
 
                 <div className="event-add-modal__date-inputs">
+                  {/* 開始日 */}
                   <input
                     id="public-event-start-date"
                     type="date"
                     className="event-add-modal__input"
-                    value={publicEventStartDate}
+                    value={
+                      publicEventStartDate
+                    }
                     onChange={(e) =>
-                      setPublicEventStartDate(e.target.value)
+                      setPublicEventStartDate(
+                        e.target.value,
+                      )
                     }
                     aria-label="開始日"
                   />
 
+                  {/* 終了日 */}
                   <input
                     id="public-event-end-date"
                     type="date"
                     className="event-add-modal__input"
-                    value={publicEventEndDate}
+                    value={
+                      publicEventEndDate
+                    }
                     onChange={(e) =>
-                      setPublicEventEndDate(e.target.value)
+                      setPublicEventEndDate(
+                        e.target.value,
+                      )
                     }
                     aria-label="終了日"
                   />
@@ -191,12 +279,19 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                   type="text"
                   className="event-add-modal__input"
                   value={publicEventLocation}
-                  onChange={(e) => setPublicEventLocation(e.target.value)}
+                  onChange={(e) =>
+                    setPublicEventLocation(
+                      e.target.value,
+                    )
+                  }
+                  onKeyDown={handleInputKeyDown}
                   placeholder="会場名などを入力"
+                  inputMode="text"
+                  enterKeyHint="done"
                 />
               </div>
 
-              {/* カウントダウン開始日 */}
+              {/* カウントダウン */}
               <div className="event-add-modal__question">
                 <p className="event-add-modal__countdown-label">
                   ＞何日前からカウントダウン
@@ -206,38 +301,47 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
 
                 <div
                   className="event-add-modal__countdown-picker"
-                  onTouchStart={handleCountdownTouchStart}
-                  onTouchEnd={handleCountdownTouchEnd}
+                  onTouchStart={
+                    handleCountdownTouchStart
+                  }
+                  onTouchEnd={
+                    handleCountdownTouchEnd
+                  }
                 >
                   <div className="event-add-modal__countdown-list">
-                    {countdownNumbers.map((day) => {
-                      const distance = Math.abs(
-                        day - currentCountdownDays,
-                      )
+                    {countdownNumbers.map(
+                      (day) => {
+                        const distance =
+                          Math.abs(
+                            day -
+                              currentCountdownDays,
+                          )
 
-                      return (
-                        <div
-                          key={day}
-                          className={`event-add-modal__countdown-item ${
-                            day === currentCountdownDays
-                              ? 'event-add-modal__countdown-item--selected'
-                              : ''
-                          }`}
-                          style={{
-                            opacity:
-                              distance === 0
-                                ? 1
-                                : distance === 1
-                                  ? 0.7
-                                  : distance === 2
-                                    ? 0.4
-                                    : 0.2,
-                          }}
-                        >
-                          {day}
-                        </div>
-                      )
-                    })}
+                        return (
+                          <div
+                            key={day}
+                            className={`event-add-modal__countdown-item ${
+                              day ===
+                              currentCountdownDays
+                                ? 'event-add-modal__countdown-item--selected'
+                                : ''
+                            }`}
+                            style={{
+                              opacity:
+                                distance === 0
+                                  ? 1
+                                  : distance === 1
+                                    ? 0.7
+                                    : distance === 2
+                                      ? 0.4
+                                      : 0.2,
+                            }}
+                          >
+                            {day}
+                          </div>
+                        )
+                      },
+                    )}
                   </div>
                 </div>
 
@@ -246,7 +350,7 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                 </span>
               </div>
 
-              {/* 検索ボタン */}
+              {/* 検索する */}
               <button
                 type="button"
                 className="event-add-modal__submit-button"
@@ -255,7 +359,13 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
               </button>
             </div>
           ) : (
+
+            /* ========================================
+               プライベートイベント
+               ======================================== */
+
             <div className="event-add-modal__questionnaire">
+
               {/* イベント名 */}
               <div className="event-add-modal__question">
                 <input
@@ -263,9 +373,16 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                   type="text"
                   className="event-add-modal__input"
                   value={privateEventName}
-                  onChange={(e) => setPrivateEventName(e.target.value)}
+                  onChange={(e) =>
+                    setPrivateEventName(
+                      e.target.value,
+                    )
+                  }
+                  onKeyDown={handleInputKeyDown}
                   placeholder="イベント名(最大10文字)"
                   maxLength={10}
+                  inputMode="text"
+                  enterKeyHint="done"
                 />
               </div>
 
@@ -276,24 +393,34 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                 </label>
 
                 <div className="event-add-modal__date-inputs">
+                  {/* 開始日 */}
                   <input
                     id="private-event-start-date"
                     type="date"
                     className="event-add-modal__input"
-                    value={privateEventStartDate}
+                    value={
+                      privateEventStartDate
+                    }
                     onChange={(e) =>
-                      setPrivateEventStartDate(e.target.value)
+                      setPrivateEventStartDate(
+                        e.target.value,
+                      )
                     }
                     aria-label="開始日"
                   />
 
+                  {/* 終了日 */}
                   <input
                     id="private-event-end-date"
                     type="date"
                     className="event-add-modal__input"
-                    value={privateEventEndDate}
+                    value={
+                      privateEventEndDate
+                    }
                     onChange={(e) =>
-                      setPrivateEventEndDate(e.target.value)
+                      setPrivateEventEndDate(
+                        e.target.value,
+                      )
                     }
                     aria-label="終了日"
                   />
@@ -318,12 +445,19 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                   type="text"
                   className="event-add-modal__input"
                   value={privateEventLocation}
-                  onChange={(e) => setPrivateEventLocation(e.target.value)}
+                  onChange={(e) =>
+                    setPrivateEventLocation(
+                      e.target.value,
+                    )
+                  }
+                  onKeyDown={handleInputKeyDown}
                   placeholder="会場名などを入力"
+                  inputMode="text"
+                  enterKeyHint="done"
                 />
               </div>
 
-              {/* カウントダウン開始日 */}
+              {/* カウントダウン */}
               <div className="event-add-modal__question">
                 <p className="event-add-modal__countdown-label">
                   ＞何日前からカウントダウン
@@ -333,38 +467,47 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
 
                 <div
                   className="event-add-modal__countdown-picker"
-                  onTouchStart={handleCountdownTouchStart}
-                  onTouchEnd={handleCountdownTouchEnd}
+                  onTouchStart={
+                    handleCountdownTouchStart
+                  }
+                  onTouchEnd={
+                    handleCountdownTouchEnd
+                  }
                 >
                   <div className="event-add-modal__countdown-list">
-                    {countdownNumbers.map((day) => {
-                      const distance = Math.abs(
-                        day - currentCountdownDays,
-                      )
+                    {countdownNumbers.map(
+                      (day) => {
+                        const distance =
+                          Math.abs(
+                            day -
+                              currentCountdownDays,
+                          )
 
-                      return (
-                        <div
-                          key={day}
-                          className={`event-add-modal__countdown-item ${
-                            day === currentCountdownDays
-                              ? 'event-add-modal__countdown-item--selected'
-                              : ''
-                          }`}
-                          style={{
-                            opacity:
-                              distance === 0
-                                ? 1
-                                : distance === 1
-                                  ? 0.7
-                                  : distance === 2
-                                    ? 0.4
-                                    : 0.2,
-                          }}
-                        >
-                          {day}
-                        </div>
-                      )
-                    })}
+                        return (
+                          <div
+                            key={day}
+                            className={`event-add-modal__countdown-item ${
+                              day ===
+                              currentCountdownDays
+                                ? 'event-add-modal__countdown-item--selected'
+                                : ''
+                            }`}
+                            style={{
+                              opacity:
+                                distance === 0
+                                  ? 1
+                                  : distance === 1
+                                    ? 0.7
+                                    : distance === 2
+                                      ? 0.4
+                                      : 0.2,
+                            }}
+                          >
+                            {day}
+                          </div>
+                        )
+                      },
+                    )}
                   </div>
                 </div>
 
@@ -373,7 +516,7 @@ export function EventAddModal({ isOpen, onClose }: EventAddModalProps) {
                 </span>
               </div>
 
-              {/* 次に進むボタン */}
+              {/* 次に進む */}
               <button
                 type="button"
                 className="event-add-modal__submit-button"
