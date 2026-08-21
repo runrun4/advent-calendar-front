@@ -152,7 +152,7 @@ export const AdventCalendar = ({
         aria-label="戻る"
       >
         <ChevronLeft
-          className="advent-calendar__icon"
+          className="advent-calendar__icon icon-color"
           size={28}
           strokeWidth={2}
         />
@@ -172,7 +172,7 @@ export const AdventCalendar = ({
           aria-label="設定"
         >
           <Settings
-            className="advent-calendar__icon"
+            className="advent-calendar__icon icon-color"
             size={24}
             strokeWidth={2}
           />
@@ -185,7 +185,7 @@ export const AdventCalendar = ({
           aria-label="チャット"
         >
           <MessageCircle
-            className="advent-calendar__icon"
+            className="advent-calendar__icon icon-color"
             size={24}
             strokeWidth={2}
           />
@@ -272,7 +272,7 @@ export const AdventCalendar = ({
         aria-label="獲得アイテム一覧"
       >
         <Gift
-          className="advent-calendar__icon"
+          className="advent-calendar__icon icon-color"
           size={24}
           strokeWidth={2}
         />
