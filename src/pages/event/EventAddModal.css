@@ -1,0 +1,200 @@
+.event-add-modal {
+  width: 100%;
+}
+
+/* ========================================
+   イベント種類選択
+   ======================================== */
+
+.event-add-modal__type-selector {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.event-add-modal__type-button {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background-color: #e0e0e0;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.event-add-modal__type-button--selected {
+  background-color: #78c878;
+  border-color: #4caf50;
+  color: #ffffff;
+}
+
+/* ========================================
+   アンケート
+   ======================================== */
+
+.event-add-modal__content {
+  width: 100%;
+}
+
+.event-add-modal__questionnaire {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.event-add-modal__question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ========================================
+   ラベル
+   ======================================== */
+
+.event-add-modal__label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ========================================
+   入力欄
+   ======================================== */
+
+.event-add-modal__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 4px;
+  border: none;
+  border-bottom: 2px solid #78c878;
+  border-radius: 0;
+  background-color: transparent;
+  color: #333;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.event-add-modal__input:focus {
+  border-bottom-color: #4caf50;
+}
+
+.event-add-modal__input::placeholder {
+  color: #999;
+}
+
+/* ========================================
+   日付
+   ======================================== */
+
+.event-add-modal__date-inputs {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.event-add-modal__date-inputs .event-add-modal__input {
+  flex: 1;
+}
+
+.event-add-modal__date-note {
+  margin: 0;
+  font-size: 11px;
+  color: #888;
+}
+
+/* ========================================
+   カウントダウン
+   ======================================== */
+
+.event-add-modal__countdown-label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #333;
+}
+
+.event-add-modal__countdown-picker {
+  width: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.event-add-modal__countdown-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 56px;
+}
+
+.event-add-modal__countdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 48px;
+  padding: 0 8px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: #000000;
+  font-size: 22px;
+  font-weight: 500;
+  flex-shrink: 0;
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.event-add-modal__countdown-item--selected {
+  border-color: #78c878;
+  color: #4caf50;
+  font-weight: 700;
+  transform: scale(1.05);
+}
+
+.event-add-modal__unit {
+  margin-top: -4px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* ========================================
+   確定・次へボタン
+   ======================================== */
+
+.event-add-modal__submit-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  background-color: #78c878;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.event-add-modal__submit-button:hover {
+  background-color: #68b968;
+}
+
+.event-add-modal__submit-button:active {
+  transform: scale(0.98);
+}
