@@ -2,12 +2,6 @@ import type { Session, User as SupabaseUser } from '@supabase/supabase-js'
 import type { User } from '../types/user'
 import { supabase } from './supabase'
 
-export type RegisterResult = {
-  user: User
-  /** パスキー登録に成功したか（失敗しても登録自体は完了） */
-  passkeyRegistered: boolean
-}
-
 function mapUser(supabaseUser: SupabaseUser): User {
   const meta = supabaseUser.user_metadata ?? {}
 
@@ -43,7 +37,6 @@ export async function getCurrentUser(): Promise<User | null> {
   return mapUser(user)
 }
 
-/** メール＋パスワードでログイン */
 export async function loginWithEmailPassword(
   email: string,
   password: string,
@@ -57,22 +50,10 @@ export async function loginWithEmailPassword(
   return mapUser(data.user)
 }
 
-/** パスキーでログイン（任意・あると楽） */
-export async function loginWithPasskey(): Promise<User> {
-  const { data, error } = await supabase.auth.signInWithPasskey()
-  if (error) throw error
-  if (!data.user) throw new Error('パスキーログインに失敗しました')
-  return mapUser(data.user)
-}
-
-/**
- * メール＋パスワードで新規登録する。
- * セッションがあればパスキー登録も試すが、失敗しても登録完了とする。
- */
 export async function registerWithEmailPassword(
   email: string,
   password: string,
-): Promise<RegisterResult> {
+): Promise<User> {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
@@ -85,19 +66,7 @@ export async function registerWithEmailPassword(
     )
   }
 
-  const user = mapUser(data.user)
-  const { error: passkeyError } = await supabase.auth.registerPasskey()
-
-  return {
-    user,
-    passkeyRegistered: !passkeyError,
-  }
-}
-
-/** ログイン済みユーザーが後からパスキーを追加する用 */
-export async function registerPasskeyForCurrentUser(): Promise<void> {
-  const { error } = await supabase.auth.registerPasskey()
-  if (error) throw error
+  return mapUser(data.user)
 }
 
 export async function logout(): Promise<void> {

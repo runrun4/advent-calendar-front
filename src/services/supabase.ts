@@ -11,9 +11,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    experimental: {
-      passkey: true,
-    },
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,

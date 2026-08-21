@@ -20,12 +20,11 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
     setIsSubmitting(true)
 
     try {
-      const { user } = await registerWithEmailPassword(email, password)
-      // パスキーの成否に関わらず登録完了として進む
+      const user = await registerWithEmailPassword(email, password)
       onRegistered?.(user)
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : '新規登録に失敗しました'
+        error instanceof Error ? error.message : '新規作成に失敗しました'
       setErrorMessage(message)
     } finally {
       setIsSubmitting(false)
@@ -33,14 +32,14 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--register">
       <main className="auth-page__main">
         <form className="auth-page__form" onSubmit={handleSubmit}>
-          <h1 className="auth-page__title">新規登録</h1>
-
-          <p className="auth-page__hint">
-            メールとパスワードで登録します。使える場合はパスキーも自動で追加します
-          </p>
+          <h1 className="auth-page__title">
+            いっしょに
+            <br />
+            るんるんしましょう！
+          </h1>
 
           {errorMessage ? (
             <p className="auth-page__error" role="alert">
@@ -48,37 +47,39 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
             </p>
           ) : null}
 
-          <div className="auth-page__field">
-            <label className="auth-page__label" htmlFor="register-email">
-              メールアドレス
-            </label>
-            <input
-              id="register-email"
-              className="auth-page__input"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@email.com"
-            />
-          </div>
+          <div className="auth-page__fields">
+            <div className="auth-page__field">
+              <label className="auth-page__sr-only" htmlFor="register-email">
+                メールアドレス
+              </label>
+              <input
+                id="register-email"
+                className="auth-page__input"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="メールアドレス"
+              />
+            </div>
 
-          <div className="auth-page__field">
-            <label className="auth-page__label" htmlFor="register-password">
-              パスワード
-            </label>
-            <input
-              id="register-password"
-              className="auth-page__input"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="6文字以上"
-            />
+            <div className="auth-page__field">
+              <label className="auth-page__sr-only" htmlFor="register-password">
+                パスワード
+              </label>
+              <input
+                id="register-password"
+                className="auth-page__input"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="パスワード(6文字以上)"
+              />
+            </div>
           </div>
 
           <button
@@ -86,10 +87,8 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
             className="auth-page__submit"
             disabled={isSubmitting}
           >
-            {isSubmitting ? '登録中…' : '登録する'}
+            {isSubmitting ? '作成中…' : '新規作成 →'}
           </button>
-
-          <hr className="auth-page__divider" />
 
           <button
             type="button"
