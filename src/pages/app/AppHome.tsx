@@ -12,9 +12,10 @@ const TABS: AppTab[] = ['private', 'event']
 
 type AppHomeProps = {
   user: User | null
+  onLoggedOut: () => void
 }
 
-export function AppHome({ user }: AppHomeProps) {
+export function AppHome({ user, onLoggedOut }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
@@ -77,6 +78,7 @@ const {
         isOpen={isProfileOpen}
         user={user}
         onClose={() => setIsProfileOpen(false)}
+        onLoggedOut={onLoggedOut}
       />
 
       <EventAddModal
