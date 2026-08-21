@@ -1,5 +1,6 @@
 import type { AuthPhase } from '../../hooks/useAuth'
 import type { User } from '../../types/user'
+import { completeInitialSetup } from '../../services/authService'
 import { AuthPage } from './AuthPage'
 import { InitialSetup } from './InitialSetup'
 import { RegisterPage } from './RegisterPage'
@@ -10,6 +11,7 @@ export type AuthView = 'login' | 'register'
 type AuthFlowProps = {
   phase: AuthPhase
   authView: AuthView
+  user: User | null
   setPhase: (phase: AuthPhase) => void
   setAuthView: (view: AuthView) => void
   setUser: (user: User | null) => void
@@ -18,20 +20,28 @@ type AuthFlowProps = {
 export function AuthFlow({
   phase,
   authView,
+  user,
   setPhase,
   setAuthView,
   setUser,
 }: AuthFlowProps) {
   if (phase === 'splash') {
-    return <SplashScreen onFinished={() => setPhase('auth')} />
+    return (
+      <SplashScreen
+        onFinished={() => {
+          // ログイン済み → イベント画面 / 未ログイン → 認証画面
+          setPhase(user ? 'app' : 'auth')
+        }}
+      />
+    )
   }
 
   if (phase === 'auth' && authView === 'login') {
     return (
       <AuthPage
-        onAuthenticated={(user) => {
-          setUser(user)
-          setPhase(user.isSetupComplete ? 'app' : 'setup')
+        onAuthenticated={(nextUser) => {
+          setUser(nextUser)
+          setPhase('app')
         }}
         onGoRegister={() => setAuthView('register')}
       />
@@ -41,8 +51,8 @@ export function AuthFlow({
   if (phase === 'auth' && authView === 'register') {
     return (
       <RegisterPage
-        onRegistered={(user) => {
-          setUser(user)
+        onRegistered={(nextUser) => {
+          setUser(nextUser)
           setPhase('setup')
         }}
         onGoLogin={() => setAuthView('login')}
@@ -53,7 +63,17 @@ export function AuthFlow({
   if (phase === 'setup') {
     return (
       <InitialSetup
-        onComplete={() => setPhase('app')}
+        onComplete={() => {
+          void (async () => {
+            try {
+              const updated = await completeInitialSetup()
+              setUser(updated)
+            } catch {
+              // メタデータ更新に失敗してもイベント画面へは進める
+            }
+            setPhase('app')
+          })()
+        }}
         onBack={() => {
           setAuthView('register')
           setPhase('auth')

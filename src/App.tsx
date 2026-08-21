@@ -16,6 +16,7 @@ function App() {
       <AuthFlow
         phase={phase}
         authView={authView}
+        user={user}
         setPhase={setPhase}
         setAuthView={setAuthView}
         setUser={setUser}

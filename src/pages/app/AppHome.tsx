@@ -25,7 +25,7 @@ export function AppHome({ user, onLoggedOut }: AppHomeProps) {
     dragOffset,
     isDragging,
     pointerHandlers,
-  } = usePageSwipe(TABS, 'private')
+  } = usePageSwipe(TABS, 'event')
 
   const openEventAdd = () => setIsEventAddOpen(true)
 
