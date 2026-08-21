@@ -26,22 +26,24 @@
 html,
 body,
 #root {
+  width: 100%;
   height: 100%;
-  min-height: 100svh;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: 100lvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
 body {
   margin: 0;
-  min-height: 100svh;
   background: #000;
 }
 
 html:has(.app-shell),
 html:has(.app-shell) body,
 html:has(.app-shell) #root {
-  background: #b7e8a7;
+  background: #fff;
   color-scheme: light;
 }
 
@@ -127,45 +129,67 @@ input {
 
 .app-shell {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 
   display: flex;
   flex-direction: column;
 
   width: 100%;
-  height: 100dvh;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: 100lvh;
+
+  margin: 0;
+  padding: 0;
 
   overflow: hidden;
   overscroll-behavior: none;
 
-  background: #b7e8a7;
+  background: #fff;
 }
 
 .app-shell__top {
   flex-shrink: 0;
+
   width: 100%;
+
   box-sizing: content-box;
+
   height: 0.5rem;
+
   padding-top: env(safe-area-inset-top, 0px);
+
   background: #b7e8a7;
 }
 
 .app-shell__main {
   position: relative;
 
-  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+
+  flex: 1 1 0;
   min-height: 0;
 
   width: 100%;
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
 
   overflow: hidden;
   overscroll-behavior: none;
 
   /*
    * ページ切替は JS で軸ロックする。
-   * pan-x だと子の pan-y と交差して none になり、縦横が同時に反応する。
+   * pan-x だと子の pan-y と交差して none になり、
+   * 縦横が同時に反応する。
    */
-  touch-action: none;
+  touch-action: pan-y;
 
   background: #fff;
 }
@@ -177,7 +201,7 @@ input {
 .app-header {
   display: flex;
 
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
 
   padding: 0.75rem 1rem;
@@ -186,16 +210,49 @@ input {
   border-bottom: 1px solid #ddd;
 }
 
+.app-header__title {
+  margin: 0;
+}
+
 .app-header__profile {
-  padding: 0.45rem 0.8rem;
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 2.75rem;
+  height: 2.75rem;
+
+  padding: 0;
 
   border: 1px solid #555;
-  border-radius: 999px;
+  border-radius: 50%;
 
-  background: transparent;
-  color: inherit;
+  background: #fff;
+  color: #000;
 
   cursor: pointer;
+}
+
+.app-header__profile-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+/* =========================
+   Common Page Title
+========================= */
+
+.page-title {
+  margin: 0;
+
+  color: #000;
+
+  font-size: 1.4rem;
+  font-weight: 700;
+
+  line-height: 1;
+  letter-spacing: 0.08em;
 }
 
 /* =========================
@@ -204,6 +261,7 @@ input {
 
 .tab-navigation {
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
 
   border-top: 1px solid #222;
@@ -235,39 +293,134 @@ input {
 
   flex-direction: column;
 
+  width: 100%;
   height: 100%;
-}
 
-.event-main__panels {
-  display: grid;
+  min-width: 0;
+  min-height: 0;
 
-  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+  padding: 0;
 
-  gap: 0.5rem;
+  overflow: hidden;
 
-  padding: 0.75rem 1rem 0;
-}
-
-.event-main__panel {
-  padding: 0.55rem 0.4rem;
-
-  border: 1px solid #444;
-  border-radius: 999px;
-
-  background: transparent;
-  color: #aaa;
-
-  cursor: pointer;
-}
-
-.event-main__panel.is-active {
-  border-color: #fff;
-  color: #fff;
+  background: #fff;
+  color: #000;
 }
 
 .event-main__content {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  flex: 1 1 0;
+
+  width: 100%;
+  height: 100%;
+
+  min-width: 0;
   min-height: 0;
+
+  margin: 0;
+  padding: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+}
+
+/* =========================
+   Event Sections
+========================= */
+
+.event-main__section {
+  display: flex;
+
+  flex-direction: column;
+
+  flex-shrink: 0;
+
+  min-width: 0;
+
+  background: #fff;
+}
+
+.event-main__section--memories {
+  flex-shrink: 0;
+}
+
+/* =========================
+   Section Title
+========================= */
+
+.event-main__section-title {
+  flex-shrink: 0;
+
+  margin: 0;
+
+  padding: 0.75rem 0.9rem;
+
+  background: #fff;
+  color: #000;
+
+  font-size: 1.6rem;
+  font-weight: 700;
+
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.event-main__section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  gap: 0.35rem;
+
+  width: 100%;
+  padding: 0;
+
+  border: 0;
+
+  background: #fff;
+  color: #000;
+
+  cursor: pointer;
+  text-align: left;
+}
+
+.event-main__section-toggle .event-main__section-title {
+  flex: 0 1 auto;
+  padding-right: 0;
+}
+
+.event-main__section-chevron {
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 1.75rem;
+  height: 1.75rem;
+
+  color: #000;
+
+  /*
+   * 閉じているとき: 下向き
+   * 開いているとき: 上向き
+   */
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+.event-main__section-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.event-main__section-chevron svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: block;
 }
 
 /* =========================
@@ -298,6 +451,91 @@ input {
   border-radius: 12px;
 
   background: #111;
+  color: #f5f5f5;
+}
+
+.modal-panel--light {
+  width: min(100%, 24rem);
+  min-height: min(70svh, 32rem);
+
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+
+  background: #fff;
+  color: #000;
+}
+
+.modal-backdrop--sheet {
+  display: flex;
+  align-items: flex-end;
+  justify-content: stretch;
+
+  padding: 0;
+}
+
+.modal-panel--sheet {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  height: 90svh;
+  max-height: 90svh;
+
+  padding: 0.5rem 1.25rem 1rem;
+
+  border: 0;
+  border-radius: 1rem 1rem 0 0;
+
+  background: #fff;
+  color: #000;
+
+  touch-action: none;
+  animation: modal-sheet-up 0.28s ease;
+}
+
+.modal-panel--sheet.is-dragging {
+  animation: none;
+}
+
+.modal-panel--sheet.is-closing {
+  animation: modal-sheet-down 0.28s ease forwards;
+}
+
+.modal-backdrop--sheet.is-closing {
+  pointer-events: none;
+}
+
+.modal-panel__handle {
+  flex-shrink: 0;
+
+  width: 2.5rem;
+  height: 0.25rem;
+
+  margin: 0.35rem auto 0.5rem;
+
+  border-radius: 999px;
+
+  background: #d0d0d0;
+}
+
+@keyframes modal-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes modal-sheet-down {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
 }
 
 .modal-panel__header {
@@ -338,7 +576,7 @@ input {
   position: absolute;
 
   left: 50%;
-  bottom: 0.75rem;
+  bottom: 1.25rem;
 
   transform: translateX(-50%);
 
@@ -347,6 +585,8 @@ input {
   align-items: center;
 
   gap: 0.7rem;
+
+  padding-bottom: 0;
 
   z-index: 5;
 
@@ -372,10 +612,16 @@ input {
 
 .page-slider {
   display: flex;
+  align-items: stretch;
+
+  flex: 1 1 0;
+  min-height: 0;
 
   width: 200%;
   height: 100%;
-  min-height: 0;
+
+  margin: 0;
+  padding: 0;
 }
 
 .page-slider__page {
@@ -385,6 +631,7 @@ input {
 
   width: 50%;
   height: 100%;
+
   min-width: 0;
   min-height: 0;
 }
@@ -394,12 +641,13 @@ input {
 ========================= */
 
 .private-calendar-page {
+  position: relative;
+
   display: grid;
 
   grid-template-rows:
     minmax(0, 1fr)
-    5rem
-    2rem;
+    5rem;
 
   width: 100%;
   height: 100%;
@@ -413,7 +661,6 @@ input {
   color: #000;
 }
 
-
 /* =========================
    Calendar Area
 ========================= */
@@ -422,6 +669,7 @@ input {
   grid-row: 1;
 
   width: 100%;
+
   min-width: 0;
   min-height: 0;
 
@@ -445,7 +693,6 @@ input {
 
   background: #fff;
 }
-
 
 /* =========================
    Calendar Header
@@ -503,6 +750,7 @@ input {
   font-weight: 600;
 
   line-height: 1;
+
   letter-spacing: 0.03em;
 }
 
@@ -517,8 +765,11 @@ input {
 
 .private-calendar-page-header-navigation {
   display: flex;
+
   flex-direction: column;
+
   align-items: flex-end;
+
   gap: 0.15rem;
 
   margin-left: auto;
@@ -554,12 +805,11 @@ input {
 }
 
 .private-calendar-page-header-navigation-arrow {
-   color: #111;
+  color: #111;
 
   font-size: 1rem;
   font-weight: 700;
 }
-
 
 /* =========================
    Weekdays
@@ -568,8 +818,7 @@ input {
 .private-calendar-weekdays {
   display: grid;
 
-  grid-template-columns:
-    repeat(7, 1fr);
+  grid-template-columns: repeat(7, 1fr);
 
   flex-shrink: 0;
 
@@ -603,14 +852,12 @@ input {
   border-bottom: 1px solid #ccc;
 
   font-size: 0.7rem;
-
   font-weight: 600;
 
   letter-spacing: 0.03em;
 
   color: #666;
 }
-
 
 /* =========================
    Calendar Days
@@ -639,7 +886,6 @@ input {
   background: #fff;
 }
 
-
 /* =========================
    Day Cell
 ========================= */
@@ -660,7 +906,6 @@ input {
   overflow: hidden;
 }
 
-
 .private-calendar-day-cell.is-sunday
   .private-calendar-day-number {
   color: #e53935;
@@ -675,7 +920,6 @@ input {
   .private-calendar-day-number {
   color: #c8c8c8;
 }
-
 
 /* =========================
    Day Number
@@ -697,7 +941,6 @@ input {
   color: #000;
 }
 
-
 /* =========================
    Today
 ========================= */
@@ -706,7 +949,6 @@ input {
   .private-calendar-day-number {
   font-weight: 700;
 }
-
 
 /* =========================
    Event Area
@@ -724,7 +966,6 @@ input {
   margin-top: 0.4rem;
 }
 
-
 /* =========================
    Add Button Area
 ========================= */
@@ -739,7 +980,6 @@ input {
 
   width: 100%;
   height: 5rem;
-
   min-height: 5rem;
 
   padding: 0 1rem;
@@ -749,12 +989,18 @@ input {
   border-top: 1px solid #ccc;
 }
 
-
 /* =========================
    Add Button
 ========================= */
 
 .private-calendar-page-addbutton-button {
+  position: absolute;
+
+  right: 1rem;
+  bottom: 5rem;
+
+  z-index: 20;
+
   display: flex;
 
   justify-content: center;
@@ -766,6 +1012,7 @@ input {
   padding: 0;
 
   border: 1px solid #000;
+
   border-radius: 50%;
 
   background: #fff;
@@ -777,24 +1024,334 @@ input {
 
   cursor: pointer;
 
-  flex-shrink: 0;
-
   box-shadow:
     0 2px 8px rgb(0 0 0 / 15%);
 }
 
-
 /* =========================
-   Bottom Area
+   Scroll Area
 ========================= */
 
-.private-calendar-page-bottom {
-  grid-row: 3;
+.event-main__scroll-area {
+  flex: 1 1 auto;
 
-  width: 100%;
+  min-width: 0;
+  min-height: 0;
 
-  height: 2rem;
-  min-height: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 
   background: #fff;
+}
+
+/* =========================
+   Event List
+========================= */
+
+.event-list {
+  display: flex;
+
+  flex-direction: column;
+  align-items: center;
+
+  gap: 0.75rem;
+
+  padding: 0.75rem 1rem 1.5rem;
+}
+
+.event-list__item {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: min(100%, 22rem);
+  min-height: 3.8rem;
+
+  flex-shrink: 0;
+
+  padding: 0.75rem 1rem;
+
+  border: 1.75px solid #1b1b1b;
+  border-radius: 999px;
+
+  background: #fff;
+  color: #000;
+
+  overflow: hidden;
+
+  cursor: pointer;
+}
+
+/* イベント：内側の色付きの縁 */
+.event-list__item::before {
+  content: '';
+
+  position: absolute;
+
+  inset: 0;
+
+  border: 0.35rem solid var(--event-color, #777);
+  border-radius: 999px;
+
+  pointer-events: none;
+}
+
+.event-list__item-title {
+  position: relative;
+  z-index: 1;
+
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 0 0.5rem;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  text-align: left;
+}
+
+.event-list__item-arrow {
+  position: relative;
+  z-index: 1;
+
+  flex-shrink: 0;
+
+  margin-left: 0.75rem;
+
+  padding-right: 0.5rem;
+
+  font-size: 1.75rem;
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #333;
+
+  letter-spacing: -0.1em;
+}
+
+/* =========================
+   Event Add Modal
+========================= */
+
+.event-add-modal {
+  flex: 1;
+  min-height: 0;
+
+  color: #000;
+}
+
+.event-add-modal__lead {
+  margin: 0;
+
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* =========================
+   Event Add Button
+========================= */
+
+.event-list__add-button {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  width: 3.5rem;
+  height: 3.5rem;
+
+  flex-shrink: 0;
+
+  margin-top: 0.25rem;
+
+  padding: 0;
+
+  border: 1px solid #000;
+  border-radius: 10px;
+
+  background: #eeeeee;
+  color: #000;
+
+  font-size: 1.8rem;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+
+/* =========================
+   Memories
+========================= */
+
+.memories-list {
+  display: flex;
+
+  flex-direction: column;
+  align-items: center;
+
+  gap: 0.75rem;
+
+  margin: 0;
+  padding: 0.75rem 1rem 0;
+}
+
+.memories-list__item {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: min(100%, 22rem);
+  min-height: 3.8rem;
+
+  flex-shrink: 0;
+
+  padding: 0.75rem 1rem;
+
+  border: 1.75px solid #1b1b1b;
+  border-radius: 999px;
+
+  background: #fff;
+  color: #000;
+
+  overflow: hidden;
+
+  cursor: pointer;
+}
+
+/* 思い出：内側の色付きの縁 */
+.memories-list__item::before {
+  content: '';
+
+  position: absolute;
+
+  inset: 0;
+
+  border: 0.35rem solid var(--memory-color, #777);
+  border-radius: 999px;
+
+  pointer-events: none;
+}
+
+.memories-list__item-title {
+  position: relative;
+  z-index: 1;
+
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 0 0.5rem;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  text-align: left;
+}
+
+.memories-list__item-arrow {
+  position: relative;
+  z-index: 1;
+
+  flex-shrink: 0;
+
+  margin-left: 0.75rem;
+
+  padding-right: 0.5rem;
+
+  font-size: 1.75rem;
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #333;
+
+  letter-spacing: -0.1em;
+}
+
+/* =========================
+   Advent Calendar Page
+========================= */
+
+.advent-calendar-page {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #fff;
+  color: #000;
+}
+
+.advent-calendar-page__header {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.advent-calendar-page__back {
+  position: absolute;
+  left: 1rem;
+
+  padding: 0.4rem 0.65rem;
+
+  border: 1px solid #000;
+  border-radius: 6px;
+
+  background: #fff;
+  color: #000;
+
+  cursor: pointer;
+}
+
+.advent-calendar-page__title {
+  margin: 0;
+
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.advent-calendar-page__body {
+  flex: 1 1 auto;
+
+  display: grid;
+  place-items: center;
+
+  min-height: 0;
+  padding: 1.5rem;
+
+  background: #fff;
+}
+
+.advent-calendar-page__label {
+  margin: 0;
+
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.6;
 }

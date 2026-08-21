@@ -8,7 +8,13 @@ import { createMonthList, getDays } from './calendarUtils'
 
 const SWIPE_THRESHOLD = 50
 
-export function PrivateCalendarPage() {
+type PrivateCalendarPageProps = {
+  onOpenEventAdd?: () => void
+}
+
+export function PrivateCalendarPage({
+  onOpenEventAdd,
+}: PrivateCalendarPageProps) {
   const months = useMemo(() => createMonthList(), [])
   const today = useMemo(() => {
     const date = new Date()
@@ -85,8 +91,7 @@ export function PrivateCalendarPage() {
         </div>
       </div>
 
-      <CalendarAddButton />
-      <div className="private-calendar-page-bottom" />
+      <CalendarAddButton onClick={onOpenEventAdd} />
     </div>
   )
 }
