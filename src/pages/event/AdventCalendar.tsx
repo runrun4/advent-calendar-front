@@ -1,15 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import './AdventCalendar.css'
 
-export const AdventCalendar = () => {
+type AdventCalendarProps = {
+  title: string
+  onBack: () => void
+}
+
+export const AdventCalendar = ({
+  title,
+  onBack,
+}: AdventCalendarProps) => {
   const unlockedDays = 8
   const cells = Array.from({ length: 30 })
 
-  const EVENT_NAME = 'ライブ'
   const EVENT_NAME_MAX_LENGTH = 10
   const TITLE_SHRINK_MIN_LENGTH = 8
 
-  const eventTitle = [...EVENT_NAME]
+  const eventTitle = [...title]
     .slice(0, EVENT_NAME_MAX_LENGTH)
     .join('')
 
@@ -23,23 +30,23 @@ export const AdventCalendar = () => {
     useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const title = titleRef.current
+    const titleEl = titleRef.current
     const calendar = calendarGridRef.current
 
-    if (!title || !calendar) return
+    if (!titleEl || !calendar) return
 
     const getDefaultFontSize = () => {
-      const previous = title.style.fontSize
-      title.style.fontSize = ''
+      const previous = titleEl.style.fontSize
+      titleEl.style.fontSize = ''
       const size = parseFloat(
-        window.getComputedStyle(title).fontSize
+        window.getComputedStyle(titleEl).fontSize
       )
-      title.style.fontSize = previous
+      titleEl.style.fontSize = previous
       return size
     }
 
     const measureTextWidth = (text: string, fontSize: number) => {
-      const computedStyle = window.getComputedStyle(title)
+      const computedStyle = window.getComputedStyle(titleEl)
       const probe = document.createElement('span')
 
       probe.textContent = text
@@ -110,6 +117,7 @@ export const AdventCalendar = () => {
       <button
         className="advent-calendar__icon-button advent-calendar__back-button"
         type="button"
+        onClick={onBack}
       >
         <span className="advent-calendar__icon">←</span>
       </button>
