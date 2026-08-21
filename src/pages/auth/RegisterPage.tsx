@@ -16,46 +16,50 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--register">
       <main className="auth-page__main">
         <form className="auth-page__form" onSubmit={handleSubmit}>
-          <h1 className="auth-page__title">新規登録</h1>
+          <h1 className="auth-page__title">
+            いっしょに
+            <br />
+            るんるんしましょう！
+          </h1>
 
-          <div className="auth-page__field">
-            <label className="auth-page__label" htmlFor="register-email">
-              メールアドレス
-            </label>
-            <input
-              id="register-email"
-              className="auth-page__input"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@email.com"
-            />
-          </div>
+          <div className="auth-page__fields">
+            <div className="auth-page__field">
+              <label className="auth-page__sr-only" htmlFor="register-email">
+                メールアドレス
+              </label>
+              <input
+                id="register-email"
+                className="auth-page__input"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="メールアドレス"
+              />
+            </div>
 
-          <div className="auth-page__field">
-            <label className="auth-page__label" htmlFor="register-password">
-              パスワード
-            </label>
-            <input
-              id="register-password"
-              className="auth-page__input"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="パスワードを入力"
-            />
+            <div className="auth-page__field">
+              <label className="auth-page__sr-only" htmlFor="register-password">
+                パスワード
+              </label>
+              <input
+                id="register-password"
+                className="auth-page__input"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="パスワード"
+              />
+            </div>
           </div>
 
           <button type="submit" className="auth-page__submit">
-            登録する
+            新規登録 →
           </button>
-
-          <hr className="auth-page__divider" />
 
           <button type="button" className="auth-page__link" onClick={onGoLogin}>
             ログインはこちら
