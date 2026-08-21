@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from '../../components/common/Modal'
+import { PublicEventRequestPage } from './PublicEventRequestPage'
 import './EventAddModal.css'
 
 type EventType = 'public' | 'private'
@@ -18,6 +19,13 @@ export function EventAddModal({
 }: EventAddModalProps) {
   const [eventType, setEventType] =
     useState<EventType>('public')
+
+  /*
+   * パブリックイベント検索後の画面を
+   * 表示するかどうか
+   */
+  const [showPublicRequest, setShowPublicRequest] =
+    useState(false)
 
   // ========================================
   // パブリックイベント
@@ -153,6 +161,10 @@ export function EventAddModal({
     }
   }
 
+  // ========================================
+  // 表示
+  // ========================================
+
   return (
     <Modal
       isOpen={isOpen}
@@ -163,369 +175,393 @@ export function EventAddModal({
       <div className="event-add-modal">
 
         {/* ========================================
-            イベント種類選択
+            パブリックイベント検索後の画面
             ======================================== */}
 
-        <div className="event-add-modal__type-selector">
-          <button
-            type="button"
-            className={`event-add-modal__type-button ${
-              eventType === 'public'
-                ? 'event-add-modal__type-button--selected'
-                : ''
-            }`}
-            onClick={() => setEventType('public')}
-          >
-            パブリックイベント
-          </button>
+        {showPublicRequest ? (
+          <PublicEventRequestPage />
+        ) : (
+          <>
+            {/* ========================================
+                イベント種類選択
+                ======================================== */}
 
-          <button
-            type="button"
-            className={`event-add-modal__type-button ${
-              eventType === 'private'
-                ? 'event-add-modal__type-button--selected'
-                : ''
-            }`}
-            onClick={() => setEventType('private')}
-          >
-            プライベート
-          </button>
-        </div>
-
-        {/* ========================================
-            パブリックイベント
-            ======================================== */}
-
-        <div className="event-add-modal__content">
-          {eventType === 'public' ? (
-            <div className="event-add-modal__questionnaire">
-
-              {/* イベント名 */}
-              <div className="event-add-modal__question">
-                <input
-                  id="public-event-name"
-                  type="text"
-                  className="event-add-modal__input"
-                  value={publicEventName}
-                  onChange={(e) =>
-                    setPublicEventName(
-                      e.target.value,
-                    )
-                  }
-                  onKeyDown={handleInputKeyDown}
-                  placeholder="イベント名(最大10文字)"
-                  maxLength={10}
-                  inputMode="text"
-                  enterKeyHint="done"
-                />
-              </div>
-
-              {/* 日付 */}
-              <div className="event-add-modal__question">
-                <label className="event-add-modal__label">
-                  日付
-                </label>
-
-                <div className="event-add-modal__date-inputs">
-                  {/* 開始日 */}
-                  <input
-                    id="public-event-start-date"
-                    type="date"
-                    className="event-add-modal__input"
-                    value={
-                      publicEventStartDate
-                    }
-                    onChange={(e) =>
-                      setPublicEventStartDate(
-                        e.target.value,
-                      )
-                    }
-                    aria-label="開始日"
-                  />
-
-                  {/* 終了日 */}
-                  <input
-                    id="public-event-end-date"
-                    type="date"
-                    className="event-add-modal__input"
-                    value={
-                      publicEventEndDate
-                    }
-                    onChange={(e) =>
-                      setPublicEventEndDate(
-                        e.target.value,
-                      )
-                    }
-                    aria-label="終了日"
-                  />
-                </div>
-
-                <p className="event-add-modal__date-note">
-                  ※一日の場合は開始日のみを入力してください
-                </p>
-              </div>
-
-              {/* 場所 */}
-              <div className="event-add-modal__question">
-                <label
-                  htmlFor="public-event-location"
-                  className="event-add-modal__label"
-                >
-                  場所
-                </label>
-
-                <input
-                  id="public-event-location"
-                  type="text"
-                  className="event-add-modal__input"
-                  value={publicEventLocation}
-                  onChange={(e) =>
-                    setPublicEventLocation(
-                      e.target.value,
-                    )
-                  }
-                  onKeyDown={handleInputKeyDown}
-                  placeholder="会場名などを入力"
-                  inputMode="text"
-                  enterKeyHint="done"
-                />
-              </div>
-
-              {/* カウントダウン */}
-              <div className="event-add-modal__question">
-                <p className="event-add-modal__countdown-label">
-                  ＞何日前からカウントダウン
-                  <br />
-                  &nbsp;&nbsp;を開始しますか？
-                </p>
-
-                <div
-                  className="event-add-modal__countdown-picker"
-                  onTouchStart={
-                    handleCountdownTouchStart
-                  }
-                  onTouchEnd={
-                    handleCountdownTouchEnd
-                  }
-                >
-                  <div className="event-add-modal__countdown-list">
-                    {countdownNumbers.map(
-                      (day) => {
-                        const distance =
-                          Math.abs(
-                            day -
-                              currentCountdownDays,
-                          )
-
-                        return (
-                          <div
-                            key={day}
-                            className={`event-add-modal__countdown-item ${
-                              day ===
-                              currentCountdownDays
-                                ? 'event-add-modal__countdown-item--selected'
-                                : ''
-                            }`}
-                            style={{
-                              opacity:
-                                distance === 0
-                                  ? 1
-                                  : distance === 1
-                                    ? 0.7
-                                    : distance === 2
-                                      ? 0.4
-                                      : 0.2,
-                            }}
-                          >
-                            {day}
-                          </div>
-                        )
-                      },
-                    )}
-                  </div>
-                </div>
-
-                <span className="event-add-modal__unit">
-                  日前
-                </span>
-              </div>
-
-              {/* 検索する */}
+            <div className="event-add-modal__type-selector">
               <button
                 type="button"
-                className="event-add-modal__submit-button"
+                className={`event-add-modal__type-button ${
+                  eventType === 'public'
+                    ? 'event-add-modal__type-button--selected'
+                    : ''
+                }`}
+                onClick={() => setEventType('public')}
               >
-                検索する
+                パブリックイベント
               </button>
-            </div>
-          ) : (
 
-            /* ========================================
-               プライベートイベント
-               ======================================== */
-
-            <div className="event-add-modal__questionnaire">
-
-              {/* イベント名 */}
-              <div className="event-add-modal__question">
-                <input
-                  id="private-event-name"
-                  type="text"
-                  className="event-add-modal__input"
-                  value={privateEventName}
-                  onChange={(e) =>
-                    setPrivateEventName(
-                      e.target.value,
-                    )
-                  }
-                  onKeyDown={handleInputKeyDown}
-                  placeholder="イベント名(最大10文字)"
-                  maxLength={10}
-                  inputMode="text"
-                  enterKeyHint="done"
-                />
-              </div>
-
-              {/* 日付 */}
-              <div className="event-add-modal__question">
-                <label className="event-add-modal__label">
-                  日付
-                </label>
-
-                <div className="event-add-modal__date-inputs">
-                  {/* 開始日 */}
-                  <input
-                    id="private-event-start-date"
-                    type="date"
-                    className="event-add-modal__input"
-                    value={
-                      privateEventStartDate
-                    }
-                    onChange={(e) =>
-                      setPrivateEventStartDate(
-                        e.target.value,
-                      )
-                    }
-                    aria-label="開始日"
-                  />
-
-                  {/* 終了日 */}
-                  <input
-                    id="private-event-end-date"
-                    type="date"
-                    className="event-add-modal__input"
-                    value={
-                      privateEventEndDate
-                    }
-                    onChange={(e) =>
-                      setPrivateEventEndDate(
-                        e.target.value,
-                      )
-                    }
-                    aria-label="終了日"
-                  />
-                </div>
-
-                <p className="event-add-modal__date-note">
-                  ※一日の場合は開始日のみを入力してください
-                </p>
-              </div>
-
-              {/* 場所 */}
-              <div className="event-add-modal__question">
-                <label
-                  htmlFor="private-event-location"
-                  className="event-add-modal__label"
-                >
-                  場所
-                </label>
-
-                <input
-                  id="private-event-location"
-                  type="text"
-                  className="event-add-modal__input"
-                  value={privateEventLocation}
-                  onChange={(e) =>
-                    setPrivateEventLocation(
-                      e.target.value,
-                    )
-                  }
-                  onKeyDown={handleInputKeyDown}
-                  placeholder="会場名などを入力"
-                  inputMode="text"
-                  enterKeyHint="done"
-                />
-              </div>
-
-              {/* カウントダウン */}
-              <div className="event-add-modal__question">
-                <p className="event-add-modal__countdown-label">
-                  ＞何日前からカウントダウン
-                  <br />
-                  &nbsp;&nbsp;を開始しますか？
-                </p>
-
-                <div
-                  className="event-add-modal__countdown-picker"
-                  onTouchStart={
-                    handleCountdownTouchStart
-                  }
-                  onTouchEnd={
-                    handleCountdownTouchEnd
-                  }
-                >
-                  <div className="event-add-modal__countdown-list">
-                    {countdownNumbers.map(
-                      (day) => {
-                        const distance =
-                          Math.abs(
-                            day -
-                              currentCountdownDays,
-                          )
-
-                        return (
-                          <div
-                            key={day}
-                            className={`event-add-modal__countdown-item ${
-                              day ===
-                              currentCountdownDays
-                                ? 'event-add-modal__countdown-item--selected'
-                                : ''
-                            }`}
-                            style={{
-                              opacity:
-                                distance === 0
-                                  ? 1
-                                  : distance === 1
-                                    ? 0.7
-                                    : distance === 2
-                                      ? 0.4
-                                      : 0.2,
-                            }}
-                          >
-                            {day}
-                          </div>
-                        )
-                      },
-                    )}
-                  </div>
-                </div>
-
-                <span className="event-add-modal__unit">
-                  日前
-                </span>
-              </div>
-
-              {/* 次に進む */}
               <button
                 type="button"
-                className="event-add-modal__submit-button"
+                className={`event-add-modal__type-button ${
+                  eventType === 'private'
+                    ? 'event-add-modal__type-button--selected'
+                    : ''
+                }`}
+                onClick={() => setEventType('private')}
               >
-                次に進む
+                プライベート
               </button>
             </div>
-          )}
-        </div>
+
+            {/* ========================================
+                アンケート
+                ======================================== */}
+
+            <div className="event-add-modal__content">
+
+              {/* ========================================
+                  パブリックイベント
+                  ======================================== */}
+
+              {eventType === 'public' ? (
+                <div className="event-add-modal__questionnaire">
+
+                  {/* イベント名 */}
+                  <div className="event-add-modal__question">
+                    <input
+                      id="public-event-name"
+                      type="text"
+                      className="event-add-modal__input"
+                      value={publicEventName}
+                      onChange={(e) =>
+                        setPublicEventName(
+                          e.target.value,
+                        )
+                      }
+                      onKeyDown={handleInputKeyDown}
+                      placeholder="イベント名(最大10文字)"
+                      maxLength={10}
+                      inputMode="text"
+                      enterKeyHint="done"
+                    />
+                  </div>
+
+                  {/* 日付 */}
+                  <div className="event-add-modal__question">
+                    <label className="event-add-modal__label">
+                      日付
+                    </label>
+
+                    <div className="event-add-modal__date-inputs">
+
+                      {/* 開始日 */}
+                      <input
+                        id="public-event-start-date"
+                        type="date"
+                        className="event-add-modal__input"
+                        value={
+                          publicEventStartDate
+                        }
+                        onChange={(e) =>
+                          setPublicEventStartDate(
+                            e.target.value,
+                          )
+                        }
+                        aria-label="開始日"
+                      />
+
+                      {/* 終了日 */}
+                      <input
+                        id="public-event-end-date"
+                        type="date"
+                        className="event-add-modal__input"
+                        value={
+                          publicEventEndDate
+                        }
+                        onChange={(e) =>
+                          setPublicEventEndDate(
+                            e.target.value,
+                          )
+                        }
+                        aria-label="終了日"
+                      />
+
+                    </div>
+
+                    <p className="event-add-modal__date-note">
+                      ※一日の場合は開始日のみを入力してください
+                    </p>
+                  </div>
+
+                  {/* 場所 */}
+                  <div className="event-add-modal__question">
+                    <label
+                      htmlFor="public-event-location"
+                      className="event-add-modal__label"
+                    >
+                      場所
+                    </label>
+
+                    <input
+                      id="public-event-location"
+                      type="text"
+                      className="event-add-modal__input"
+                      value={publicEventLocation}
+                      onChange={(e) =>
+                        setPublicEventLocation(
+                          e.target.value,
+                        )
+                      }
+                      onKeyDown={handleInputKeyDown}
+                      placeholder="会場名などを入力"
+                      inputMode="text"
+                      enterKeyHint="done"
+                    />
+                  </div>
+
+                  {/* カウントダウン */}
+                  <div className="event-add-modal__question">
+                    <p className="event-add-modal__countdown-label">
+                      ＞何日前からカウントダウン
+                      <br />
+                      &nbsp;&nbsp;を開始しますか？
+                    </p>
+
+                    <div
+                      className="event-add-modal__countdown-picker"
+                      onTouchStart={
+                        handleCountdownTouchStart
+                      }
+                      onTouchEnd={
+                        handleCountdownTouchEnd
+                      }
+                    >
+                      <div className="event-add-modal__countdown-list">
+                        {countdownNumbers.map(
+                          (day) => {
+                            const distance =
+                              Math.abs(
+                                day -
+                                  currentCountdownDays,
+                              )
+
+                            return (
+                              <div
+                                key={day}
+                                className={`event-add-modal__countdown-item ${
+                                  day ===
+                                  currentCountdownDays
+                                    ? 'event-add-modal__countdown-item--selected'
+                                    : ''
+                                }`}
+                                style={{
+                                  opacity:
+                                    distance === 0
+                                      ? 1
+                                      : distance === 1
+                                        ? 0.7
+                                        : distance === 2
+                                          ? 0.4
+                                          : 0.2,
+                                }}
+                              >
+                                {day}
+                              </div>
+                            )
+                          },
+                        )}
+                      </div>
+                    </div>
+
+                    <span className="event-add-modal__unit">
+                      日前
+                    </span>
+                  </div>
+
+                  {/* 検索する */}
+                  <button
+                    type="button"
+                    className="event-add-modal__submit-button"
+                    onClick={() =>
+                      setShowPublicRequest(true)
+                    }
+                  >
+                    検索する
+                  </button>
+
+                </div>
+              ) : (
+
+                /* ========================================
+                   プライベートイベント
+                   ======================================== */
+
+                <div className="event-add-modal__questionnaire">
+
+                  {/* イベント名 */}
+                  <div className="event-add-modal__question">
+                    <input
+                      id="private-event-name"
+                      type="text"
+                      className="event-add-modal__input"
+                      value={privateEventName}
+                      onChange={(e) =>
+                        setPrivateEventName(
+                          e.target.value,
+                        )
+                      }
+                      onKeyDown={handleInputKeyDown}
+                      placeholder="イベント名(最大10文字)"
+                      maxLength={10}
+                      inputMode="text"
+                      enterKeyHint="done"
+                    />
+                  </div>
+
+                  {/* 日付 */}
+                  <div className="event-add-modal__question">
+                    <label className="event-add-modal__label">
+                      日付
+                    </label>
+
+                    <div className="event-add-modal__date-inputs">
+
+                      {/* 開始日 */}
+                      <input
+                        id="private-event-start-date"
+                        type="date"
+                        className="event-add-modal__input"
+                        value={
+                          privateEventStartDate
+                        }
+                        onChange={(e) =>
+                          setPrivateEventStartDate(
+                            e.target.value,
+                          )
+                        }
+                        aria-label="開始日"
+                      />
+
+                      {/* 終了日 */}
+                      <input
+                        id="private-event-end-date"
+                        type="date"
+                        className="event-add-modal__input"
+                        value={
+                          privateEventEndDate
+                        }
+                        onChange={(e) =>
+                          setPrivateEventEndDate(
+                            e.target.value,
+                          )
+                        }
+                        aria-label="終了日"
+                      />
+
+                    </div>
+
+                    <p className="event-add-modal__date-note">
+                      ※一日の場合は開始日のみを入力してください
+                    </p>
+                  </div>
+
+                  {/* 場所 */}
+                  <div className="event-add-modal__question">
+                    <label
+                      htmlFor="private-event-location"
+                      className="event-add-modal__label"
+                    >
+                      場所
+                    </label>
+
+                    <input
+                      id="private-event-location"
+                      type="text"
+                      className="event-add-modal__input"
+                      value={privateEventLocation}
+                      onChange={(e) =>
+                        setPrivateEventLocation(
+                          e.target.value,
+                        )
+                      }
+                      onKeyDown={handleInputKeyDown}
+                      placeholder="会場名などを入力"
+                      inputMode="text"
+                      enterKeyHint="done"
+                    />
+                  </div>
+
+                  {/* カウントダウン */}
+                  <div className="event-add-modal__question">
+                    <p className="event-add-modal__countdown-label">
+                      ＞何日前からカウントダウン
+                      <br />
+                      &nbsp;&nbsp;を開始しますか？
+                    </p>
+
+                    <div
+                      className="event-add-modal__countdown-picker"
+                      onTouchStart={
+                        handleCountdownTouchStart
+                      }
+                      onTouchEnd={
+                        handleCountdownTouchEnd
+                      }
+                    >
+                      <div className="event-add-modal__countdown-list">
+                        {countdownNumbers.map(
+                          (day) => {
+                            const distance =
+                              Math.abs(
+                                day -
+                                  currentCountdownDays,
+                              )
+
+                            return (
+                              <div
+                                key={day}
+                                className={`event-add-modal__countdown-item ${
+                                  day ===
+                                  currentCountdownDays
+                                    ? 'event-add-modal__countdown-item--selected'
+                                    : ''
+                                }`}
+                                style={{
+                                  opacity:
+                                    distance === 0
+                                      ? 1
+                                      : distance === 1
+                                        ? 0.7
+                                        : distance === 2
+                                          ? 0.4
+                                          : 0.2,
+                                }}
+                              >
+                                {day}
+                              </div>
+                            )
+                          },
+                        )}
+                      </div>
+                    </div>
+
+                    <span className="event-add-modal__unit">
+                      日前
+                    </span>
+                  </div>
+
+                  {/* 次に進む */}
+                  <button
+                    type="button"
+                    className="event-add-modal__submit-button"
+                  >
+                    次に進む
+                  </button>
+
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   )
