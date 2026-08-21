@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '../../components/layout/Header'
 import { AdventCalendar } from './AdventCalendar'
 import { EventList } from './EventList'
@@ -7,6 +7,7 @@ import { MemoriesPage } from '../memories/MemoriesPage'
 type EventMainPageProps = {
   onOpenProfile?: () => void
   onOpenEventAdd?: () => void
+  onDetailOpenChange?: (isOpen: boolean) => void
 }
 
 type AdventTarget = {
@@ -18,9 +19,15 @@ type AdventTarget = {
 export function EventMainPage({
   onOpenProfile,
   onOpenEventAdd,
+  onDetailOpenChange,
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
+
+
+  useEffect(() => {
+  onDetailOpenChange?.(adventTarget !== null)
+}, [adventTarget, onDetailOpenChange])
 
   if (adventTarget !== null) {
     return (

@@ -1,4 +1,5 @@
 import type { AuthPhase } from '../../hooks/useAuth'
+import type { User } from '../../types/user'
 import { AuthPage } from './AuthPage'
 import { InitialSetup } from './InitialSetup'
 import { RegisterPage } from './RegisterPage'
@@ -11,6 +12,7 @@ type AuthFlowProps = {
   authView: AuthView
   setPhase: (phase: AuthPhase) => void
   setAuthView: (view: AuthView) => void
+  setUser: (user: User | null) => void
 }
 
 export function AuthFlow({
@@ -18,6 +20,7 @@ export function AuthFlow({
   authView,
   setPhase,
   setAuthView,
+  setUser,
 }: AuthFlowProps) {
   if (phase === 'splash') {
     return <SplashScreen onFinished={() => setPhase('auth')} />
@@ -26,7 +29,10 @@ export function AuthFlow({
   if (phase === 'auth' && authView === 'login') {
     return (
       <AuthPage
-        onAuthenticated={() => setPhase('app')}
+        onAuthenticated={(user) => {
+          setUser(user)
+          setPhase(user.isSetupComplete ? 'app' : 'setup')
+        }}
         onGoRegister={() => setAuthView('register')}
       />
     )
@@ -35,7 +41,10 @@ export function AuthFlow({
   if (phase === 'auth' && authView === 'register') {
     return (
       <RegisterPage
-        onRegistered={() => setPhase('setup')}
+        onRegistered={(user) => {
+          setUser(user)
+          setPhase('setup')
+        }}
         onGoLogin={() => setAuthView('login')}
       />
     )

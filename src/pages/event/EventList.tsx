@@ -9,7 +9,7 @@ type EventItem = {
 const events: EventItem[] = [
   {
     id: 1,
-    title: 'イベント1',
+    title: 'ライブ',
     color: '#FFD166',
   },
   {

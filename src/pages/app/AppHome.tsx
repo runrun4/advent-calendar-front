@@ -12,11 +12,13 @@ const TABS: AppTab[] = ['private', 'event']
 
 type AppHomeProps = {
   user: User | null
+  onLoggedOut: () => void
 }
 
-export function AppHome({ user }: AppHomeProps) {
+export function AppHome({ user, onLoggedOut }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
+  const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
   const {
     activeTab,
     currentIndex,
@@ -46,28 +48,33 @@ export function AppHome({ user }: AppHomeProps) {
             <EventMainPage
               onOpenProfile={() => setIsProfileOpen(true)}
               onOpenEventAdd={openEventAdd}
+              onDetailOpenChange={setIsEventDetailOpen}
             />
           </div>
         </div>
 
-        <div className="page-indicator" aria-label="ページ位置">
-          {TABS.map((tab) => (
-            <span
-              key={tab}
-              className={
-                activeTab === tab
-                  ? 'page-indicator__dot is-active'
-                  : 'page-indicator__dot'
-              }
-            />
-          ))}
-        </div>
+        {(activeTab === 'private' ||
+          (activeTab === 'event' && !isEventDetailOpen)) && (
+            <div className="page-indicator" aria-label="ページ位置">
+              {TABS.map((tab) => (
+                <span
+                  key={tab}
+                  className={
+                    activeTab === tab
+                      ? 'page-indicator__dot is-active'
+                      : 'page-indicator__dot'
+                  }
+                />
+              ))}
+            </div>
+          )}
       </main>
 
       <ProfileModal
         isOpen={isProfileOpen}
         user={user}
         onClose={() => setIsProfileOpen(false)}
+        onLoggedOut={onLoggedOut}
       />
 
       <EventAddModal
