@@ -19,13 +19,17 @@ export function AppHome({ user, onLoggedOut }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
-  const {
-    activeTab,
-    currentIndex,
-    dragOffset,
-    isDragging,
-    pointerHandlers,
-  } = usePageSwipe(TABS, 'event')
+const {
+  activeTab,
+  currentIndex,
+  dragOffset,
+  isDragging,
+  pointerHandlers,
+} = usePageSwipe(
+  TABS,
+  'private',
+  isEventDetailOpen,
+)
 
   const openEventAdd = () => setIsEventAddOpen(true)
 
