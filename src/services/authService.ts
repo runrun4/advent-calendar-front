@@ -75,9 +75,12 @@ export async function logout(): Promise<void> {
 }
 
 /** 個人情報（初回セットアップ）完了をユーザーメタデータに保存 */
-export async function completeInitialSetup(): Promise<User> {
+export async function completeInitialSetup(
+  displayName: string,
+): Promise<User> {
   const { data, error } = await supabase.auth.updateUser({
     data: {
+      display_name: displayName,
       is_setup_complete: true,
     },
   })

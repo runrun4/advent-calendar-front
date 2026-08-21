@@ -63,20 +63,16 @@ export function AuthFlow({
   if (phase === 'setup') {
     return (
       <InitialSetup
-        onComplete={() => {
+        onComplete={(nickname) => {
           void (async () => {
             try {
-              const updated = await completeInitialSetup()
+              const updated = await completeInitialSetup(nickname)
               setUser(updated)
             } catch {
               // メタデータ更新に失敗してもイベント画面へは進める
             }
             setPhase('app')
           })()
-        }}
-        onBack={() => {
-          setAuthView('register')
-          setPhase('auth')
         }}
       />
     )

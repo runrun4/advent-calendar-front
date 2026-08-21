@@ -47,9 +47,17 @@ html:has(.app-shell) #root {
   color-scheme: light;
 }
 
-body:has(.auth-page) {
+body:has(.auth-page),
+body:has(.initial-setup) {
   overflow: hidden;
   background: #fff;
+}
+
+html:has(.initial-setup),
+html:has(.initial-setup) body,
+html:has(.initial-setup) #root {
+  background: #fff;
+  color-scheme: light;
 }
 
 button,
