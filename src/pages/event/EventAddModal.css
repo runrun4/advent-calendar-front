@@ -78,7 +78,7 @@
   border-radius: 0;
   background-color: transparent;
   color: #333;
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.2s ease;
 }
@@ -89,6 +89,7 @@
 
 .event-add-modal__input::placeholder {
   color: #999;
+  font-size: 16px;
 }
 
 /* ========================================
