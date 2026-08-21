@@ -37,28 +37,20 @@ export function usePageSwipe<T extends string>(
     setDragOffset(0)
   }
 
-  const onPointerDown = (event: PointerEvent<HTMLElement>) => {
-    // 詳細画面を開いている場合はスワイプ開始しない
-    if (disabled) return
+const onPointerDown = (event: PointerEvent<HTMLElement>) => {
+  // 詳細画面を開いている場合はスワイプ開始しない
+  if (disabled) return
 
-    if (event.pointerType === 'mouse' && event.button !== 0) return
+  if (event.pointerType === 'mouse' && event.button !== 0) return
 
-    if (
-      (event.target as HTMLElement).closest(
-        'button, a, input, textarea',
-      )
-    ) {
-      return
-    }
-
-    pointerStart.current = {
-      x: event.clientX,
-      y: event.clientY,
-      id: event.pointerId,
-    }
-
-    gestureAxis.current = 'pending'
+  pointerStart.current = {
+    x: event.clientX,
+    y: event.clientY,
+    id: event.pointerId,
   }
+
+  gestureAxis.current = 'pending'
+}
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     // 詳細画面を開いている場合は処理しない
