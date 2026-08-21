@@ -35,8 +35,8 @@ export function EventMainPage({
       <Header onOpenProfile={onOpenProfile} />
 
       <main className="event-main__content">
-        <section className="event-main__section event-main__section--events">
-          <div className="event-main__scroll-area">
+        <div className="event-main__scroll-area">
+          <section className="event-main__section event-main__section--events">
             <EventList
               onOpenEventAdd={onOpenEventAdd}
               onSelectEvent={(event) =>
@@ -47,15 +47,13 @@ export function EventMainPage({
                 })
               }
             />
-          </div>
-        </section>
+          </section>
 
-        <section className="event-main__section event-main__section--memories">
-          <h2 className="page-title event-main__section-title">
-            Reflection
-          </h2>
+          <section className="event-main__section event-main__section--memories">
+            <h2 className="page-title event-main__section-title">
+              Reflection
+            </h2>
 
-          <div className="event-main__scroll-area">
             <MemoriesPage
               onSelectMemory={(memory) =>
                 setAdventTarget({
@@ -65,8 +63,8 @@ export function EventMainPage({
                 })
               }
             />
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
     </div>
   )

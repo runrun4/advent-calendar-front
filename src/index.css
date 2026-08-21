@@ -26,22 +26,24 @@
 html,
 body,
 #root {
+  width: 100%;
   height: 100%;
-  min-height: 100svh;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: 100lvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
 body {
   margin: 0;
-  min-height: 100svh;
   background: #000;
 }
 
 html:has(.app-shell),
 html:has(.app-shell) body,
 html:has(.app-shell) #root {
-  background: #b7e8a7;
+  background: #fff;
   color-scheme: light;
 }
 
@@ -127,18 +129,27 @@ input {
 
 .app-shell {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 
   display: flex;
   flex-direction: column;
 
   width: 100%;
-  height: 100dvh;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: 100lvh;
+
+  margin: 0;
+  padding: 0;
 
   overflow: hidden;
   overscroll-behavior: none;
 
-  background: #b7e8a7;
+  background: #fff;
 }
 
 .app-shell__top {
@@ -158,11 +169,17 @@ input {
 .app-shell__main {
   position: relative;
 
-  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 
+  flex: 1 1 0;
   min-height: 0;
 
   width: 100%;
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
 
   overflow: hidden;
   overscroll-behavior: none;
@@ -172,7 +189,7 @@ input {
    * pan-x だと子の pan-y と交差して none になり、
    * 縦横が同時に反応する。
    */
-  touch-action: none;
+  touch-action: pan-y;
 
   background: #fff;
 }
@@ -282,6 +299,9 @@ input {
   min-width: 0;
   min-height: 0;
 
+  margin: 0;
+  padding: 0;
+
   overflow: hidden;
 
   background: #fff;
@@ -289,18 +309,19 @@ input {
 }
 
 .event-main__content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
 
-  grid-template-rows: 1.5fr 1fr;
-
-  flex: 1 1 auto;
+  flex: 1 1 0;
 
   width: 100%;
+  height: 100%;
 
   min-width: 0;
   min-height: 0;
 
-  padding-bottom: 3rem;
+  margin: 0;
+  padding: 0;
 
   overflow: hidden;
 
@@ -316,10 +337,15 @@ input {
 
   flex-direction: column;
 
+  flex-shrink: 0;
+
   min-width: 0;
-  min-height: 0;
 
   background: #fff;
+}
+
+.event-main__section--memories {
+  flex-shrink: 0;
 }
 
 /* =========================
@@ -403,7 +429,7 @@ input {
   height: 83svh;
   max-height: 83svh;
 
-  padding: 0.5rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.5rem 1.25rem 1rem;
 
   border: 0;
   border-radius: 1rem 1rem 0 0;
@@ -498,7 +524,7 @@ input {
   position: absolute;
 
   left: 50%;
-  bottom: 0.75rem;
+  bottom: 1.25rem;
 
   transform: translateX(-50%);
 
@@ -507,6 +533,8 @@ input {
   align-items: center;
 
   gap: 0.7rem;
+
+  padding-bottom: 0;
 
   z-index: 5;
 
@@ -532,11 +560,16 @@ input {
 
 .page-slider {
   display: flex;
+  align-items: stretch;
+
+  flex: 1 1 0;
+  min-height: 0;
 
   width: 200%;
   height: 100%;
 
-  min-height: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .page-slider__page {
@@ -560,8 +593,7 @@ input {
 
   grid-template-rows:
     minmax(0, 1fr)
-    5rem
-    2rem;
+    5rem;
 
   width: 100%;
   height: 100%;
@@ -894,7 +926,6 @@ input {
 
   width: 100%;
   height: 5rem;
-
   min-height: 5rem;
 
   padding: 0 1rem;
@@ -939,21 +970,6 @@ input {
 }
 
 /* =========================
-   Bottom Area
-========================= */
-
-.private-calendar-page-bottom {
-  grid-row: 3;
-
-  width: 100%;
-
-  height: 2rem;
-  min-height: 2rem;
-
-  background: #fff;
-}
-
-/* =========================
    Scroll Area
 ========================= */
 
@@ -967,6 +983,8 @@ input {
   overflow-x: hidden;
 
   overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 
   background: #fff;
 }
@@ -1123,7 +1141,8 @@ input {
 
   gap: 0.75rem;
 
-  padding: 0.75rem 1rem 1.5rem;
+  margin: 0;
+  padding: 0.75rem 1rem 0;
 }
 
 .memories-list__item {
