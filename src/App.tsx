@@ -23,7 +23,16 @@ function App() {
     )
   }
 
-  return <AppHome user={user} />
+  return (
+    <AppHome
+      user={user}
+      onLoggedOut={() => {
+        setUser(null)
+        setAuthView('login')
+        setPhase('auth')
+      }}
+    />
+  )
 }
 
 export default App

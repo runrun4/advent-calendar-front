@@ -1,0 +1,59 @@
+.profile-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-modal__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-modal__name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.profile-modal__email {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.profile-modal__empty {
+  margin: 0;
+  color: #555;
+}
+
+.profile-modal__error {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #b00020;
+  font-size: 0.875rem;
+}
+
+.profile-modal__logout {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e53935;
+  border-radius: 8px;
+  background: #fff;
+  color: #e53935;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-modal__logout:hover {
+  background: #fff5f5;
+}
+
+.profile-modal__logout:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { User } from '../types/user'
 import {
   getCurrentUser,
@@ -55,13 +56,15 @@ export function useAuth() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        setUser(null)
-        return
-      }
-      setUser(mapUser(session.user))
-    })
+    } = supabase.auth.onAuthStateChange(
+      (_event: AuthChangeEvent, session: Session | null) => {
+        if (!session?.user) {
+          setUser(null)
+          return
+        }
+        setUser(mapUser(session.user))
+      },
+    )
 
     return () => {
       cancelled = true

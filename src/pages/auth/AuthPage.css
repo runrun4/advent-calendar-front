@@ -79,6 +79,21 @@
   background: #f5fff2;
 }
 
+.auth-page__secondary {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--auth-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--auth-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-page__secondary:hover {
+  border-color: #000;
+}
+
 .auth-page__link {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -119,6 +134,7 @@
 }
 
 .auth-page__submit:disabled,
+.auth-page__secondary:disabled,
 .auth-page__link:disabled {
   opacity: 0.55;
   cursor: not-allowed;
