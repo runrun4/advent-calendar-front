@@ -1,13 +1,12 @@
 type HeaderProps = {
+  title?: string
   onOpenProfile?: () => void
 }
 
-export function Header({ onOpenProfile }: HeaderProps) {
+export function Header({ title = 'タイトル', onOpenProfile }: HeaderProps) {
   return (
     <header className="app-header">
-      <h1 className="page-title app-header__title">
-  EVENT
-</h1>
+      <h1 className="page-title app-header__title">{title}</h1>
 
       <button
         type="button"

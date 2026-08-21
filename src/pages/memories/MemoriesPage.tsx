@@ -27,6 +27,11 @@ const memories: MemoryItem[] = [
     title: '思い出4',
     color: '#F9C7BE',
   },
+  {
+    id: 5,
+    title: '思い出5',
+    color: '#FFD6A5',
+  },
 ]
 
 type MemoriesPageProps = {
@@ -61,14 +66,6 @@ export function MemoriesPage({ onSelectMemory }: MemoriesPageProps) {
           </button>
         )
       })}
-
-      <button
-        type="button"
-        className="memories-list__add-button"
-        aria-label="思い出を追加"
-      >
-        ＋
-      </button>
     </div>
   )
 }

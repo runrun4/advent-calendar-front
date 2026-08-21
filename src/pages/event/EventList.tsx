@@ -27,6 +27,11 @@ const events: EventItem[] = [
     title: 'イベント4',
     color: '#B5EAD7',
   },
+  {
+    id: 5,
+    title: 'イベント5',
+    color: '#CDB4DB',
+  },
 ]
 
 type EventListProps = {
