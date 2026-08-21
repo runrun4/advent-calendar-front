@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  ChevronLeft,
+  Settings,
+  MessageCircle,
+  Gift,
+} from 'lucide-react'
 import './AdventCalendar.css'
 
 type AdventCalendarProps = {
@@ -10,174 +16,268 @@ export const AdventCalendar = ({
   title,
   onBack,
 }: AdventCalendarProps) => {
+  // 現在解放されている日数
   const unlockedDays = 8
+
+  // 縦6 × 横5のマスを作成
   const cells = Array.from({ length: 30 })
 
-  const EVENT_NAME_MAX_LENGTH = 10
-  const TITLE_SHRINK_MIN_LENGTH = 8
+  /*
+   * ==========================================
+   * タイトル設定
+   * ==========================================
+   */
 
-  const eventTitle = [...title]
-    .slice(0, EVENT_NAME_MAX_LENGTH)
-    .join('')
+  // 標準フォントサイズ
+  const DEFAULT_TITLE_FONT_SIZE = 45
 
+  // タイトルの現在のフォントサイズ
   const [titleFontSize, setTitleFontSize] =
-    useState<number | null>(null)
+    useState(DEFAULT_TITLE_FONT_SIZE)
 
+  // タイトル要素
   const titleRef =
     useRef<HTMLHeadingElement>(null)
 
+  // アドベント枠
   const calendarGridRef =
     useRef<HTMLDivElement>(null)
 
+  /*
+   * ==========================================
+   * タイトルサイズ自動調整
+   * ==========================================
+   */
+
   useEffect(() => {
-    const titleEl = titleRef.current
+    const titleElement = titleRef.current
     const calendar = calendarGridRef.current
 
-    if (!titleEl || !calendar) return
-
-    const getDefaultFontSize = () => {
-      const previous = titleEl.style.fontSize
-      titleEl.style.fontSize = ''
-      const size = parseFloat(
-        window.getComputedStyle(titleEl).fontSize
-      )
-      titleEl.style.fontSize = previous
-      return size
-    }
-
-    const measureTextWidth = (text: string, fontSize: number) => {
-      const computedStyle = window.getComputedStyle(titleEl)
-      const probe = document.createElement('span')
-
-      probe.textContent = text
-      probe.style.cssText = [
-        'position:absolute',
-        'visibility:hidden',
-        'white-space:nowrap',
-        `font-weight:${computedStyle.fontWeight}`,
-        `font-size:${fontSize}px`,
-        `font-family:${computedStyle.fontFamily}`,
-        `letter-spacing:${computedStyle.letterSpacing}`,
-      ].join(';')
-
-      document.body.appendChild(probe)
-      const width = probe.getBoundingClientRect().width
-      probe.remove()
-
-      return width
-    }
+    if (!titleElement || !calendar) return
 
     const adjustTitleSize = () => {
-      const maxWidth = calendar.getBoundingClientRect().width
-      const charCount = [...eventTitle].length
-      const defaultFontSize = getDefaultFontSize()
+      // アドベント枠の横幅
+      const maxWidth =
+        calendar.getBoundingClientRect().width
 
-      if (charCount < TITLE_SHRINK_MIN_LENGTH) {
-        setTitleFontSize(null)
-        return
-      }
+      // タイトル文字列
+      const text = titleElement.textContent ?? ''
 
-      const textWidth = measureTextWidth(eventTitle, defaultFontSize)
+      // Canvasを使って45px時の文字幅を測定
+      const canvas =
+        document.createElement('canvas')
 
+      const context =
+        canvas.getContext('2d')
+
+      if (!context) return
+
+      // 現在のタイトルと同じフォントを使用
+      const computedStyle =
+        window.getComputedStyle(titleElement)
+
+      context.font =
+        `${computedStyle.fontWeight} ${DEFAULT_TITLE_FONT_SIZE}px ${computedStyle.fontFamily}`
+
+      const textWidth =
+        context.measureText(text).width
+
+      /*
+       * 45pxのままで枠に収まる場合
+       */
       if (textWidth <= maxWidth) {
-        setTitleFontSize(null)
+        setTitleFontSize(
+          DEFAULT_TITLE_FONT_SIZE
+        )
+
         return
       }
 
+      /*
+       * 枠を超えた場合だけ縮小
+       */
+      const calculatedFontSize =
+        DEFAULT_TITLE_FONT_SIZE *
+        (maxWidth / textWidth)
+
+      // 少し余裕を持たせる
+      const newFontSize =
+        calculatedFontSize - 0.5
+
+      // 最低20px
       setTitleFontSize(
-        Math.max(20, defaultFontSize * (maxWidth / textWidth))
+        Math.max(20, newFontSize)
       )
     }
 
-    let cancelled = false
-    const fontsReady = document.fonts?.ready ?? Promise.resolve()
+    // 初回
+    adjustTitleSize()
 
-    const start = async () => {
-      await fontsReady
-      if (cancelled) return
-      adjustTitleSize()
-    }
+    // 画面サイズ変更
+    window.addEventListener(
+      'resize',
+      adjustTitleSize
+    )
 
-    void start()
+    // アドベント枠のサイズ変更
+    const resizeObserver =
+      new ResizeObserver(adjustTitleSize)
 
-    window.addEventListener('resize', adjustTitleSize)
-
-    const resizeObserver = new ResizeObserver(adjustTitleSize)
     resizeObserver.observe(calendar)
 
     return () => {
-      cancelled = true
-      window.removeEventListener('resize', adjustTitleSize)
+      window.removeEventListener(
+        'resize',
+        adjustTitleSize
+      )
+
       resizeObserver.disconnect()
     }
-  }, [eventTitle])
+  }, [])
 
   return (
     <div className="advent-calendar">
+
+      {/* =========================
+          左上：戻るボタン
+          ========================= */}
+
       <button
-        className="advent-calendar__icon-button advent-calendar__back-button"
         type="button"
+        className="
+          advent-calendar__icon-button
+          advent-calendar__back-button
+        "
         onClick={onBack}
+        aria-label="戻る"
       >
-        <span className="advent-calendar__icon">←</span>
+        <ChevronLeft
+          className="advent-calendar__icon icon-color"
+          size={28}
+          strokeWidth={2}
+        />
       </button>
 
+
+      {/* =========================
+          右上：設定・チャット
+          ========================= */}
+
       <div className="advent-calendar__top-buttons">
-        <button className="advent-calendar__icon-button" type="button">
-          <span className="advent-calendar__icon">⚙</span>
+
+        {/* 設定 */}
+        <button
+          type="button"
+          className="advent-calendar__icon-button"
+          aria-label="設定"
+        >
+          <Settings
+            className="advent-calendar__icon icon-color"
+            size={24}
+            strokeWidth={2}
+          />
         </button>
-        <button className="advent-calendar__icon-button" type="button">
-          <span className="advent-calendar__icon">💬</span>
+
+        {/* チャット */}
+        <button
+          type="button"
+          className="advent-calendar__icon-button"
+          aria-label="チャット"
+        >
+          <MessageCircle
+            className="advent-calendar__icon icon-color"
+            size={24}
+            strokeWidth={2}
+          />
         </button>
+
       </div>
 
+
+      {/* =========================
+          イベント情報
+          ========================= */}
+
       <div className="advent-calendar__event-info">
-        <p className="advent-calendar__event-date">8/30</p>
+
+        {/* 日付 */}
+        <p className="advent-calendar__event-date">
+          8/30
+        </p>
+
+        {/* 題名 */}
         <h1
           ref={titleRef}
           className="advent-calendar__event-title"
-          style={
-            titleFontSize != null
-              ? { fontSize: `${titleFontSize}px` }
-              : undefined
-          }
+          style={{
+            fontSize: `${titleFontSize}px`,
+          }}
         >
-          {eventTitle}
+          {title}
         </h1>
+
       </div>
 
-      <div className="advent-calendar__calendar-area">
-        <div className="advent-calendar__calendar-wrapper">
-          <div ref={calendarGridRef} className="advent-calendar__grid">
-            {cells.map((_, index) => {
-              const day = index + 1
-              const isUnlocked = day <= unlockedDays
 
-              return (
-                <div
-                  className={`advent-calendar__cell ${
-                    isUnlocked
-                      ? 'advent-calendar__cell--unlocked'
-                      : 'advent-calendar__cell--locked'
-                  }`}
-                  key={day}
-                />
-              )
-            })}
-          </div>
+      {/* =========================
+          アドベントカレンダー
+          ========================= */}
 
-          <div className="advent-calendar__progress">
-            {unlockedDays} / {cells.length}
-          </div>
+      <div
+        className="advent-calendar__calendar-wrapper"
+      >
+        <div
+          ref={calendarGridRef}
+          className="advent-calendar__grid"
+        >
+
+          {cells.map((_, index) => {
+            const day = index + 1
+
+            const isUnlocked =
+              day <= unlockedDays
+
+            return (
+              <div
+                className={`advent-calendar__cell ${
+                  isUnlocked
+                    ? 'advent-calendar__cell--unlocked'
+                    : 'advent-calendar__cell--locked'
+                }`}
+                key={day}
+              />
+            )
+          })}
+
         </div>
+
+        {/* 解放数 */}
+        <div className="advent-calendar__progress">
+          {unlockedDays} / {cells.length} opened
+        </div>
+
       </div>
+
+
+      {/* =========================
+          右下：獲得アイテム一覧
+          ========================= */}
 
       <button
-        className="advent-calendar__icon-button advent-calendar__collection-button"
         type="button"
+        className="
+          advent-calendar__icon-button
+          advent-calendar__collection-button
+        "
+        aria-label="獲得アイテム一覧"
       >
-        <span className="advent-calendar__icon">🎁</span>
+        <Gift
+          className="advent-calendar__icon icon-color"
+          size={24}
+          strokeWidth={2}
+        />
       </button>
+
     </div>
   )
 }
