@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&amp;display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #05081a; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', system-ui, sans-serif; }
+  a { color: #ffd98a; } a:hover { color: #ffe7b0; }
+  button { font-family: inherit; }
+  @keyframes cc-tw { 0%, 100% { opacity: 1; } 50% { opacity: 0.22; } }
+  @keyframes cc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes cc-spin-r { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+  @keyframes cc-breathe { 0%, 100% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.07); opacity: 1; } }
+  @keyframes cc-ring { 0% { transform: scale(0.45); opacity: 0; } 18% { opacity: 0.7; } 100% { transform: scale(1.75); opacity: 0; } }
+  @keyframes cc-ignite { 0% { transform: scale(0.35); opacity: 0; } 45% { transform: scale(1.22); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes cc-rise { from { opacity: 0; transform: translateY(26px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes cc-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cc-banner { from { opacity: 0; transform: translateY(-8px); letter-spacing: 0.5em; } to { opacity: 1; transform: translateY(0); letter-spacing: 0.25em; } }
+  @keyframes cc-neb { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(14px, -18px, 0) scale(1.12); } }
+  @keyframes cc-neb2 { 0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); } 50% { transform: translate3d(-20px, 14px, 0) scale(0.95); } }
+  @keyframes cc-shoot { 0% { transform: translate3d(0, 0, 0) rotate(24deg); opacity: 0; } 2% { opacity: 0; } 4% { opacity: 1; } 12% { transform: translate3d(300px, 150px, 0) rotate(24deg); opacity: 0; } 100% { transform: translate3d(300px, 150px, 0) rotate(24deg); opacity: 0; } }
+  @keyframes cc-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes cc-bloom-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.018); } }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</helmet>
+<div style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: linear-gradient(180deg, #070b1e 0%, #0f1633 42%, #1a2349 78%, #202a55 100%); color: #e9edff; font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', system-ui, sans-serif; --star: {{ starColor }}">
+
+  <div style="position: absolute; inset: 0; pointer-events: none; overflow: hidden">
+    <div style="position: absolute; top: -80px; left: -60px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(120,150,255,0.16) 0%, rgba(120,150,255,0) 68%); filter: blur(14px); animation: cc-neb 26s ease-in-out infinite"></div>
+    <div style="position: absolute; bottom: -100px; right: -90px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(255,196,140,0.12) 0%, rgba(255,196,140,0) 66%); filter: blur(18px); animation: cc-neb2 34s ease-in-out infinite"></div>
+    <div style="position: absolute; top: 240px; left: 120px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(170,120,255,0.10) 0%, rgba(170,120,255,0) 70%); filter: blur(20px); animation: cc-neb 42s ease-in-out infinite 6s"></div>
+    <sc-for list="{{ shooters }}" as="sh" hint-placeholder-count="3">
+      <div style="position: absolute; top: {{ sh.top }}px; left: {{ sh.left }}px; width: 120px; height: 1.4px; border-radius: 1px; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,247,224,0.9) 72%, #ffffff 100%); opacity: 0; animation: cc-shoot {{ sh.dur }}s linear infinite {{ sh.delay }}s"></div>
+    </sc-for>
+  </div>
+
+  <button type="button" aria-label="戻る" style="position: absolute; top: 20px; left: 20px; z-index: 3; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,0.16); border-radius: 50%; background: rgba(255,255,255,0.08); color: #e9edff; cursor: pointer; backdrop-filter: blur(6px)" style-hover="background: rgba(255,255,255,0.16)">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+  </button>
+
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 3; display: flex; gap: 12px">
+    <button type="button" aria-label="設定" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,0.16); border-radius: 50%; background: rgba(255,255,255,0.08); color: #e9edff; cursor: pointer; backdrop-filter: blur(6px)" style-hover="background: rgba(255,255,255,0.16)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.4"></circle><line x1="18.4" y1="12" x2="21.2" y2="12"></line><line x1="16.5" y1="16.5" x2="18.5" y2="18.5"></line><line x1="12" y1="18.4" x2="12" y2="21.2"></line><line x1="7.5" y1="16.5" x2="5.5" y2="18.5"></line><line x1="5.6" y1="12" x2="2.8" y2="12"></line><line x1="7.5" y1="7.5" x2="5.5" y2="5.5"></line><line x1="12" y1="5.6" x2="12" y2="2.8"></line><line x1="16.5" y1="7.5" x2="18.5" y2="5.5"></line></svg>
+    </button>
+    <button type="button" aria-label="チャット" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,0.16); border-radius: 50%; background: rgba(255,255,255,0.08); color: #e9edff; cursor: pointer; backdrop-filter: blur(6px)" style-hover="background: rgba(255,255,255,0.16)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+    </button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 8px; padding-top: 80px; opacity: {{ chromeOpacity }}; transition: opacity 0.6s ease">
+    <p style="margin: 0; font-size: 15px; font-weight: 500; letter-spacing: 0.2em; line-height: 1; color: rgba(233,237,255,0.7)">{{ eventDate }}</p>
+    <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.2; text-align: center; color: #f2ecdb; text-shadow: 0 0 18px rgba(255,217,138,0.35), 0 0 46px rgba(255,217,138,0.14)">{{ eventTitle }}</h1>
+  </div>
+
+  <sc-for list="{{ banner }}" as="b" hint-placeholder-count="0">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; padding-top: 10px; animation: cc-banner 0.9s cubic-bezier(0.16,1,0.3,1) both">
+      <span style="font-size: 17px; font-weight: 700; letter-spacing: 0.25em; color: var(--star, #ffd98a); text-shadow: 0 0 22px rgba(255,217,138,0.5)">星座が完成</span>
+      <span style="font-size: 12px; letter-spacing: 0.2em; color: rgba(233,237,255,0.55)">{{ b.sub }}</span>
+    </div>
+  </sc-for>
+
+  <div ref="{{ fieldRef }}" onPointerDown="{{ onDown }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerCancel="{{ onUp }}" style="position: relative; flex: 1 1 auto; min-height: 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab">
+    <svg viewBox="0 0 390 640" style="display: block; width: 100%; height: 100%">
+      <defs>
+        <radialGradient id="cc-halo" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="var(--star, #ffd98a)" stop-opacity="0.4"></stop>
+          <stop offset="0.5" stop-color="var(--star, #ffd98a)" stop-opacity="0.11"></stop>
+          <stop offset="1" stop-color="var(--star, #ffd98a)" stop-opacity="0"></stop>
+        </radialGradient>
+        <radialGradient id="cc-bloom" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#fff7e0" stop-opacity="0.85"></stop>
+          <stop offset="0.4" stop-color="var(--star, #ffd98a)" stop-opacity="0.3"></stop>
+          <stop offset="1" stop-color="var(--star, #ffd98a)" stop-opacity="0"></stop>
+        </radialGradient>
+        <linearGradient id="cc-fog" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#05081a" stop-opacity="0"></stop>
+          <stop offset="1" stop-color="#05081a" stop-opacity="0.92"></stop>
+        </linearGradient>
+        <filter id="cc-soft" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter>
+      </defs>
+
+      <g transform="translate({{ px1 }} {{ py1 }})">
+        <sc-for list="{{ bgA }}" as="s" hint-placeholder-count="8">
+          <circle cx="{{ s.x }}" cy="{{ s.y }}" r="{{ s.r }}" fill="#ffffff" fill-opacity="{{ s.o }}" style="animation: cc-tw {{ s.dur }}s ease-in-out infinite {{ s.delay }}s"></circle>
+        </sc-for>
+      </g>
+      <g transform="translate({{ px2 }} {{ py2 }})">
+        <sc-for list="{{ bgB }}" as="s" hint-placeholder-count="8">
+          <circle cx="{{ s.x }}" cy="{{ s.y }}" r="{{ s.r }}" fill="#dfe6ff" fill-opacity="{{ s.o }}" style="animation: cc-tw {{ s.dur }}s ease-in-out infinite {{ s.delay }}s"></circle>
+        </sc-for>
+      </g>
+      <g transform="translate({{ px3 }} {{ py3 }})">
+        <sc-for list="{{ bgC }}" as="s" hint-placeholder-count="8">
+          <circle cx="{{ s.x }}" cy="{{ s.y }}" r="{{ s.r }}" fill="#fff4dc" fill-opacity="{{ s.o }}" style="animation: cc-tw {{ s.dur }}s ease-in-out infinite {{ s.delay }}s"></circle>
+        </sc-for>
+      </g>
+
+      <g style="animation: cc-drift 11s ease-in-out infinite">
+
+        <sc-for list="{{ ghostPath }}" as="g" hint-placeholder-count="0">
+          <polyline points="{{ g.points }}" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1" stroke-dasharray="1 5"></polyline>
+        </sc-for>
+
+        <sc-for list="{{ glowLines }}" as="l" hint-placeholder-count="0">
+          <line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="var(--star, #ffd98a)" stroke-opacity="0.22" stroke-width="{{ l.w }}" stroke-linecap="round" filter="url(#cc-soft)"></line>
+        </sc-for>
+        <sc-for list="{{ coreLines }}" as="l" hint-placeholder-count="0">
+          <line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="var(--star, #ffd98a)" stroke-opacity="0.85" stroke-width="{{ l.w }}" stroke-linecap="round"></line>
+        </sc-for>
+        <sc-for list="{{ dashLines }}" as="l" hint-placeholder-count="0">
+          <line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="var(--star, #ffd98a)" stroke-opacity="{{ l.o }}" stroke-width="{{ l.w }}" stroke-dasharray="{{ l.dash }}" stroke-linecap="round"></line>
+        </sc-for>
+
+        <sc-for list="{{ finaleChain }}" as="c" hint-placeholder-count="0">
+          <g>
+            <polyline points="{{ c.points }}" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.22" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#cc-soft)"></polyline>
+            <polyline points="{{ c.points }}" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </g>
+        </sc-for>
+        <sc-for list="{{ chainHead }}" as="h" hint-placeholder-count="0">
+          <g transform="translate({{ h.x }} {{ h.y }})">
+            <circle r="18" fill="url(#cc-bloom)"></circle>
+            <circle r="3.4" fill="#fff9ea"></circle>
+          </g>
+        </sc-for>
+
+        <g style="{{ travelStyle }}">
+          <sc-for list="{{ stars }}" as="st" hint-placeholder-count="1">
+            <g transform="translate({{ st.x }} {{ st.y }})">
+              <g style="transform-box: fill-box; transform-origin: center; animation: {{ st.anim }}">
+                <circle r="{{ st.halo }}" fill="url(#cc-halo)"></circle>
+                <g transform="scale({{ st.crossSc }})" opacity="{{ st.crossOp }}">
+                  <g style="transform-box: fill-box; transform-origin: center; animation: cc-spin 90s linear infinite">
+                    <path d="M 0 -102 L 4.5 0 L 0 102 L -4.5 0 Z" fill="var(--star, #ffd98a)"></path>
+                    <path d="M -102 0 L 0 4.5 L 102 0 L 0 -4.5 Z" fill="var(--star, #ffd98a)"></path>
+                  </g>
+                </g>
+                <path d="{{ st.d }}" fill="var(--star, #ffd98a)" style="transform-box: fill-box; transform-origin: center; animation: cc-breathe 4.4s ease-in-out infinite"></path>
+                <circle r="{{ st.core }}" fill="#ffffff" fill-opacity="0.94"></circle>
+              </g>
+            </g>
+          </sc-for>
+
+          <sc-for list="{{ chained }}" as="c" hint-placeholder-count="0">
+            <g transform="translate({{ c.x }} {{ c.y }})" opacity="{{ c.op }}">
+              <g transform="scale({{ c.sc }})">
+                <circle r="74" fill="url(#cc-halo)" opacity="{{ c.haloOp }}" style="transform-box: fill-box; transform-origin: center; animation: cc-breathe 5.2s ease-in-out infinite"></circle>
+                <path d="{{ c.d }}" fill="var(--star, #ffd98a)" fill-opacity="{{ c.coreOp }}"></path>
+                <circle r="2.6" fill="#ffffff" fill-opacity="{{ c.coreOp }}"></circle>
+              </g>
+            </g>
+          </sc-for>
+          <sc-for list="{{ chainArcs }}" as="c" hint-placeholder-count="0">
+            <g transform="{{ c.tf }}">
+              <g style="transform-origin: 0 0; animation: cc-spin 44s linear infinite">
+                <path d="{{ c.d }}" fill="none" stroke="#cfd8f5" stroke-opacity="{{ c.op }}" stroke-width="{{ c.w }}" stroke-linecap="round"></path>
+              </g>
+            </g>
+          </sc-for>
+          <sc-for list="{{ chainNodes }}" as="n" hint-placeholder-count="0">
+            <g transform="{{ n.tf }}">
+              <g style="transform-origin: 0 0; animation: cc-spin 44s linear infinite">
+                <circle cx="{{ n.lx }}" cy="{{ n.ly }}" r="{{ n.r }}" fill="#e6ecff" fill-opacity="{{ n.op }}"></circle>
+              </g>
+            </g>
+          </sc-for>
+          <sc-for list="{{ shards }}" as="sh" hint-placeholder-count="0">
+            <circle cx="{{ sh.x }}" cy="{{ sh.y }}" r="{{ sh.r }}" fill="#fff6de" opacity="{{ sh.op }}"></circle>
+          </sc-for>
+
+          <sc-for list="{{ openables }}" as="p" hint-placeholder-count="0">
+            <g transform="translate({{ p.x }} {{ p.y }})" opacity="{{ p.op }}">
+              <g transform="scale({{ p.sc }})">
+                <circle r="96" fill="url(#cc-halo)" style="transform-box: fill-box; transform-origin: center; animation: cc-breathe 3.6s ease-in-out infinite"></circle>
+                <circle r="62" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.5" stroke-width="1.4" style="transform-box: fill-box; transform-origin: center; animation: cc-ring 3.2s ease-out infinite"></circle>
+                <circle r="62" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.4" stroke-width="1.2" style="transform-box: fill-box; transform-origin: center; animation: cc-ring 3.2s ease-out infinite 1.6s"></circle>
+                <circle r="64" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.8" stroke-width="1.6" stroke-dasharray="5 8" style="transform-box: fill-box; transform-origin: center; animation: cc-spin 18s linear infinite"></circle>
+                <circle r="80" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="2 12" style="transform-box: fill-box; transform-origin: center; animation: cc-spin-r 30s linear infinite"></circle>
+                <path d="{{ p.d }}" fill="none" stroke="var(--star, #ffd98a)" stroke-opacity="0.42" stroke-width="1.4" style="transform-box: fill-box; transform-origin: center; animation: cc-breathe 2.8s ease-in-out infinite"></path>
+                <text y="108" text-anchor="middle" font-size="14" font-weight="500" fill="rgba(233,237,255,0.75)" opacity="{{ p.hintOp }}" style="animation: cc-tw 2.6s ease-in-out infinite">タップでひらく</text>
+              </g>
+            </g>
+          </sc-for>
+        </g>
+
+        <sc-for list="{{ finaleStars }}" as="s" hint-placeholder-count="0">
+          <g transform="translate({{ s.x }} {{ s.y }})" opacity="{{ s.op }}">
+            <g style="transform: scale({{ s.sc }})">
+              <circle r="13" fill="var(--star, #ffd98a)" fill-opacity="0.13"></circle>
+              <circle r="6" fill="var(--star, #ffd98a)" fill-opacity="0.3"></circle>
+              <path d="{{ s.d }}" fill="var(--star, #ffd98a)"></path>
+              <circle r="1.7" fill="#ffffff" fill-opacity="0.95"></circle>
+            </g>
+          </g>
+        </sc-for>
+
+        <sc-for list="{{ nextHint }}" as="n" hint-placeholder-count="0">
+          <g transform="translate({{ n.x }} {{ n.y }}) rotate({{ n.deg }})" opacity="0.6" style="animation: cc-tw 2.2s ease-in-out infinite">
+            <path d="M -5 -7 L 3 0 L -5 7" fill="none" stroke="var(--star, #ffd98a)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </g>
+        </sc-for>
+
+        <sc-for list="{{ backHint }}" as="n" hint-placeholder-count="0">
+          <g transform="translate({{ n.x }} {{ n.y }}) rotate({{ n.deg }})" opacity="0.35">
+            <path d="M -5 -7 L 3 0 L -5 7" fill="none" stroke="#e9edff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </g>
+        </sc-for>
+      </g>
+
+      <sc-for list="{{ fog }}" as="f" hint-placeholder-count="0">
+        <rect x="300" y="0" width="90" height="640" fill="url(#cc-fog)"></rect>
+      </sc-for>
+
+      <sc-for list="{{ bloom }}" as="b" hint-placeholder-count="0">
+        <circle cx="195" cy="320" r="{{ b.r }}" fill="url(#cc-bloom)" opacity="{{ b.op }}"></circle>
+      </sc-for>
+
+      <sc-for list="{{ travelLabel }}" as="t" hint-placeholder-count="0">
+        <text x="195" y="616" text-anchor="middle" font-size="12" letter-spacing="1" fill="rgba(233,237,255,0.6)" opacity="{{ t.op }}">線をたどって星へ</text>
+      </sc-for>
+    </svg>
+    <div style="position: absolute; inset: 0; pointer-events: none; z-index: 4">
+      <sc-for list="{{ labels }}" as="l" hint-placeholder-count="0">
+        <div style="position: absolute; left: {{ l.x }}px; top: {{ l.y }}px; transform: {{ l.tx }}; font-size: {{ l.fs }}px; font-weight: {{ l.fw }}; letter-spacing: {{ l.ls }}; line-height: 1; white-space: nowrap; color: {{ l.color }}; opacity: {{ l.op }}">{{ l.t }}</div>
+      </sc-for>
+    </div>
+    <sc-for list="{{ coopHud }}" as="h" hint-placeholder-count="0">
+      <div style="position: absolute; top: 12px; left: 0; right: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: none; animation: cc-fade 0.5s ease both">
+        <div style="display: flex; align-items: center; gap: 9px; padding: 6px 15px; border: 1px solid rgba(207,216,245,0.3); border-radius: 999px; background: rgba(10,16,40,0.55); backdrop-filter: blur(6px)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#cfd8f5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5"></circle><circle cx="16" cy="16" r="5"></circle></svg>
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; color: #cfd8f5">協力デイ</span>
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--star, #ffd98a)">{{ h.count }}</span>
+        </div>
+        <span style="font-size: 12px; letter-spacing: 0.06em; color: rgba(233,237,255,0.8)">{{ h.note }}</span>
+        <span style="font-size: 12px; letter-spacing: 0.08em; color: rgba(233,237,255,0.6)">{{ h.hint }}</span>
+      </div>
+    </sc-for>
+
+    <sc-for list="{{ coopCta }}" as="c" hint-placeholder-count="0">
+      <div style="position: absolute; left: 0; right: 0; bottom: 34px; z-index: 6; display: flex; justify-content: center; pointer-events: none">
+      <button type="button" onClick="{{ onRelease }}" style="pointer-events: auto; display: flex; align-items: center; gap: 9px; padding: 13px 34px; border: none; border-radius: 999px; background: linear-gradient(180deg, #ffe7b0, var(--star, #ffd98a)); color: #1c264d; font-size: 14px; font-weight: 700; letter-spacing: 0.14em; cursor: pointer; box-shadow: 0 8px 30px rgba(255,217,138,0.4); animation: cc-rise 0.5s cubic-bezier(0.16,1,0.3,1) both" style-hover="filter: brightness(1.06)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V7a5 5 0 0 1 9.9-1"></path><rect x="3" y="11" width="18" height="10" rx="2"></rect></svg>
+        <span>鎖を解放する</span>
+      </button>
+      </div>
+    </sc-for>
+
+    <sc-for list="{{ coopPanel }}" as="p" hint-placeholder-count="0">
+      <div onClick="{{ onClosePanel }}" style="position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: rgba(6,10,28,0.6); backdrop-filter: blur(6px); animation: cc-fade 0.2s ease both">
+        <div style="display: flex; flex-direction: column; gap: 12px; width: 264px; padding: 20px 20px 18px; border: 1px solid rgba(207,216,245,0.28); border-radius: 18px; background: linear-gradient(165deg, rgba(24,34,68,0.96), rgba(14,20,44,0.96)); box-shadow: 0 16px 50px rgba(0,0,0,0.45); animation: cc-rise 0.34s cubic-bezier(0.16,1,0.3,1) both">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <p style="flex: 1 1 auto; margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: rgba(233,237,255,0.6)">{{ p.head }}</p>
+            <button type="button" onClick="{{ onClosePanel }}" aria-label="とじる" style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin: -4px -6px -4px 0; padding: 0; border: none; border-radius: 50%; background: transparent; color: rgba(233,237,255,0.7); cursor: pointer" style-hover="background: rgba(255,255,255,0.08)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <sc-for list="{{ panelRows }}" as="r" hint-placeholder-count="6">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid rgba(255,255,255,0.05)">
+                <span style="width: 14px; font-size: 13px; font-weight: 700; color: {{ r.color }}">{{ r.mark }}</span>
+                <span style="flex: 1 1 auto; font-size: 14px; color: #e9edff">{{ r.name }}</span>
+                <span style="font-size: 11px; letter-spacing: 0.06em; color: {{ r.color }}">{{ r.note }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+
+    <sc-for list="{{ notice }}" as="n" hint-placeholder-count="0">
+      <div onClick="{{ onCloseNotice }}" style="position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: rgba(6,10,28,0.6); backdrop-filter: blur(7px); animation: cc-fade 0.24s ease both">
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 13px; width: 300px; padding: 28px 24px 24px; border: 1px solid rgba(207,216,245,0.3); border-radius: 20px; background: linear-gradient(165deg, rgba(24,34,68,0.96), rgba(14,20,44,0.96)); box-shadow: 0 16px 52px rgba(0,0,0,0.45); animation: cc-rise 0.4s cubic-bezier(0.16,1,0.3,1) both">
+          <button type="button" onClick="{{ onCloseNotice }}" aria-label="とじる" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 50%; background: transparent; color: rgba(233,237,255,0.7); cursor: pointer" style-hover="background: rgba(255,255,255,0.08)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+          </button>
+          <p style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.26em; color: #cfd8f5">協力デイ</p>
+          <svg width="46" height="46" viewBox="-14 -14 28 28" style="display: block">
+            <circle r="12" fill="none" stroke="#cfd8f5" stroke-opacity="0.45" stroke-width="1.6" stroke-dasharray="7 6" style="transform-origin: 0 0; animation: cc-spin 22s linear infinite"></circle>
+            <path d="M 0 -7 C 1.40 -1.4 1.40 -1.4 7 0 C 1.40 1.40 1.40 1.40 0 7 C -1.4 1.40 -1.4 1.40 -7 0 C -1.4 -1.4 -1.4 -1.4 0 -7 Z" fill="var(--star, #ffd98a)"></path>
+          </svg>
+          <h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.05em; text-align: center; color: #f2ecdb">あなたの分を書きました</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.75; text-align: center; text-wrap: pretty; color: rgba(233,237,255,0.85)">{{ n.body }}</p>
+          <button type="button" onClick="{{ onCloseNotice }}" style="margin-top: 4px; padding: 12px 40px; border: none; border-radius: 999px; background: linear-gradient(180deg, #ffe7b0, var(--star, #ffd98a)); color: #1c264d; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; box-shadow: 0 6px 22px rgba(255,217,138,0.28)">{{ n.cta }}</button>
+        </div>
+      </div>
+    </sc-for>
+
+    <canvas ref="{{ canvasRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5"></canvas>
+  </div>
+
+  <div style="display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 14px; padding: 4px 26px 44px; opacity: {{ chromeOpacity }}; transition: opacity 0.6s ease">
+    <div style="flex: 1 1 auto; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1); overflow: hidden">
+      <div style="height: 100%; width: {{ progressPct }}; border-radius: 2px; background: linear-gradient(90deg, rgba(255,217,138,0.4), var(--star, #ffd98a)); box-shadow: 0 0 10px rgba(255,217,138,0.6); transition: width 0.6s cubic-bezier(0.16,1,0.3,1)"></div>
+    </div>
+    <span style="font-size: 14px; font-weight: 600; letter-spacing: 0.06em; color: rgba(233,237,255,0.6); white-space: nowrap">{{ opened }} / 30 opened</span>
+  </div>
+
+  <button type="button" aria-label="獲得アイテム一覧" style="position: absolute; right: 24px; bottom: 56px; z-index: 3; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,0.16); border-radius: 50%; background: rgba(255,255,255,0.08); color: #e9edff; cursor: pointer; backdrop-filter: blur(6px)" style-hover="background: rgba(255,255,255,0.16)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></svg>
+  </button>
+
+  <sc-for list="{{ finaleExit }}" as="e" hint-placeholder-count="0">
+    <button type="button" onClick="{{ onExitFinale }}" style="position: absolute; left: 50%; bottom: 96px; z-index: 6; transform: translateX(-50%); padding: 11px 34px; border: 1px solid rgba(255,217,138,0.45); border-radius: 999px; background: rgba(10,16,40,0.6); color: var(--star, #ffd98a); font-size: 13px; font-weight: 700; letter-spacing: 0.16em; cursor: pointer; backdrop-filter: blur(8px); animation: cc-fade 0.8s ease both" style-hover="background: rgba(255,217,138,0.14)">星空にもどる</button>
+  </sc-for>
+
+  <sc-for list="{{ card }}" as="c" hint-placeholder-count="0">
+    <div onClick="{{ onScrim }}" style="position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: rgba(6,10,28,0.55); backdrop-filter: blur(7px); animation: cc-fade 0.28s ease both">
+      <div onClick="{{ stop }}" style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; width: 320px; padding: 30px 24px 26px; border: 1px solid rgba(255,217,138,0.4); border-radius: 22px; background: linear-gradient(165deg, rgba(24,34,68,0.95) 0%, rgba(14,20,44,0.95) 100%); box-shadow: 0 18px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 70px rgba(255,217,138,0.1); animation: cc-rise 0.44s cubic-bezier(0.16,1,0.3,1) both">
+        <button type="button" onClick="{{ onCloseCard }}" aria-label="とじる" style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 50%; background: transparent; color: rgba(233,237,255,0.7); cursor: pointer" style-hover="background: rgba(255,255,255,0.08)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+        <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.3em; color: var(--star, #ffd98a)">DAY {{ c.day }}</p>
+        <svg width="52" height="52" viewBox="-14 -14 28 28" style="display: block">
+          <circle r="12" fill="var(--star, #ffd98a)" fill-opacity="0.12" style="transform-box: fill-box; transform-origin: center; animation: cc-breathe 3.4s ease-in-out infinite"></circle>
+          <path d="{{ c.d }}" fill="var(--star, #ffd98a)"></path>
+          <circle r="1.6" fill="#ffffff"></circle>
+        </svg>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: 0.05em; text-align: center; color: #f2ecdb">{{ c.day }}日目のおくりもの</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.75; text-align: center; text-wrap: pretty; color: rgba(233,237,255,0.9)">{{ c.message }}</p>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid rgba(255,217,138,0.4); border-radius: 999px; color: var(--star, #ffd98a); font-size: 13px; font-weight: 600">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"></rect><path d="M12 8v13"></path><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"></path></svg>
+          <span>{{ c.itemName }}</span>
+        </div>
+        <button type="button" onClick="{{ c.cta }}" style="margin-top: 6px; padding: 12px 40px; border: none; border-radius: 999px; background: linear-gradient(180deg, #ffe7b0, var(--star, #ffd98a)); color: #1c264d; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; box-shadow: 0 6px 22px rgba(255,217,138,0.28)">{{ c.ctaLabel }}</button>
+      </div>
+    </div>
+  </sc-for>
+
+  <sc-for list="{{ debug }}" as="d" hint-placeholder-count="0">
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 8; display: flex; flex-direction: column; align-items: stretch; font-size: 12px; color: #e9edff">
+      <button type="button" onClick="{{ onToggleDebug }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0; border: none; border-top: 1px solid rgba(255,255,255,0.14); background: rgba(6,10,28,0.92); color: #e9edff; font-size: 11px; letter-spacing: 0.1em; cursor: pointer">
+        <span>Debug</span>
+        <span>{{ d.chevron }}</span>
+      </button>
+      <sc-for list="{{ debugBody }}" as="b" hint-placeholder-count="0">
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 16px; background: rgba(6,10,28,0.92)">
+          <label style="display: flex; flex-direction: column; gap: 6px">
+            <span>開封日数: {{ opened }}</span>
+            <input type="range" min="0" max="30" value="{{ opened }}" onChange="{{ onDebugRange }}" style="width: 100%; accent-color: #ffd98a">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px">
+            <span>協力デイ 他メンバー: {{ othersWritten }} / 5</span>
+            <input type="range" min="0" max="5" value="{{ othersWritten }}" onChange="{{ onDebugMembers }}" style="width: 100%; accent-color: #cfd8f5">
+          </label>
+          <div style="display: flex; gap: 8px">
+            <button type="button" onClick="{{ onJumpCoopEve }}" style="flex: 1 1 0; padding: 7px 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; background: rgba(255,255,255,0.06); color: #e9edff; font-size: 11px; cursor: pointer">協力デイ直前</button>
+            <button type="button" onClick="{{ onJumpCoop }}" style="flex: 1 1 0; padding: 7px 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; background: rgba(255,255,255,0.06); color: #e9edff; font-size: 11px; cursor: pointer">協力デイへ</button>
+            <button type="button" onClick="{{ onJump29 }}" style="flex: 1 1 0; padding: 7px 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; background: rgba(255,255,255,0.06); color: #e9edff; font-size: 11px; cursor: pointer">29日開封済み</button>
+            <button type="button" onClick="{{ onJumpFinale }}" style="flex: 1 1 0; padding: 7px 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; background: rgba(255,255,255,0.06); color: #e9edff; font-size: 11px; cursor: pointer">フィナーレ再生</button>
+            <button type="button" onClick="{{ onReset }}" style="flex: 1 1 0; padding: 7px 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; background: rgba(255,255,255,0.06); color: #e9edff; font-size: 11px; cursor: pointer">リセット</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 390, &quot;height&quot;: 844}, &quot;eventTitle&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;きなこの誕生日&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;eventDate&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;8/30&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;starColor&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#ffd98a&quot;, &quot;options&quot;: [&quot;#ffd98a&quot;, &quot;#a9d7ff&quot;, &quot;#cdb9ff&quot;, &quot;#9ef581&quot;], &quot;tsType&quot;: &quot;string&quot;}, &quot;initialOpened&quot;: {&quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 8, &quot;min&quot;: 0, &quot;max&quot;: 30, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;状態&quot;}, &quot;effectLevel&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;balanced&quot;, &quot;options&quot;: [&quot;calm&quot;, &quot;balanced&quot;, &quot;lush&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;演出&quot;}, &quot;ambient&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;演出&quot;}, &quot;showDebug&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;状態&quot;}}">
+const STARS = [[48,480],[92,452],[70,408],[120,396],[158,424],[196,400],[176,356],[222,340],[264,362],[300,330],[276,292],[312,262],[282,226],[236,244],[200,216],[222,176],[180,152],[140,176],[108,148],[128,108],[172,96],[214,108],[252,88],[290,104],[322,76],[300,40],[256,32],[216,44],[170,32],[120,40]];
+const TOTAL = STARS.length;
+const BGS = [[22,30,1.2,.5],[60,96,.9,.3],[140,24,1,.4],[250,140,.9,.35],[348,30,1.3,.5],[368,120,.9,.3],[30,180,1,.35],[340,200,1.1,.4],[20,300,.9,.3],[356,300,1,.35],[40,372,1.2,.4],[366,396,.9,.3],[16,440,.9,.35],[120,500,1,.3],[230,496,.9,.35],[330,470,1.2,.45],[96,250,.8,.25],[286,380,.8,.3],[190,290,.8,.22],[64,60,.8,.28],[310,160,.8,.3],[150,64,.8,.26],[240,40,.9,.3],[352,340,.8,.28]];
+const VW = 390, VH = 640, CX = VW / 2, CY = VH / 2;
+const K_IDLE = 3.8, K_DOLLY = 6.4, DRAG_PX = 130, SNAP_MS = 280, GLIDE_MS = 760;
+const FINALE_K = 1.15;
+const CENTROID = [STARS.reduce((s, p) => s + p[0], 0) / TOTAL, STARS.reduce((s, p) => s + p[1], 0) / TOTAL];
+const CUM = [0];
+for (let i = 1; i < TOTAL; i++) CUM.push(CUM[i - 1] + Math.hypot(STARS[i][0] - STARS[i - 1][0], STARS[i][1] - STARS[i - 1][1]));
+const TOTLEN = CUM[TOTAL - 1];
+const T_ZOOM = 1900, T_CHAIN = 2800, T_BLOOM = 900, T_END = T_ZOOM + T_CHAIN + T_BLOOM + 500;
+
+/* ==========================================
+ * 協力デイ: 参加者全員が書き込まないと星が解放されない日
+ * 鎖の弧の本数 = 残り人数。最後の1人が「解放する」を押して演出に入る。
+ * ========================================== */
+const COOP_DAYS = [10];
+const MEMBERS = ['あなた', 'みなと', 'ひなた', 'そら', 'つむぎ', 'りく'];
+const MEMBER_TOTAL = MEMBERS.length;
+const CHAIN_R = 74;
+const REL_SHATTER = 420, REL_SHARD_IN = 1080, REL_IGNITE = 900, REL_CARD = 1320, REL_END = 1400;
+const LONG_PRESS_MS = 420;
+const arcPath = (r, a0, a1) => {
+  const p = (a) => [r * Math.cos(a), r * Math.sin(a)];
+  const [x0, y0] = p(a0), [x1, y1] = p(a1);
+  return `M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+};
+const RAD = Math.PI / 180;
+
+const MOODS = ['ちょっとまぶしいね', 'しずかにまたたいている', 'いつもよりあかるい', 'すこしオレンジ色', 'ふるえるくらい輝いてる', '遠くでちいさく光ってる'];
+const ITEMS = ['こんぺいとう', 'クッキー', 'キャンドル', 'リボン', 'オルゴール', 'まつぼっくり', 'ガラス玉', 'どんぐり', 'ふうせん', 'ほしのかけら'];
+
+const sp = (s) => {
+  const c = (s / 5).toFixed(2);
+  return `M 0 ${-s} C ${c} ${-c} ${c} ${-c} ${s} 0 C ${c} ${c} ${c} ${c} 0 ${s} C ${-c} ${c} ${-c} ${c} ${-s} 0 C ${-c} ${-c} ${-c} ${-c} 0 ${-s} Z`;
+};
+const contentFor = (day) => {
+  const remain = TOTAL - day;
+  const head = remain > 0 ? `たんじょうびまであと${remain}日。` : 'たんじょうび、おめでとう。';
+  return { message: `${head}きょうの星は${MOODS[(day - 1) % MOODS.length]}。`, itemName: `${ITEMS[(day - 1) % ITEMS.length]}の星` };
+};
+const cl = (v, a, b) => Math.min(Math.max(v, a), b);
+const c01 = (v) => cl(v, 0, 1);
+const lerp = (a, b, t) => a + (b - a) * t;
+const eo3 = (t) => 1 - Math.pow(1 - t, 3);
+const eio3 = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const seeded = (i, m) => ((Math.sin(i * 127.1 + m * 311.7) + 1) / 2);
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const init = cl(Math.round(props.initialOpened ?? 8), 0, TOTAL);
+    this.state = {
+      opened: init,
+      focus: Math.min(init + 1, TOTAL),
+      tp: 0,
+      phase: 'daily',
+      cardDay: null,
+      justOpened: false,
+      finaleT: 0,
+      debugOpen: false,
+      fw: VW,
+      fh: VH,
+      myWritten: false,
+      othersWritten: 3,
+      coopUnlocked: false,
+      coopT: 0,
+      coopPanel: false,
+      notice: false,
+    };
+    this.fieldRef = React.createRef();
+    this.canvasRef = React.createRef();
+    this.raf = null;
+    this.finaleRaf = null;
+    this.burstRaf = null;
+    this.coopRaf = null;
+    this.pressTimer = null;
+    this.timers = [];
+    this.drag = null;
+    this.dragBase = 0;
+    this.reduced = false;
+  }
+
+  /* ---------- lifecycle ---------- */
+
+  componentDidMount() {
+    this.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.sizeCanvas();
+    // SVG の <text> はテンプレートの穴を受け付けないため、数値ラベルは HTML オーバーレイで描く。
+    // viewBox → コンテナ px の変換に実寸が必要なので観測する。
+    this.measure();
+    if (window.ResizeObserver && this.fieldRef.current) {
+      this.ro = new ResizeObserver(() => { this.sizeCanvas(); this.measure(); });
+      this.ro.observe(this.fieldRef.current);
+    }
+    this.onResize = () => { this.sizeCanvas(); this.measure(); };
+    window.addEventListener('resize', this.onResize);
+    this.onVis = () => { if (document.hidden) this.finishOpening(); };
+    document.addEventListener('visibilitychange', this.onVis);
+  }
+
+  componentWillUnmount() {
+    // すべての rAF / timer を一箇所で確実に解放する (旧実装の解放漏れ対策)
+    [this.raf, this.finaleRaf, this.burstRaf, this.coopRaf].forEach((id) => { if (id !== null) cancelAnimationFrame(id); });
+    if (this.pressTimer !== null) clearTimeout(this.pressTimer);
+    this.timers.forEach((t) => clearTimeout(t));
+    this.timers = [];
+    window.removeEventListener('resize', this.onResize);
+    document.removeEventListener('visibilitychange', this.onVis);
+    if (this.ro) this.ro.disconnect();
+  }
+
+  measure() {
+    const el = this.fieldRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    if (Math.abs(r.width - this.state.fw) > 0.5 || Math.abs(r.height - this.state.fh) > 0.5) {
+      this.setState({ fw: r.width, fh: r.height });
+    }
+  }
+
+  later(fn, ms) {
+    const id = window.setTimeout(() => {
+      this.timers = this.timers.filter((t) => t !== id);
+      fn();
+    }, ms);
+    this.timers.push(id);
+    return id;
+  }
+
+  stopRaf(key) {
+    if (this[key] !== null) { cancelAnimationFrame(this[key]); this[key] = null; }
+  }
+
+  /* ---------- geometry ---------- */
+
+  get maxDay() { return Math.min(this.state.opened + 1, TOTAL); }
+
+  stateOf(day) {
+    const o = this.state.opened;
+    return day <= o ? 'opened' : day === o + 1 ? 'openable' : 'locked';
+  }
+
+  /* ---------- 協力デイ ---------- */
+
+  isCoopDay(day) { return COOP_DAYS.indexOf(day) !== -1; }
+  /** 鎖がかかっている = 協力デイでまだ解放されていない */
+  isChained(day) { return this.isCoopDay(day) && !this.state.coopUnlocked; }
+  get writtenCount() { return this.state.othersWritten + (this.state.myWritten ? 1 : 0); }
+  get allWritten() { return this.writtenCount >= MEMBER_TOTAL; }
+
+  /** 自分の分を書き込む。進行は止めないので opened も進める */
+  writeMyPart(day) {
+    if (this.state.myWritten) return;
+    this.setState((st) => ({ myWritten: true, opened: Math.max(st.opened, day), notice: true }));
+    this.burst(0.45);
+  }
+
+  closeNotice = () => this.setState({ notice: false });
+
+  releaseCoop = () => {
+    if (this.state.coopT > 0) return;
+    this.setState({ coopPanel: false });
+    const start = performance.now();
+    const step = (now) => {
+      const t = now - start;
+      this.setState({ coopT: t });
+      if (t >= REL_IGNITE && !this.state.coopUnlocked) {
+        this.setState({ coopUnlocked: true, justOpened: true });
+        this.burst();
+        this.later(() => this.setState({ justOpened: false }), 900);
+      }
+      if (t >= REL_CARD && this.state.phase === 'daily') {
+        this.setState({ phase: 'card', cardDay: COOP_DAYS[0] });
+      }
+      if (t < REL_END) this.coopRaf = requestAnimationFrame(step);
+      else { this.coopRaf = null; this.setState({ coopT: REL_END }); }
+    };
+    this.coopRaf = requestAnimationFrame(step);
+    // タブ非表示などで rAF が止まっても演出が終わるようにする
+    this.later(() => {
+      if (this.state.coopUnlocked) return;
+      this.stopRaf('coopRaf');
+      this.setState({ coopT: REL_END, coopUnlocked: true, phase: 'card', cardDay: COOP_DAYS[0] });
+    }, REL_END + 500);
+  }
+
+  closePanel = () => this.setState({ coopPanel: false });
+
+  camera() {
+    const s = this.state;
+    const fs = STARS[s.focus - 1];
+    if (s.phase === 'finale') {
+      const ez = eo3(c01(s.finaleT / T_ZOOM));
+      return { cx: lerp(fs[0], CENTROID[0], ez), cy: lerp(fs[1], CENTROID[1], ez), k: lerp(K_IDLE, FINALE_K, ez) };
+    }
+    const tgt = this.travelTarget();
+    if (tgt === null) return { cx: fs[0], cy: fs[1], k: K_IDLE };
+    const ts = STARS[tgt - 1];
+    const a = Math.abs(s.tp);
+    return { cx: lerp(fs[0], ts[0], a), cy: lerp(fs[1], ts[1], a), k: K_IDLE + (K_DOLLY - K_IDLE) * Math.sin(Math.PI * a) };
+  }
+
+  travelTarget() {
+    const s = this.state;
+    if (Math.abs(s.tp) < 0.001) return null;
+    const d = s.tp > 0 ? 1 : -1;
+    const t = s.focus + d;
+    if (t < 1 || t > this.maxDay) return null;
+    return t;
+  }
+
+  /* ---------- swipe: 星をつなぐ線に沿って動かす ---------- */
+
+  /** focus から day への画面上の単位ベクトル (レイアウト座標系。y は下向き) */
+  dirTo(day) {
+    const a = STARS[this.state.focus - 1], b = STARS[day - 1];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    return [dx / len, dy / len];
+  }
+
+  onDown = (e) => {
+    if (this.state.phase !== 'daily') return;
+    this.stopRaf('raf');
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), el: e.currentTarget };
+    this.dragBase = this.state.tp;
+    // 鎖を長押しすると、まだ書いていない人の一覧を出す
+    if (this.isChained(this.state.focus) && this.state.coopT === 0) {
+      this.pressTimer = window.setTimeout(() => {
+        this.pressTimer = null;
+        this.longPressed = true;
+        this.setState({ coopPanel: true });
+      }, LONG_PRESS_MS);
+    }
+  }
+
+  cancelPress() {
+    if (this.pressTimer !== null) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+  }
+
+  onMove = (e) => {
+    const d = this.drag;
+    if (!d || d.id !== e.pointerId) return;
+    if (this.state.phase !== 'daily') { this.releaseDrag(); return; }
+
+    const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (Math.hypot(dx, dy) > 8) this.cancelPress();
+    const focus = this.state.focus;
+    const canNext = focus < this.maxDay;
+    const canPrev = focus > 1;
+
+    // 指の動きを「次の星／前の星へ向かう線」に射影する。
+    // カメラが星へ寄る = 画面の中身は逆方向に動く → 指の向きは -dir。
+    let best = 0;
+    if (canNext) {
+      const n = this.dirTo(focus + 1);
+      best = Math.max(best, (dx * -n[0] + dy * -n[1]) / DRAG_PX);
+    }
+    let bestPrev = 0;
+    if (canPrev) {
+      const p = this.dirTo(focus - 1);
+      bestPrev = Math.max(bestPrev, (dx * -p[0] + dy * -p[1]) / DRAG_PX);
+    }
+
+    // 前後どちらの線に沿っているかを1本の符号付きスカラーにまとめ、
+    // スナップ中の割り込みでも dragBase から連続させる (進行度が飛ばない)
+    const signed = best >= bestPrev ? Math.max(0, best) : -Math.max(0, bestPrev);
+    this.setState({ tp: cl(this.dragBase + signed, -1, 1) });
+  }
+
+  releaseDrag() {
+    const d = this.drag;
+    if (d) {
+      try { d.el.releasePointerCapture(d.id); } catch (err) { /* noop */ }
+      this.drag = null;
+    }
+  }
+
+  onUp = (e) => {
+    const d = this.drag;
+    if (!d || d.id !== e.pointerId) return;
+    const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+    const dur = performance.now() - d.t;
+    this.cancelPress();
+    this.releaseDrag();
+    if (this.longPressed) { this.longPressed = false; this.setState({ tp: 0 }); return; }
+    if (this.state.phase !== 'daily') { this.setState({ tp: 0 }); return; }
+
+    if (dist < 8 && dur < 400) {
+      this.setState({ tp: 0 }, () => this.tapFocus());
+      return;
+    }
+
+    const cur = this.state.tp;
+    if (Math.abs(cur) > 0.45) {
+      const dir = cur > 0 ? 1 : -1;
+      this.animateTp(cur, dir, SNAP_MS, () => {
+        this.setState((st) => ({ focus: cl(st.focus + dir, 1, Math.min(st.opened + 1, TOTAL)), tp: 0 }));
+      });
+    } else {
+      this.animateTp(cur, 0, SNAP_MS, () => this.setState({ tp: 0 }));
+    }
+  }
+
+  animateTp(from, to, ms, done) {
+    this.stopRaf('raf');
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / ms);
+      this.setState({ tp: lerp(from, to, eo3(t)) });
+      if (t < 1) this.raf = requestAnimationFrame(step);
+      else { this.raf = null; done(); }
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+
+  /* ---------- open flow ---------- */
+
+  tapFocus() {
+    const day = this.state.focus;
+    if (this.isChained(day)) {
+      if (this.state.coopT > 0) return;             // 解放演出中
+      if (!this.state.myWritten) this.writeMyPart(day);
+      else if (!this.allWritten) this.setState({ coopPanel: true });
+      return;                                       // 解放は専用ボタンから
+    }
+    const st = this.stateOf(day);
+    if (st === 'openable') this.openDay(day);
+    else if (st === 'opened') this.setState({ phase: 'card', cardDay: day });
+  }
+
+  openDay(day) {
+    if (this.state.phase !== 'daily') return; // 多重タップ防止
+    this.releaseDrag();
+    this.setState({ phase: 'opening', tp: 0, opened: day, justOpened: true });
+    this.later(() => this.setState({ justOpened: false }), 900);
+    this.burst();
+    this.openTimer = this.later(() => this.finishOpening(), 760);
+  }
+
+  finishOpening() {
+    if (this.state.phase !== 'opening') return;
+    this.setState((st) => ({ phase: 'card', cardDay: st.focus }));
+  }
+
+  closeCard = () => {
+    const day = this.state.cardDay;
+    this.setState({ phase: 'daily', cardDay: null });
+    // 開封後は次の星へ自前でカメラを送る (旧実装は手動スワイプ待ちだった)
+    if (day !== null && day === this.state.opened && day < TOTAL) this.glideNext();
+  }
+
+  onScrim = () => { this.closeCard(); }
+  stop = (e) => { e.stopPropagation(); }
+  onCloseCard = () => { this.closeCard(); }
+
+  glideNext() {
+    if (this.state.focus >= this.maxDay) return;
+    this.animateTp(0, 1, GLIDE_MS, () => {
+      this.setState((st) => ({ focus: cl(st.focus + 1, 1, Math.min(st.opened + 1, TOTAL)), tp: 0 }));
+    });
+  }
+
+  /* ---------- finale ---------- */
+
+  startFinale = () => {
+    this.stopRaf('raf');
+    this.stopRaf('finaleRaf');
+    this.releaseDrag();
+    this.setState({ phase: 'finale', cardDay: null, tp: 0, focus: TOTAL, finaleT: 0 });
+    const start = performance.now();
+    const step = (now) => {
+      const t = now - start;
+      this.setState({ finaleT: t });
+      // 単一の rAF が進行度の唯一のソース (CSS transition との二重制御をやめた)
+      if (t < T_END) this.finaleRaf = requestAnimationFrame(step);
+      else { this.finaleRaf = null; this.setState({ finaleT: T_END }); }
+    };
+    this.finaleRaf = requestAnimationFrame(step);
+    this.later(() => {
+      if (this.state.phase === 'finale' && this.state.finaleT < T_END) {
+        this.stopRaf('finaleRaf');
+        this.setState({ finaleT: T_END });
+      }
+    }, T_END + 500);
+  }
+
+  onExitFinale = () => {
+    this.stopRaf('finaleRaf');
+    this.setState({ phase: 'daily', finaleT: 0, focus: TOTAL, tp: 0 });
+  }
+
+  /* ---------- burst (canvas 2D, additive) ---------- */
+
+  sizeCanvas() {
+    const c = this.canvasRef.current;
+    if (!c) return;
+    const r = c.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    c.width = Math.max(1, Math.round(r.width * dpr));
+    c.height = Math.max(1, Math.round(r.height * dpr));
+    this.dpr = dpr;
+  }
+
+  burst(strength) {
+    const c = this.canvasRef.current;
+    if (!c) return;
+    const K = strength || 1;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    this.sizeCanvas();
+    this.stopRaf('burstRaf');
+
+    const level = this.props.effectLevel ?? 'balanced';
+    const n = Math.round((this.reduced ? 24 : level === 'calm' ? 70 : level === 'lush' ? 210 : 140) * K);
+    const rays = Math.round((this.reduced ? 0 : level === 'calm' ? 6 : 12) * K);
+    const color = (this.props.starColor ?? '#ffd98a');
+    const x = c.width / 2, y = c.height / 2;
+    const scale = this.dpr || 1;
+    const DUR = 1150;
+
+    const ps = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const core = i < n * 0.1;
+      const v = (core ? 12 + Math.random() * 30 : 90 + Math.random() * 240) * scale;
+      ps.push({ a, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: (core ? 2.6 : 0.9 + Math.random() * 1.9) * scale, tw: Math.random() * 6.28, life: 0.55 + Math.random() * 0.45 });
+    }
+    const rs = [];
+    for (let i = 0; i < rays; i++) rs.push({ a: (i / rays) * Math.PI * 2 + Math.random() * 0.3, len: (70 + Math.random() * 130) * scale });
+
+    const start = performance.now();
+    const step = (now) => {
+      const t = c01((now - start) / DUR);
+      const e = eo3(t);
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.globalCompositeOperation = 'lighter';
+
+      // 白の閃光
+      const fa = Math.max(0, 1 - t / 0.22);
+      if (fa > 0) {
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 130 * scale * (0.3 + e * 1.6));
+        g.addColorStop(0, `rgba(255,251,240,${0.9 * fa})`);
+        g.addColorStop(0.45, `rgba(255,226,170,${0.35 * fa})`);
+        g.addColorStop(1, 'rgba(255,226,170,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, c.width, c.height);
+      }
+
+      // 衝撃波リング
+      const ra = Math.max(0, 1 - t / 0.65);
+      if (ra > 0) {
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = ra * 0.55;
+        ctx.lineWidth = Math.max(0.6, 5 * scale * ra);
+        ctx.beginPath();
+        ctx.arc(x, y, 20 * scale + e * 230 * scale, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // 十字の光条
+      for (let i = 0; i < rs.length; i++) {
+        const r = rs[i];
+        const a = Math.max(0, 1 - t / 0.5);
+        const L = r.len * e;
+        const gx = x + Math.cos(r.a) * L, gy = y + Math.sin(r.a) * L;
+        const g = ctx.createLinearGradient(x, y, gx, gy);
+        g.addColorStop(0, `rgba(255,247,224,${0.5 * a})`);
+        g.addColorStop(1, 'rgba(255,247,224,0)');
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.6 * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(gx, gy);
+        ctx.stroke();
+      }
+
+      // 粒子 + トレイル
+      for (let i = 0; i < ps.length; i++) {
+        const p = ps[i];
+        const pe = eo3(Math.min(1, t / p.life));
+        const px = x + p.vx * pe, py = y + p.vy * pe + 26 * scale * t * t;
+        const prev = eo3(Math.min(1, Math.max(0, t - 0.045) / p.life));
+        const lx = x + p.vx * prev, ly = y + p.vy * prev + 26 * scale * Math.max(0, t - 0.045) ** 2;
+        const alpha = (1 - c01((t - p.life * 0.5) / (1 - p.life * 0.5 + 0.001))) * (0.72 + 0.28 * Math.sin(p.tw + t * 14));
+        if (alpha <= 0) continue;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = alpha * 0.45;
+        ctx.lineWidth = p.r;
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = i % 5 === 0 ? '#fff8e8' : color;
+        ctx.beginPath();
+        ctx.arc(px, py, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+
+      if (t < 1) this.burstRaf = requestAnimationFrame(step);
+      else { this.burstRaf = null; ctx.clearRect(0, 0, c.width, c.height); }
+    };
+    this.burstRaf = requestAnimationFrame(step);
+  }
+
+  /* ---------- debug ---------- */
+
+  applyOpened = (count) => {
+    this.stopRaf('raf');
+    this.stopRaf('finaleRaf');
+    this.stopRaf('burstRaf');
+    this.stopRaf('coopRaf');
+    this.cancelPress();
+    this.timers.forEach((t) => clearTimeout(t));
+    this.timers = [];
+    this.releaseDrag();
+    const c = this.canvasRef.current;
+    if (c) { const cx = c.getContext('2d'); if (cx) cx.clearRect(0, 0, c.width, c.height); }
+    const coop = COOP_DAYS[0];
+    this.setState({
+      opened: count, focus: Math.min(count + 1, TOTAL), tp: 0, phase: 'daily', cardDay: null, justOpened: false, finaleT: 0,
+      coopT: 0, coopPanel: false,
+      // 協力デイを通り過ぎた状態にジャンプしたら解放済み扱いにする
+      coopUnlocked: count > coop,
+      myWritten: count >= coop,
+      othersWritten: count >= coop ? MEMBER_TOTAL - 1 : 3,
+    });
+  }
+
+  onDebugRange = (e) => this.applyOpened(cl(Number(e.target.value), 0, TOTAL));
+
+  onDebugMembers = (e) => this.setState({ othersWritten: cl(Number(e.target.value), 0, MEMBER_TOTAL - 1) });
+
+  onJumpCoop = () => {
+    const day = COOP_DAYS[0];
+    this.stopRaf('coopRaf');
+    this.applyOpened(day - 1);
+    this.setState({ focus: day, myWritten: false, othersWritten: 3, coopUnlocked: false, coopT: 0, coopPanel: false, notice: false });
+  }
+
+  /** 協力デイ直前: 9日目に立って、鎖につながれた10日目を先に見ている状態 */
+  onJumpCoopEve = () => {
+    const day = COOP_DAYS[0];
+    this.stopRaf('coopRaf');
+    this.applyOpened(day - 1);
+    this.setState({ focus: day - 1, myWritten: false, othersWritten: 3, coopUnlocked: false, coopT: 0, coopPanel: false, notice: false });
+  }
+  onJump29 = () => this.applyOpened(TOTAL - 1);
+  onJumpFinale = () => { this.applyOpened(TOTAL); this.later(this.startFinale, 30); }
+  onReset = () => this.applyOpened(cl(Math.round(this.props.initialOpened ?? 8), 0, TOTAL));
+  onToggleDebug = () => this.setState((s) => ({ debugOpen: !s.debugOpen }));
+
+  /* ---------- render values ---------- */
+
+  renderVals() {
+    const s = this.state;
+    const starColor = this.props.starColor ?? '#ffd98a';
+    const cam = this.camera();
+    const P = (p) => [CX + (p[0] - cam.cx) * cam.k, CY + (p[1] - cam.cy) * cam.k];
+    const finale = s.phase === 'finale';
+    const tgt = this.travelTarget();
+    const traveling = !finale && tgt !== null;
+    const a = Math.abs(s.tp);
+
+    const glowLines = [], coreLines = [], dashLines = [];
+    const stars = [], openables = [], finaleStars = [], finaleChain = [], chainHead = [];
+    const chained = [], chainArcs = [], chainNodes = [], shards = [], coopHud = [], coopCta = [], coopPanel = [], panelRows = [], notice = [];
+    const nextHint = [], backHint = [], ghostPath = [], bloom = [], banner = [], finaleExit = [], travelLabel = [], fog = [];
+    const labels = [];
+    // viewBox(390x640) → コンテナ px。preserveAspectRatio="xMidYMid meet" と同じ計算
+    const S = Math.min(s.fw / VW, s.fh / VH);
+    const OX = (s.fw - VW * S) / 2, OY = (s.fh - VH * S) / 2;
+    const lab = (vx, vy, o) => Object.assign({ x: (OX + vx * S).toFixed(1), y: (OY + vy * S).toFixed(1), tx: 'translate(0,-50%)', fw: 500, ls: 'normal', color: '#e9edff' }, o);
+
+    if (finale) {
+      const chainRaw = c01((s.finaleT - T_ZOOM) / T_CHAIN);
+      const chain = eio3(chainRaw) * TOTLEN;
+      const pts = [];
+      let lastIdx = 0;
+      for (let i = 0; i < TOTAL; i++) {
+        if (CUM[i] <= chain) { const q = P(STARS[i]); pts.push(`${q[0].toFixed(1)},${q[1].toFixed(1)}`); lastIdx = i; }
+      }
+      if (lastIdx < TOTAL - 1 && chain > 0) {
+        const segLen = CUM[lastIdx + 1] - CUM[lastIdx];
+        const f = c01((chain - CUM[lastIdx]) / (segLen || 1));
+        const hp = [lerp(STARS[lastIdx][0], STARS[lastIdx + 1][0], f), lerp(STARS[lastIdx][1], STARS[lastIdx + 1][1], f)];
+        const q = P(hp);
+        pts.push(`${q[0].toFixed(1)},${q[1].toFixed(1)}`);
+        if (chainRaw > 0 && chainRaw < 1) chainHead.push({ x: q[0].toFixed(1), y: q[1].toFixed(1) });
+      }
+      if (pts.length > 1) finaleChain.push({ points: pts.join(' ') });
+
+      // 全体の輪郭は連鎖が始まったら薄く見せる
+      if (chainRaw > 0) ghostPath.push({ points: STARS.map((p) => P(p).map((v) => v.toFixed(1)).join(',')).join(' ') });
+
+      const chainDone = chainRaw >= 1;
+      for (let i = 0; i < TOTAL; i++) {
+        // 最終星 (CUM = 全長) が点灯しない取りこぼしを防ぐ
+        const ov = chainDone ? 1 : c01((chain - CUM[i]) / 30);
+        if (ov <= 0 && !(i === 0 && chainRaw > 0)) continue;
+        const scv = ov < 0.5 ? 0.2 + (ov / 0.5) * 1.15 : 1.35 - ((ov - 0.5) / 0.5) * 0.35;
+        const q = P(STARS[i]);
+        finaleStars.push({ x: q[0].toFixed(1), y: q[1].toFixed(1), day: i + 1, d: sp(7), sc: scv.toFixed(3), op: c01(ov * 4).toFixed(2) });
+        labels.push(lab(q[0] + 11, q[1], { fs: (9 * S).toFixed(1), color: 'rgba(233,237,255,0.6)', op: c01(ov * 4).toFixed(2), t: String(i + 1) }));
+      }
+
+      const bp = c01((s.finaleT - T_ZOOM - T_CHAIN) / T_BLOOM);
+      if (bp > 0 && bp < 1) bloom.push({ r: (120 + 300 * bp).toFixed(0), op: (Math.sin(Math.PI * bp) * 0.9).toFixed(2) });
+      if (s.finaleT > T_ZOOM + T_CHAIN * 0.88) banner.push({ sub: '30 / 30 opened' });
+      if (s.finaleT >= T_ZOOM + T_CHAIN + T_BLOOM * 0.6) finaleExit.push({ on: true });
+    } else {
+      fog.push({ on: true });
+      // 星の大きさは「フォーカスへの近さ」を進行度から連続補間する。
+      // 大きな中央星と中サイズの星を別要素で描き分けると、切替の瞬間に見た目が飛ぶ。
+      const m = cam.k / K_IDLE;
+      const bigness = (day) => {
+        if (!traveling) return day === s.focus ? 1 : 0;
+        if (day === s.focus) return 1 - a;
+        if (day === tgt) return a;
+        return 0;
+      };
+      // 通ってきた道が途切れないよう、常に focus-2 〜 focus+1 の窓を描く
+      const winFrom = Math.max(1, s.focus - 2);
+      const winTo = Math.min(this.maxDay, Math.max(s.focus + 1, tgt === null ? 0 : tgt));
+
+      for (let d = winFrom; d < winTo; d++) {
+        const p = P(STARS[d - 1]), q = P(STARS[d]);
+        const L = { x1: p[0].toFixed(1), y1: p[1].toFixed(1), x2: q[0].toFixed(1), y2: q[1].toFixed(1) };
+        if (this.stateOf(d + 1) === 'opened' && !this.isChained(d) && !this.isChained(d + 1)) {
+          glowLines.push(Object.assign({}, L, { w: (7 * m).toFixed(2) }));
+          coreLines.push(Object.assign({}, L, { w: (2 * m).toFixed(2) }));
+        } else {
+          dashLines.push(Object.assign({}, L, { w: (1.6 * m).toFixed(2), o: 0.35, dash: '3 6' }));
+        }
+      }
+
+      for (let d = winFrom; d <= winTo; d++) {
+        const q = P(STARS[d - 1]);
+        const bb = bigness(d);
+        const base = { x: q[0].toFixed(1), y: q[1].toFixed(1), day: d };
+        if (this.isChained(d)) {
+          const g = lerp(0.34, 1, bb) * m;
+          const rel = s.coopT;
+          const shatter = c01(rel / REL_SHATTER);
+          const wc = this.writtenCount;
+          const R = (CHAIN_R + 26 * shatter) * g;
+          chained.push(Object.assign({}, base, {
+            sc: g.toFixed(3),
+            d: sp(30),
+            coreOp: ((s.myWritten ? 0.5 : 0.26) * (1 - shatter) + shatter).toFixed(2),
+            haloOp: (s.myWritten ? 0.42 : 0.16).toFixed(2),
+            op: (0.5 + 0.5 * bb).toFixed(2),
+          }));
+          for (let i = 0; i < MEMBER_TOTAL; i++) {
+            const done = i < wc;
+            const a0 = (-90 + i * 60 + 7) * RAD, a1 = (-90 + (i + 1) * 60 - 7) * RAD;
+            const linkOp = done ? 0.1 : 0.9 * (1 - shatter);
+            chainArcs.push({ tf: `translate(${q[0].toFixed(1)} ${q[1].toFixed(1)})`, d: arcPath(R, a0, a1), op: (linkOp * (0.55 + 0.45 * bb)).toFixed(3), w: (3.4 * g).toFixed(2) });
+            const na = (-90 + i * 60) * RAD;
+            chainNodes.push({ tf: `translate(${q[0].toFixed(1)} ${q[1].toFixed(1)})`, lx: (Math.cos(na) * R).toFixed(1), ly: (Math.sin(na) * R).toFixed(1), r: (3.2 * g).toFixed(2), op: (linkOp * (0.55 + 0.45 * bb)).toFixed(3) });
+          }
+          // 解放演出: 6つの破片が外へ弾けてから星へ吸い込まれる
+          if (rel > REL_SHATTER * 0.6) {
+            const t2 = c01((rel - REL_SHATTER * 0.6) / (REL_SHARD_IN - REL_SHATTER * 0.6));
+            for (let i = 0; i < MEMBER_TOTAL; i++) {
+              const a = (-90 + i * 60 + 30) * RAD;
+              const dist = t2 < 0.32 ? lerp(R, R + 58 * g, eo3(t2 / 0.32)) : lerp(R + 58 * g, 6 * g, eo3((t2 - 0.32) / 0.68));
+              shards.push({ x: (q[0] + Math.cos(a) * dist).toFixed(1), y: (q[1] + Math.sin(a) * dist).toFixed(1), r: (lerp(4.6, 1.6, t2) * g).toFixed(2), op: (t2 > 0.92 ? (1 - t2) / 0.08 : 1).toFixed(2) });
+            }
+          }
+          labels.push(lab(q[0], q[1] + 2 * g, { tx: 'translate(-50%,-50%)', fs: (38 * g * S).toFixed(1), fw: 700, color: 'var(--star, #ffd98a)', op: ((s.myWritten ? 0.85 : 0.5) * (0.5 + 0.5 * bb)).toFixed(2), t: String(d) }));
+        } else if (this.stateOf(d) === 'openable') {
+          const g = lerp(0.3, 1, bb) * m;
+          openables.push(Object.assign({}, base, {
+            d: sp(46),
+            sc: g.toFixed(3),
+            op: (0.42 + 0.58 * bb).toFixed(2),
+            hintOp: bb.toFixed(2),
+          }));
+          labels.push(lab(q[0], q[1] + 2 * g, { tx: 'translate(-50%,-50%)', fs: (44 * g * S).toFixed(1), fw: 700, color: 'var(--star, #ffd98a)', op: (0.42 + 0.58 * bb).toFixed(2), t: String(d) }));
+        } else {
+          labels.push(lab(q[0] + lerp(24, 46, bb) * m, q[1], { fs: (Math.min(22, 15 * m) * S).toFixed(1), op: (0.7 * (1 - bb)).toFixed(2), t: String(d) }));
+          if (bb > 0.02) labels.push(lab(q[0], q[1] - 142 * m, { tx: 'translate(-50%,-50%)', fs: (15 * S).toFixed(1), fw: 700, ls: '4px', color: 'var(--star, #ffd98a)', op: bb.toFixed(2), t: `DAY ${d}` }));
+          stars.push(Object.assign({}, base, {
+            halo: (lerp(30, 118, bb) * m).toFixed(1),
+            crossSc: (lerp(0.2, 1, bb) * m).toFixed(3),
+            crossOp: (bb * 0.42).toFixed(3),
+            d: sp(lerp(18, 56, bb) * m),
+            core: (lerp(3, 5.5, bb) * m).toFixed(2),
+            lx: (lerp(24, 46, bb) * m).toFixed(1),
+            ly: (8 * m).toFixed(1),
+            fs: Math.min(22, 15 * m).toFixed(1),
+            smallOp: (0.7 * (1 - bb)).toFixed(2),
+            bigOp: bb.toFixed(2),
+            dayY: (-142 * m).toFixed(0),
+            anim: s.justOpened && d === s.opened ? 'cc-ignite 0.75s cubic-bezier(0.16,1,0.3,1) both' : 'none',
+          }));
+        }
+      }
+
+      // 協力デイの HUD / 解放ボタン / メンバー一覧
+      if (this.isChained(s.focus) && !traveling) {
+        const wc = this.writtenCount;
+        const remain = MEMBER_TOTAL - wc;
+        coopHud.push({
+          count: `${wc} / ${MEMBER_TOTAL}`,
+          note: s.coopT > 0 ? '鎖がほどけていく' : remain > 0 ? (s.myWritten ? `あと${remain}人を待っています` : 'タップしてあなたの分を書く') : 'ぜんいん そろいました',
+          hint: s.coopT > 0 ? '' : '鎖を長押しで だれが書いたか',
+        });
+        if (remain === 0 && s.coopT === 0) coopCta.push({ on: true });
+      }
+      if (s.notice) {
+        const remain = MEMBER_TOTAL - this.writtenCount;
+        notice.push({
+          body: remain > 0
+            ? `のこり${remain}人が書きこむと、鎖がほどけて星がひらきます。`
+            : 'ぜんいんの分がそろいました。鎖を解放できます。',
+          cta: remain > 0 ? 'とじる' : 'つづける',
+        });
+      }
+      if (s.coopPanel) {
+        coopPanel.push({ head: `${this.writtenCount} / ${MEMBER_TOTAL} が書きました` });
+        for (let i = 0; i < MEMBER_TOTAL; i++) {
+          const done = i === 0 ? s.myWritten : i <= s.othersWritten;
+          panelRows.push({
+            name: MEMBERS[i],
+            mark: done ? '✓' : '—',
+            color: done ? 'var(--star, #ffd98a)' : 'rgba(233,237,255,0.4)',
+            note: done ? '書いた' : 'まだ',
+          });
+        }
+      }
+
+      // 次/前の方向ヒントと予告スタブは静止時のみ
+      if (!traveling) {
+        if (s.focus > 1) {
+          const bd = this.dirTo(s.focus - 1);
+          backHint.push({ x: (CX + bd[0] * 128).toFixed(1), y: (CY + bd[1] * 128).toFixed(1), deg: (Math.atan2(bd[1], bd[0]) * 180 / Math.PI).toFixed(1) });
+        }
+        if (s.focus < TOTAL && this.stateOf(s.focus) === 'opened' && this.stateOf(s.focus + 1) !== 'locked') {
+          const nd = this.dirTo(s.focus + 1);
+          nextHint.push({ x: (CX + nd[0] * 118).toFixed(1), y: (CY + nd[1] * 118).toFixed(1), deg: (Math.atan2(nd[1], nd[0]) * 180 / Math.PI).toFixed(1) });
+        }
+      } else {
+        travelLabel.push({ op: Math.sin(Math.PI * a).toFixed(2) });
+      }
+    }
+
+    const card = [];
+    if (s.phase === 'card' && s.cardDay !== null) {
+      const c = contentFor(s.cardDay);
+      const isLast = s.cardDay === TOTAL;
+      card.push({ day: s.cardDay, d: sp(9), message: c.message, itemName: c.itemName, cta: isLast ? this.startFinale : this.onCloseCard, ctaLabel: isLast ? '夜空に浮かべる' : 'とじる' });
+    }
+
+    const mk = (arr, mul, fill) => arr.map((b, i) => ({
+      x: b[0], y: (b[1] * VH / 520).toFixed(1), r: (b[2] * mul).toFixed(2), o: (b[3] * (fill || 1)).toFixed(2),
+      dur: (2.4 + seeded(i, 3) * 4.2).toFixed(2), delay: (seeded(i, 7) * 5).toFixed(2),
+    }));
+    const par = (f) => [(-(cam.cx - CENTROID[0]) * f).toFixed(1), (-(cam.cy - CENTROID[1]) * f).toFixed(1)];
+    const p1 = par(0.02), p2 = par(0.05), p3 = par(0.09);
+
+    return {
+      starColor,
+      eventTitle: this.props.eventTitle ?? 'きなこの誕生日',
+      eventDate: this.props.eventDate ?? '8/30',
+      opened: s.opened,
+      othersWritten: s.othersWritten,
+      progressPct: `${((s.opened / TOTAL) * 100).toFixed(1)}%`,
+      chromeOpacity: finale && s.finaleT > 600 ? 0.35 : 1,
+      fieldRef: this.fieldRef,
+      canvasRef: this.canvasRef,
+      onDown: this.onDown, onMove: this.onMove, onUp: this.onUp,
+      onCloseCard: this.onCloseCard, onScrim: this.onScrim, stop: this.stop,
+      onExitFinale: this.onExitFinale,
+      onDebugRange: this.onDebugRange, onJump29: this.onJump29, onJumpFinale: this.onJumpFinale, onReset: this.onReset, onToggleDebug: this.onToggleDebug,
+      labels,
+      bgA: mk(BGS.slice(0, 9), 1.3, 1), bgB: mk(BGS.slice(9, 17), 1.05, 0.8), bgC: mk(BGS.slice(17), 0.85, 0.7),
+      px1: p1[0], py1: p1[1], px2: p2[0], py2: p2[1], px3: p3[0], py3: p3[1],
+      shooters: (this.props.ambient ?? true) && !this.reduced
+        ? [{ top: 60, left: -140, dur: 17, delay: 3 }, { top: 200, left: -160, dur: 23, delay: 11 }, { top: 420, left: -120, dur: 29, delay: 19 }]
+        : [],
+      travelStyle: traveling ? `filter: blur(${(Math.sin(Math.PI * a) * 1.6).toFixed(2)}px)` : 'filter: none',
+      glowLines, coreLines, dashLines, stars, openables,
+      chained, chainArcs, chainNodes, shards, coopHud, coopCta, coopPanel, panelRows, notice,
+      onRelease: this.releaseCoop, onClosePanel: this.closePanel, onCloseNotice: this.closeNotice,
+      onDebugMembers: this.onDebugMembers, onJumpCoop: this.onJumpCoop, onJumpCoopEve: this.onJumpCoopEve,
+      finaleStars, finaleChain, chainHead, ghostPath, bloom, banner, finaleExit, travelLabel, fog,
+      nextHint, backHint, card,
+      debug: (this.props.showDebug ?? true) ? [{ chevron: s.debugOpen ? '▾' : '▴' }] : [],
+      debugBody: (this.props.showDebug ?? true) && s.debugOpen ? [{ on: true }] : [],
+    };
+  }
+}
+</script>
+</body>
+</html>
