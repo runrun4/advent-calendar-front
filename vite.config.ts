@@ -39,29 +39,31 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'アドベントカレンダーアプリ',
-        short_name: 'アドベント',
+        name: 'めくるんるん',
+        short_name: 'めくるん',
         description: 'カレンダー・チャット・思い出共有PWA',
         theme_color: '#ffffff',
         background_color: '#ffffff',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
+icons: [
+  {
+    src: 'pwa-192x192.png',
+    sizes: '192x192',
+    type: 'image/png',
+    purpose: 'any'
+  },
+  {
+    src: 'pwa-512x512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'any'
+  },
+  {
+    src: 'pwa-512x512-maskable.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'maskable'
+  }
+]
       }
     })
   ],
