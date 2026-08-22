@@ -4,8 +4,24 @@ import type { User as AppUser } from '../../types/user'
 import { logout } from '../../services/authService'
 import { ApiError } from '../../services/apiClient'
 import { getMe, updateProfile } from '../../services/userApi'
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  getPushStatus,
+  isIOS,
+  isPushSupported,
+  isStandalone,
+  requestNotificationPermission,
+  sendTestNotification,
+} from '../../services/pushNotificationService'
 import { Modal } from '../common/Modal'
 import './ProfileModal.css'
+
+function toMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) return error.message
+  if (error instanceof Error) return error.message
+  return fallback
+}
 
 type ProfileModalProps = {
   isOpen: boolean
@@ -34,7 +50,16 @@ export function ProfileModal({
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false)
+  const [pushPermission, setPushPermission] =
+    useState<NotificationPermission>('default')
+  const [isPushBusy, setIsPushBusy] = useState(false)
+  const [pushError, setPushError] = useState<string | null>(null)
+  const [pushMessage, setPushMessage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const pushSupported = isPushSupported()
+  const needsHomeScreen = pushSupported && isIOS() && !isStandalone()
 
   useEffect(() => {
     if (!isOpen) return
@@ -83,6 +108,25 @@ export function ProfileModal({
       if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
+
+  // モーダルを開くたびに、この端末の通知許可状態と購読有無を読み直す
+  useEffect(() => {
+    if (!isOpen) return
+
+    let cancelled = false
+
+    void getPushStatus().then((status) => {
+      if (cancelled) return
+      setPushError(null)
+      setPushMessage(null)
+      setPushPermission(status.permission)
+      setIsPushSubscribed(status.subscribed)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen])
 
   const handlePickImage = () => {
     fileInputRef.current?.click()
@@ -143,6 +187,70 @@ export function ProfileModal({
       setErrorMessage(message)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  /*
+   * 通知トグル。
+   *
+   * iOS Safari は「タップの同期的な延長」でしか通知許可ダイアログを出さないため、
+   * ON にするときは await を挟む前に requestNotificationPermission() を呼ぶ。
+   */
+  const handleTogglePush = (nextEnabled: boolean) => {
+    setPushError(null)
+    setPushMessage(null)
+
+    if (!nextEnabled) {
+      setIsPushBusy(true)
+      void disablePushNotifications()
+        .then(() => {
+          setIsPushSubscribed(false)
+          setPushMessage('通知をオフにしました')
+        })
+        .catch((error: unknown) => {
+          setPushError(toMessage(error, '通知の解除に失敗しました'))
+        })
+        .finally(() => setIsPushBusy(false))
+      return
+    }
+
+    // ここより前に await / then を挟まないこと（user activation が切れる）
+    const permissionPromise = requestNotificationPermission()
+
+    setIsPushBusy(true)
+    void permissionPromise
+      .then(async (permission) => {
+        setPushPermission(permission)
+
+        if (permission !== 'granted') {
+          throw new Error('通知が許可されませんでした')
+        }
+
+        await enablePushNotifications()
+        setIsPushSubscribed(true)
+        setPushMessage('通知をオンにしました')
+      })
+      .catch((error: unknown) => {
+        setIsPushSubscribed(false)
+        setPushError(toMessage(error, '通知の設定に失敗しました'))
+      })
+      .finally(() => setIsPushBusy(false))
+  }
+
+  const handleSendTestNotification = async () => {
+    setPushError(null)
+    setPushMessage(null)
+    setIsPushBusy(true)
+
+    try {
+      const result = await sendTestNotification()
+      setPushMessage(
+        `テスト通知を送信しました（成功 ${result.sent} 件 / 失敗 ${result.failed} 件）`,
+      )
+    } catch (error) {
+      setPushError(toMessage(error, 'テスト通知の送信に失敗しました'))
+    } finally {
+      setIsPushBusy(false)
     }
   }
 
@@ -253,6 +361,74 @@ export function ProfileModal({
               />
               <p className="profile-modal__hint">メールアドレスは変更できません</p>
             </div>
+
+            <section className="profile-modal__section">
+              <h3 className="profile-modal__section-title">通知</h3>
+
+              {!pushSupported ? (
+                <p className="profile-modal__hint">
+                  このブラウザは通知に対応していません
+                </p>
+              ) : needsHomeScreen ? (
+                <p className="profile-modal__hint">
+                  通知を使うにはホーム画面に追加してから開いてください
+                </p>
+              ) : pushPermission === 'denied' ? (
+                <p className="profile-modal__hint">
+                  通知がブロックされています。端末の設定から許可してください
+                </p>
+              ) : (
+                <>
+                  <div className="profile-modal__toggle-row">
+                    <span className="profile-modal__toggle-label">
+                      お知らせを受け取る
+                    </span>
+
+                    <button
+                      type="button"
+                      className={
+                        isPushSubscribed
+                          ? 'profile-modal__toggle is-on'
+                          : 'profile-modal__toggle'
+                      }
+                      role="switch"
+                      aria-checked={isPushSubscribed}
+                      aria-label="通知を受け取る"
+                      onClick={() => handleTogglePush(!isPushSubscribed)}
+                      disabled={isPushBusy || isSaving || isLoggingOut}
+                    >
+                      <span
+                        className="profile-modal__toggle-knob"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
+
+                  {isPushSubscribed ? (
+                    <button
+                      type="button"
+                      className="profile-modal__test-push"
+                      onClick={() => void handleSendTestNotification()}
+                      disabled={isPushBusy || isSaving || isLoggingOut}
+                    >
+                      テスト通知を送る
+                    </button>
+                  ) : null}
+                </>
+              )}
+
+              {pushError ? (
+                <p className="profile-modal__error" role="alert">
+                  {pushError}
+                </p>
+              ) : null}
+
+              {pushMessage ? (
+                <p className="profile-modal__success" role="status">
+                  {pushMessage}
+                </p>
+              ) : null}
+            </section>
           </>
         )}
 
