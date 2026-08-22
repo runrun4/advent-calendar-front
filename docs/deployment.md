@@ -13,6 +13,17 @@
 
 HTTPS 標準対応のため PWA 要件（TR-804）を満たす。SPA フォールバック・`manifest.webmanifest`・`sw.js` の配信は確認済み。
 
+### SPA フォールバック（招待リンク `/invite/{token}` の直アクセス）
+
+このアプリはルーターを持たないため、招待リンクの直アクセスでも `index.html` が返る必要がある。返ったあと `src/services/inviteToken.ts` がパスからトークンを取り出し、URL を `/` に戻す。
+
+| 環境 | 設定 | 状態 |
+|------|------|------|
+| Cloudflare Pages（本番） | [public/\_redirects](../public/_redirects) の `/*  /index.html  200` | 明示設定済み。`404.html` が無いため Pages の自動 SPA 判定でも同じ挙動になるが、依存しないよう明示している |
+| nginx（Docker 本番） | [nginx.conf](../nginx.conf) の `try_files $uri $uri/ /index.html` | 対応済み。トークンは URL-safe base64 のみで拡張子を含まないため、下の静的ファイル用 location（`try_files $uri =404`）には該当しない |
+| vite dev / preview | 標準機能 | 対応済み |
+| Service Worker | `workbox` の navigation fallback が `index.html` | 対応済み（PWA インストール後も同じ） |
+
 ## 自動デプロイ（develop マージで本番反映）
 
 `develop` へ push（PRマージ含む）されると、GitHub Actions（[.github/workflows/deploy.yml](../.github/workflows/deploy.yml)）がビルドして本番URLへ自動デプロイする。手動実行も Actions タブの `deploy` > Run workflow から可能。
