@@ -73,7 +73,7 @@ export function SplashScreen({
 
           <div className="splash-pwa-loading">
             <p className="splash-pwa-loading-text">
-              loading...
+              loading
             </p>
 
             <div className="splash-pwa-loading-dots">

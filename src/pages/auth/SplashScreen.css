@@ -24,7 +24,8 @@
 }
 
 .splash-welcome {
-  position: relative;
+  position: absolute;
+  top:80px;
   z-index: 1;
 
   width: 100%;
