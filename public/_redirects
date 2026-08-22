@@ -1,0 +1,4 @@
+# Cloudflare Pages の SPA フォールバック。
+# ルーターを持たないため `/invite/{token}` などへの直アクセスでも index.html を返す。
+# 静的アセットに一致するリクエストはこの規則より先に配信される。
+/*    /index.html   200

@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient'
+import { apiRequest, apiRequestWithStatus } from './apiClient'
 
 export type BoardOrientation = 'PORTRAIT' | 'LANDSCAPE'
 
@@ -198,4 +198,35 @@ export async function getEventCollections(
   return apiRequest<EventCollections>(`/v1/events/${eventId}/collections`, {
     signal,
   })
+}
+
+/** GET /v1/events の要素に詳細フィールドを足したもの(openapi.yaml の EventDetail)。 */
+export type EventDetail = EventSummary & {
+  createdAt: string
+  calendarStartDate: string
+  visibleDayCount: number
+  groupId?: string | null
+}
+
+export type AcceptInvitationResult = {
+  event: EventDetail
+  /** 201=今回参加 / 200=既に参加済み。 */
+  alreadyJoined: boolean
+}
+
+/**
+ * 招待トークンを承認してイベントへ参加する。
+ *
+ * 200(既に参加済み)と201(参加完了)で文言を変えるため、
+ * ステータスまで見られる apiRequestWithStatus を使う。
+ */
+export async function acceptInvitation(
+  token: string,
+): Promise<AcceptInvitationResult> {
+  const { data, status } = await apiRequestWithStatus<EventDetail>(
+    `/v1/invitations/${encodeURIComponent(token)}/accept`,
+    { method: 'POST' },
+  )
+
+  return { event: data, alreadyJoined: status === 200 }
 }
