@@ -13,7 +13,18 @@
 
 HTTPS 標準対応のため PWA 要件（TR-804）を満たす。SPA フォールバック・`manifest.webmanifest`・`sw.js` の配信は確認済み。
 
-## デプロイ手順
+## 自動デプロイ（develop マージで本番反映）
+
+`develop` へ push（PRマージ含む）されると、GitHub Actions（[.github/workflows/deploy.yml](../.github/workflows/deploy.yml)）がビルドして本番URLへ自動デプロイする。手動実行も Actions タブの `deploy` > Run workflow から可能。
+
+**初回セットアップ（1回だけ・要人間操作）:**
+
+1. Cloudflare ダッシュボード > My Profile > API Tokens で、権限 `Cloudflare Pages: Edit`（対象アカウント限定）のトークンを作成する
+2. リポジトリの Settings > Secrets and variables > Actions に `CLOUDFLARE_API_TOKEN` として登録する（CLI なら `gh secret set CLOUDFLARE_API_TOKEN`）
+
+Secret 未設定の間はワークフローのデプロイステップが失敗するだけで、マージ自体には影響しない。
+
+## 手動デプロイ手順
 
 Cloudflare アカウントに `wrangler login` 済みの環境で:
 
