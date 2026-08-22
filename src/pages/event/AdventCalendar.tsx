@@ -9,12 +9,24 @@ import './AdventCalendar.css'
 
 type AdventCalendarProps = {
   title: string
+  eventDate: string
   onBack: () => void
+  onOpenStickers?: () => void
+  onOpenSettings?: () => void
+}
+
+function formatEventDateDisplay(value: string): string {
+  const [year, month, day] = value.split('-')
+  if (!year || !month || !day) return value
+  return `${Number(month)}/${Number(day)}`
 }
 
 export const AdventCalendar = ({
   title,
+  eventDate,
   onBack,
+  onOpenStickers,
+  onOpenSettings,
 }: AdventCalendarProps) => {
   // 現在解放されている日数
   const unlockedDays = 8
@@ -170,6 +182,7 @@ export const AdventCalendar = ({
           type="button"
           className="advent-calendar__icon-button"
           aria-label="設定"
+          onClick={onOpenSettings}
         >
           <Settings
             className="advent-calendar__icon icon-color"
@@ -202,7 +215,7 @@ export const AdventCalendar = ({
 
         {/* 日付 */}
         <p className="advent-calendar__event-date">
-          8/30
+          {formatEventDateDisplay(eventDate)}
         </p>
 
         {/* 題名 */}
@@ -256,6 +269,14 @@ export const AdventCalendar = ({
           {unlockedDays} / {cells.length} opened
         </div>
 
+        <button
+          type="button"
+          className="advent-calendar__stickers-button"
+          onClick={onOpenStickers}
+        >
+          獲得ステッカー
+        </button>
+
       </div>
 
 
@@ -269,7 +290,8 @@ export const AdventCalendar = ({
           advent-calendar__icon-button
           advent-calendar__collection-button
         "
-        aria-label="獲得アイテム一覧"
+        aria-label="獲得ステッカー"
+        onClick={onOpenStickers}
       >
         <Gift
           className="advent-calendar__icon icon-color"

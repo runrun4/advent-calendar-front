@@ -567,7 +567,7 @@ export const EVENT_ICON_OPTIONS: EventIconOption[] = [
 
 export const DEFAULT_EVENT_ICON_ID: EventIconId = 'calendar-days'
 
-function getEventIcon(id: EventIconId): LucideIcon {
+export function getEventIcon(id: EventIconId): LucideIcon {
   return (
     EVENT_ICON_OPTIONS.find((option) => option.id === id)
       ?.Icon ?? CalendarDays

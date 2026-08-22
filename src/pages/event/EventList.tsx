@@ -1,7 +1,14 @@
+import type { BoardOrientation } from '../../services/eventApi'
+
 export type EventListItem = {
   id: string
   title: string
   status: string
+  startDate: string
+  boardOrientation: BoardOrientation
+  iconId: string
+  boardEdited: boolean
+  mode: string
 }
 
 const EMPTY_EVENTS_MESSAGE = (

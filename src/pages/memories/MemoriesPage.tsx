@@ -1,6 +1,13 @@
+import type { BoardOrientation } from '../../services/eventApi'
+
 export type MemoryItem = {
   id: string
   title: string
+  startDate: string
+  boardOrientation: BoardOrientation
+  iconId: string
+  boardEdited: boolean
+  mode: string
 }
 
 const EMPTY_MEMORIES_MESSAGE = (

@@ -1,5 +1,7 @@
 import { apiRequest } from './apiClient'
 
+export type BoardOrientation = 'PORTRAIT' | 'LANDSCAPE'
+
 export type EventSummary = {
   id: string
   name: string
@@ -11,6 +13,9 @@ export type EventSummary = {
   role: string
   daysRemaining: number
   coverImageUrl: string | null
+  boardOrientation: BoardOrientation
+  iconId: string
+  boardEdited: boolean
 }
 
 type ListEventsResponse = {
@@ -97,6 +102,54 @@ export async function createEvent(
   })
 }
 
+export async function updateEventSettings(
+  eventId: string,
+  input: {
+    boardOrientation?: BoardOrientation
+    name?: string
+    iconId?: string
+    clearBoard?: boolean
+  },
+): Promise<EventSummary> {
+  return apiRequest<EventSummary>(`/v1/events/${eventId}`, {
+    method: 'PATCH',
+    body: input,
+  })
+}
+
+export type EventMemberUser = {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export type EventMember = {
+  user: EventMemberUser
+  role: string
+  joinedAt: string
+  openedToday: boolean | null
+}
+
+type EventMembersResponse = {
+  eventId: string
+  members: EventMember[]
+}
+
+export async function listEventMembers(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventMembersResponse> {
+  return apiRequest<EventMembersResponse>(`/v1/events/${eventId}/members`, {
+    signal,
+  })
+}
+
+export async function leaveEvent(eventId: string): Promise<void> {
+  await apiRequest<void>(`/v1/events/${eventId}/leave`, {
+    method: 'POST',
+  })
+}
+
 export type Invitation = {
   id: string
   eventId: string
@@ -112,5 +165,37 @@ export async function createInvitation(
   return apiRequest<Invitation>(`/v1/events/${eventId}/invitations`, {
     method: 'POST',
     body: { expiresInHours },
+  })
+}
+
+export type StickerItem = {
+  id: string
+  name: string
+  imageUrl: string
+  rarity: string
+  flavorText: string
+  source: string
+}
+
+export type CollectedSticker = {
+  grantId: string
+  grantedAt: string
+  source: string
+  dayId: string | null
+  sticker: StickerItem
+}
+
+export type EventCollections = {
+  eventId: string
+  knowledgeCards: unknown[]
+  stickers: CollectedSticker[]
+}
+
+export async function getEventCollections(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventCollections> {
+  return apiRequest<EventCollections>(`/v1/events/${eventId}/collections`, {
+    signal,
   })
 }

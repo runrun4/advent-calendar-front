@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Header } from '../../components/layout/Header'
-import { listEvents } from '../../services/eventApi'
+import { listEvents, type BoardOrientation } from '../../services/eventApi'
+import { DEFAULT_EVENT_ICON_ID } from './EventNameField'
 import { AdventCalendar } from './AdventCalendar'
 import { EventList, type EventListItem } from './EventList'
 import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
+import { EventSettingsModal } from './EventSettingsModal'
 import { ShareInviteModal } from './ShareInviteModal'
+import { StickerCollectionPage } from './StickerCollectionPage'
+import { BoardEditPage } from './BoardEditPage'
 
 type EventMainPageProps = {
   profileIconUrl?: string | null
   eventsRefreshKey?: number
-  pendingEvent?: { id: string; name: string } | null
+  pendingEvent?: {
+    id: string
+    name: string
+    startDate: string
+    boardOrientation?: BoardOrientation
+    mode?: string
+    iconId?: string
+    boardEdited?: boolean
+  } | null
   onOpenProfile?: () => void
   onOpenEventAdd?: (startDate?: string) => void
   onDetailOpenChange?: (isOpen: boolean) => void
@@ -19,6 +31,11 @@ type EventMainPageProps = {
 type AdventTarget = {
   id: string
   title: string
+  startDate: string
+  boardOrientation: BoardOrientation
+  iconId: string
+  boardEdited: boolean
+  mode: string
   source: 'event' | 'memory'
 }
 
@@ -26,11 +43,21 @@ function toListItem(event: {
   id: string
   name: string
   status: string
+  startDate: string
+  boardOrientation: BoardOrientation
+  iconId: string
+  boardEdited: boolean
+  mode: string
 }): EventListItem {
   return {
     id: event.id,
     title: event.name,
     status: event.status,
+    startDate: event.startDate,
+    boardOrientation: event.boardOrientation ?? 'PORTRAIT',
+    iconId: event.iconId || DEFAULT_EVENT_ICON_ID,
+    boardEdited: event.boardEdited ?? false,
+    mode: event.mode,
   }
 }
 
@@ -44,7 +71,11 @@ export function EventMainPage({
   onPendingEventConsumed,
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
+  const [adventView, setAdventView] = useState<
+    'calendar' | 'stickers' | 'board-edit'
+  >('calendar')
   const [showShareInvite, setShowShareInvite] = useState(false)
+  const [showEventSettings, setShowEventSettings] = useState(false)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
   const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
   const [completedEvents, setCompletedEvents] = useState<MemoryItem[]>([])
@@ -52,6 +83,9 @@ export function EventMainPage({
 
   useEffect(() => {
     onDetailOpenChange?.(adventTarget !== null)
+    if (adventTarget === null) {
+      setAdventView('calendar')
+    }
   }, [adventTarget, onDetailOpenChange])
 
   useEffect(() => {
@@ -60,6 +94,11 @@ export function EventMainPage({
     setAdventTarget({
       id: pendingEvent.id,
       title: pendingEvent.name,
+      startDate: pendingEvent.startDate,
+      boardOrientation: pendingEvent.boardOrientation ?? 'PORTRAIT',
+      iconId: pendingEvent.iconId ?? DEFAULT_EVENT_ICON_ID,
+      boardEdited: pendingEvent.boardEdited ?? false,
+      mode: pendingEvent.mode ?? 'GROUP',
       source: 'event',
     })
 
@@ -104,6 +143,11 @@ export function EventMainPage({
             .map((event) => ({
               id: event.id,
               title: event.name,
+              startDate: event.startDate,
+              boardOrientation: event.boardOrientation ?? 'PORTRAIT',
+              iconId: event.iconId || DEFAULT_EVENT_ICON_ID,
+              boardEdited: event.boardEdited ?? false,
+              mode: event.mode,
             })),
         )
       } catch (error) {
@@ -125,15 +169,154 @@ export function EventMainPage({
     }
   }, [eventsRefreshKey])
 
+  const handleBoardOrientationSaved = (
+    boardOrientation: BoardOrientation,
+    boardEdited: boolean,
+  ) => {
+    setAdventTarget((current) =>
+      current ? { ...current, boardOrientation, boardEdited } : null,
+    )
+    setActiveEvents((events) =>
+      events.map((event) =>
+        adventTarget && event.id === adventTarget.id
+          ? { ...event, boardOrientation, boardEdited }
+          : event,
+      ),
+    )
+    setCompletedEvents((memories) =>
+      memories.map((memory) =>
+        adventTarget && memory.id === adventTarget.id
+          ? { ...memory, boardOrientation, boardEdited }
+          : memory,
+      ),
+    )
+  }
+
+  const handleEventNameSaved = (name: string) => {
+    setAdventTarget((current) => (current ? { ...current, title: name } : null))
+    setActiveEvents((events) =>
+      events.map((event) =>
+        adventTarget && event.id === adventTarget.id
+          ? { ...event, title: name }
+          : event,
+      ),
+    )
+    setCompletedEvents((memories) =>
+      memories.map((memory) =>
+        adventTarget && memory.id === adventTarget.id
+          ? { ...memory, title: name }
+          : memory,
+      ),
+    )
+  }
+
+  const handleEventIconSaved = (iconId: string) => {
+    setAdventTarget((current) => (current ? { ...current, iconId } : null))
+    setActiveEvents((events) =>
+      events.map((event) =>
+        adventTarget && event.id === adventTarget.id
+          ? { ...event, iconId }
+          : event,
+      ),
+    )
+    setCompletedEvents((memories) =>
+      memories.map((memory) =>
+        adventTarget && memory.id === adventTarget.id
+          ? { ...memory, iconId }
+          : memory,
+      ),
+    )
+  }
+
+  const handleLeftRoom = () => {
+    setShowEventSettings(false)
+    setShowShareInvite(false)
+    setAdventTarget(null)
+
+    const controller = new AbortController()
+    void listEvents(controller.signal)
+      .then((summaries) => {
+        setActiveEvents(
+          summaries
+            .filter((event) => event.status === 'ACTIVE')
+            .map(toListItem),
+        )
+        setCompletedEvents(
+          summaries
+            .filter((event) => event.status === 'COMPLETED')
+            .map((event) => ({
+              id: event.id,
+              title: event.name,
+              startDate: event.startDate,
+              boardOrientation: event.boardOrientation ?? 'PORTRAIT',
+              iconId: event.iconId || DEFAULT_EVENT_ICON_ID,
+              boardEdited: event.boardEdited ?? false,
+              mode: event.mode,
+            })),
+        )
+      })
+      .catch((error) => {
+        console.error('GET /v1/events failed after leave', error)
+      })
+  }
+
   if (adventTarget !== null) {
+    const settingsModal = (
+      <EventSettingsModal
+        isOpen={showEventSettings}
+        eventId={adventTarget.id}
+        eventTitle={adventTarget.title}
+        eventMode={adventTarget.mode}
+        eventIconId={adventTarget.iconId}
+        boardOrientation={adventTarget.boardOrientation}
+        boardEdited={adventTarget.boardEdited}
+        onClose={() => setShowEventSettings(false)}
+        onBoardOrientationSaved={handleBoardOrientationSaved}
+        onEventNameSaved={handleEventNameSaved}
+        onEventIconSaved={handleEventIconSaved}
+        onLeftRoom={handleLeftRoom}
+      />
+    )
+    const openSettings = () => setShowEventSettings(true)
+
+    if (adventView === 'board-edit') {
+      return (
+        <BoardEditPage
+          boardOrientation={adventTarget.boardOrientation}
+          onBack={() => setAdventView('stickers')}
+        />
+      )
+    }
+
+    if (adventView === 'stickers') {
+      return (
+        <>
+          <StickerCollectionPage
+            eventId={adventTarget.id}
+            eventTitle={adventTarget.title}
+            eventDate={adventTarget.startDate}
+            boardOrientation={adventTarget.boardOrientation}
+            onBack={() => setAdventView('calendar')}
+            onOpenSettings={openSettings}
+            onOpenBoardEdit={() => setAdventView('board-edit')}
+          />
+          {settingsModal}
+        </>
+      )
+    }
+
     return (
       <>
         <AdventCalendar
           title={adventTarget.title}
+          eventDate={adventTarget.startDate}
           onBack={() => {
             setShowShareInvite(false)
+            setShowEventSettings(false)
             setAdventTarget(null)
           }}
+          onOpenStickers={() => setAdventView('stickers')}
+          onOpenSettings={openSettings}
         />
         <ShareInviteModal
           isOpen={showShareInvite}
@@ -141,6 +324,7 @@ export function EventMainPage({
           eventName={adventTarget.title}
           onClose={() => setShowShareInvite(false)}
         />
+        {settingsModal}
       </>
     )
   }
@@ -162,6 +346,11 @@ export function EventMainPage({
                 setAdventTarget({
                   id: event.id,
                   title: event.title,
+                  startDate: event.startDate,
+                  boardOrientation: event.boardOrientation ?? 'PORTRAIT',
+                  iconId: event.iconId || DEFAULT_EVENT_ICON_ID,
+                  boardEdited: event.boardEdited ?? false,
+                  mode: event.mode ?? 'GROUP',
                   source: 'event',
                 })
               }
@@ -214,6 +403,11 @@ export function EventMainPage({
                     setAdventTarget({
                       id: memory.id,
                       title: memory.title,
+                      startDate: memory.startDate,
+                      boardOrientation: memory.boardOrientation ?? 'PORTRAIT',
+                      iconId: memory.iconId || DEFAULT_EVENT_ICON_ID,
+                      boardEdited: memory.boardEdited ?? false,
+                      mode: memory.mode ?? 'GROUP',
                       source: 'memory',
                     })
                   }

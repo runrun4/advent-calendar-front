@@ -178,6 +178,24 @@
   color: #555;
 }
 
+.advent-calendar__stickers-button {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #78c878;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.advent-calendar__stickers-button:active {
+  transform: scale(0.98);
+}
+
 .advent-calendar__collection-button {
   position: fixed;
 
