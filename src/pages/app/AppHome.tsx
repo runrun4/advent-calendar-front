@@ -1,5 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ProfileModal } from '../../components/profile/ProfileModal'
+import {
+  listenForPushResubscribe,
+  syncPushSubscription,
+} from '../../services/pushNotificationService'
 import { useInviteAccept } from '../../hooks/useInviteAccept'
 import { usePageSwipe } from '../../hooks/usePageSwipe'
 import type { User } from '../../types/user'
@@ -63,9 +67,34 @@ export function AppHome({
     isEventDetailOpen,
   )
 
+  const hasSyncedPush = useRef(false)
+
   const refreshEvents = useCallback(() => {
     setEventsRefreshKey((key) => key + 1)
   }, [])
+
+  /*
+   * ログイン後の起動時に 1 回だけ Push 購読をサーバと同期する。
+   * 既に許可済み・購読済みのときだけ再登録して、
+   * VAPID 鍵のローテーションやサーバ側の購読消失に追従させる。
+   * ここでは通知許可を求めない（失敗はログのみ）。
+   */
+  useEffect(() => {
+    if (user === null) return
+    if (hasSyncedPush.current) return
+    hasSyncedPush.current = true
+
+    void syncPushSubscription()
+  }, [user])
+
+  /*
+   * Service Worker の pushsubscriptionchange から再登録を依頼された場合に、
+   * 認証トークンを持つクライアント側で PUT し直す。
+   */
+  useEffect(() => {
+    if (user === null) return
+    return listenForPushResubscribe()
+  }, [user])
 
   /*
    * 招待リンクで開かれていた場合の承認。

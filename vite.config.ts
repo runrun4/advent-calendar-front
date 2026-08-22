@@ -38,7 +38,20 @@ export default defineConfig({
     react(),
     basicSsl(), 
     VitePWA({
+      // Web Push を扱うため自前の Service Worker (src/sw.ts) を注入する
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+      },
+      // dev でも SW が動かないと Push の購読テストができない
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html',
+      },
       includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
       manifest: {
         name: 'mekulunlun',
