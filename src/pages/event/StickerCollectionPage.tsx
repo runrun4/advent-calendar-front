@@ -18,6 +18,7 @@ type StickerCollectionPageProps = {
   onBack: () => void
   onOpenSettings?: () => void
   onOpenBoardEdit?: () => void
+  onOpenChat?: () => void
 }
 
 function boardInnerClass(orientation?: BoardOrientation): string {
@@ -42,6 +43,7 @@ export function StickerCollectionPage({
   onBack,
   onOpenSettings,
   onOpenBoardEdit,
+  onOpenChat,
 }: StickerCollectionPageProps) {
   const [stickers, setStickers] = useState<CollectedSticker[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -151,6 +153,7 @@ export function StickerCollectionPage({
           type="button"
           className="event-board__icon-button"
           aria-label="チャット"
+          onClick={onOpenChat}
         >
           <MessageCircle className="event-board__icon" size={24} strokeWidth={2} />
         </button>

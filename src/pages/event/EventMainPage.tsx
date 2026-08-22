@@ -9,6 +9,7 @@ import { EventSettingsModal } from './EventSettingsModal'
 import { ShareInviteModal } from './ShareInviteModal'
 import { StickerCollectionPage } from './StickerCollectionPage'
 import { BoardEditPage } from './BoardEditPage'
+import { ChatView } from './ChatView'
 
 type EventMainPageProps = {
   profileIconUrl?: string | null
@@ -72,7 +73,10 @@ export function EventMainPage({
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
   const [adventView, setAdventView] = useState<
-    'calendar' | 'stickers' | 'board-edit'
+    'calendar' | 'stickers' | 'board-edit' | 'chat'
+  >('calendar')
+  const [chatReturnView, setChatReturnView] = useState<
+    'calendar' | 'stickers'
   >('calendar')
   const [showShareInvite, setShowShareInvite] = useState(false)
   const [showEventSettings, setShowEventSettings] = useState(false)
@@ -278,6 +282,19 @@ export function EventMainPage({
       />
     )
     const openSettings = () => setShowEventSettings(true)
+    const openChat = (from: 'calendar' | 'stickers') => {
+      setChatReturnView(from)
+      setAdventView('chat')
+    }
+
+    if (adventView === 'chat') {
+      return (
+        <ChatView
+          eventTitle={adventTarget.title}
+          onBack={() => setAdventView(chatReturnView)}
+        />
+      )
+    }
 
     if (adventView === 'board-edit') {
       return (
@@ -299,6 +316,7 @@ export function EventMainPage({
             onBack={() => setAdventView('calendar')}
             onOpenSettings={openSettings}
             onOpenBoardEdit={() => setAdventView('board-edit')}
+            onOpenChat={() => openChat('stickers')}
           />
           {settingsModal}
         </>
@@ -317,6 +335,7 @@ export function EventMainPage({
           }}
           onOpenStickers={() => setAdventView('stickers')}
           onOpenSettings={openSettings}
+          onOpenChat={() => openChat('calendar')}
         />
         <ShareInviteModal
           isOpen={showShareInvite}

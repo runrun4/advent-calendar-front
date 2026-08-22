@@ -13,6 +13,7 @@ type AdventCalendarProps = {
   onBack: () => void
   onOpenStickers?: () => void
   onOpenSettings?: () => void
+  onOpenChat?: () => void
 }
 
 function formatEventDateDisplay(value: string): string {
@@ -27,6 +28,7 @@ export const AdventCalendar = ({
   onBack,
   onOpenStickers,
   onOpenSettings,
+  onOpenChat,
 }: AdventCalendarProps) => {
   // 現在解放されている日数
   const unlockedDays = 8
@@ -196,6 +198,7 @@ export const AdventCalendar = ({
           type="button"
           className="advent-calendar__icon-button"
           aria-label="チャット"
+          onClick={onOpenChat}
         >
           <MessageCircle
             className="advent-calendar__icon icon-color"
