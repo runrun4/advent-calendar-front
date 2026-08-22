@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ProfileModal } from '../../components/profile/ProfileModal'
+import { useInviteAccept } from '../../hooks/useInviteAccept'
 import { usePageSwipe } from '../../hooks/usePageSwipe'
 import type { User } from '../../types/user'
+import type { EventSummary } from '../../services/eventApi'
 import { EventAddModal } from '../event/EventAddModal'
 import { EventMainPage } from '../event/EventMainPage'
+import { InviteAcceptModal } from '../event/InviteAcceptModal'
 import { PrivateCalendarPage } from '../private-calendar/PrivateCalendarPage'
 
 type AppTab = 'private' | 'event'
@@ -45,10 +48,7 @@ export function AppHome({
   ] = useState(false)
 
   const [pendingEvent, setPendingEvent] =
-    useState<{
-      id: string
-      name: string
-    } | null>(null)
+    useState<EventSummary | null>(null)
 
   const {
     activeTab,
@@ -63,13 +63,27 @@ export function AppHome({
     isEventDetailOpen,
   )
 
+  const refreshEvents = useCallback(() => {
+    setEventsRefreshKey((key) => key + 1)
+  }, [])
+
+  /*
+   * 招待リンクで開かれていた場合の承認。
+   * AppHome は認証が済んだ後にしか描画されないので、
+   * ここに来た時点で承認APIを叩いてよい。
+   */
+  const { result: inviteResult, dismissResult: dismissInviteResult } =
+    useInviteAccept({
+      enabled: user !== null,
+      onJoined: refreshEvents,
+    })
+
   const openEventAdd = (
     startDate?: string,
   ) => {
     setEventAddStartDate(
       startDate ?? null,
     )
-
     setIsEventAddOpen(true)
   }
 
@@ -182,20 +196,21 @@ export function AppHome({
         }
         onClose={closeEventAdd}
         onCreated={(event) => {
-          setEventsRefreshKey(
-            (key) => key + 1,
-          )
-
-          setPendingEvent({
-            id: event.id,
-            name: event.name,
-          })
-
-          setIsWaitingForEventTransition(
-            activeTab !== 'event',
-          )
-
+          setEventsRefreshKey((key) => key + 1)
+          setPendingEvent(event)
+          setIsWaitingForEventTransition(activeTab !== 'event')
           setActiveTab('event')
+        }}
+      />
+
+      <InviteAcceptModal
+        result={inviteResult}
+        onClose={() => {
+          // 参加できたときは参加先を探せるイベント一覧へ寄せる。
+          if (inviteResult?.kind !== 'failed') {
+            setActiveTab('event')
+          }
+          dismissInviteResult()
         }}
       />
     </div>

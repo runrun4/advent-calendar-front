@@ -277,6 +277,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
+import changeIcon from '../../assets/change.svg'
 import './EventNameField.css'
 
 export type EventIconId = string
@@ -567,7 +568,7 @@ export const EVENT_ICON_OPTIONS: EventIconOption[] = [
 
 export const DEFAULT_EVENT_ICON_ID: EventIconId = 'calendar-days'
 
-function getEventIcon(id: EventIconId): LucideIcon {
+export function getEventIcon(id: EventIconId): LucideIcon {
   return (
     EVENT_ICON_OPTIONS.find((option) => option.id === id)
       ?.Icon ?? CalendarDays
@@ -629,6 +630,12 @@ export function EventNameField({
           <SelectedIcon
             className="event-name-field__icon"
             strokeWidth={1.75}
+            aria-hidden="true"
+          />
+          <img
+            className="event-name-field__change-icon"
+            src={changeIcon}
+            alt=""
             aria-hidden="true"
           />
         </button>

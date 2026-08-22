@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ApiError } from '../../services/apiClient'
-import { createEvent } from '../../services/eventApi'
+import { createEvent, type EventSummary } from '../../services/eventApi'
 import './PrivateEventDetailPage.css'
 
 type PrivateEventDetailPageProps = {
@@ -9,7 +9,7 @@ type PrivateEventDetailPageProps = {
   endDate: string
   countdownDays: number
   category: string
-  onCreated?: (event: { id: string; name: string }) => void
+  onCreated?: (event: EventSummary) => void
   onBusyChange?: (isBusy: boolean) => void
 }
 

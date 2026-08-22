@@ -1,4 +1,6 @@
-import { apiRequest } from './apiClient'
+import { apiRequest, apiRequestWithStatus } from './apiClient'
+
+export type BoardOrientation = 'PORTRAIT' | 'LANDSCAPE'
 
 export type EventSummary = {
   id: string
@@ -11,6 +13,9 @@ export type EventSummary = {
   role: string
   daysRemaining: number
   coverImageUrl: string | null
+  boardOrientation: BoardOrientation
+  iconId: string
+  boardEdited: boolean
 }
 
 type ListEventsResponse = {
@@ -97,6 +102,54 @@ export async function createEvent(
   })
 }
 
+export async function updateEventSettings(
+  eventId: string,
+  input: {
+    boardOrientation?: BoardOrientation
+    name?: string
+    iconId?: string
+    clearBoard?: boolean
+  },
+): Promise<EventSummary> {
+  return apiRequest<EventSummary>(`/v1/events/${eventId}`, {
+    method: 'PATCH',
+    body: input,
+  })
+}
+
+export type EventMemberUser = {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export type EventMember = {
+  user: EventMemberUser
+  role: string
+  joinedAt: string
+  openedToday: boolean | null
+}
+
+type EventMembersResponse = {
+  eventId: string
+  members: EventMember[]
+}
+
+export async function listEventMembers(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventMembersResponse> {
+  return apiRequest<EventMembersResponse>(`/v1/events/${eventId}/members`, {
+    signal,
+  })
+}
+
+export async function leaveEvent(eventId: string): Promise<void> {
+  await apiRequest<void>(`/v1/events/${eventId}/leave`, {
+    method: 'POST',
+  })
+}
+
 export type Invitation = {
   id: string
   eventId: string
@@ -113,4 +166,67 @@ export async function createInvitation(
     method: 'POST',
     body: { expiresInHours },
   })
+}
+
+export type StickerItem = {
+  id: string
+  name: string
+  imageUrl: string
+  rarity: string
+  flavorText: string
+  source: string
+}
+
+export type CollectedSticker = {
+  grantId: string
+  grantedAt: string
+  source: string
+  dayId: string | null
+  sticker: StickerItem
+}
+
+export type EventCollections = {
+  eventId: string
+  knowledgeCards: unknown[]
+  stickers: CollectedSticker[]
+}
+
+export async function getEventCollections(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventCollections> {
+  return apiRequest<EventCollections>(`/v1/events/${eventId}/collections`, {
+    signal,
+  })
+}
+
+/** GET /v1/events の要素に詳細フィールドを足したもの(openapi.yaml の EventDetail)。 */
+export type EventDetail = EventSummary & {
+  createdAt: string
+  calendarStartDate: string
+  visibleDayCount: number
+  groupId?: string | null
+}
+
+export type AcceptInvitationResult = {
+  event: EventDetail
+  /** 201=今回参加 / 200=既に参加済み。 */
+  alreadyJoined: boolean
+}
+
+/**
+ * 招待トークンを承認してイベントへ参加する。
+ *
+ * 200(既に参加済み)と201(参加完了)で文言を変えるため、
+ * ステータスまで見られる apiRequestWithStatus を使う。
+ */
+export async function acceptInvitation(
+  token: string,
+): Promise<AcceptInvitationResult> {
+  const { data, status } = await apiRequestWithStatus<EventDetail>(
+    `/v1/invitations/${encodeURIComponent(token)}/accept`,
+    { method: 'POST' },
+  )
+
+  return { event: data, alreadyJoined: status === 200 }
 }

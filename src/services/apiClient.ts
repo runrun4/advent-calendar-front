@@ -51,10 +51,16 @@ type RequestOptions = {
   signal?: AbortSignal
 }
 
-export async function apiRequest<T>(
+export type ApiResponse<T> = {
+  data: T
+  /** HTTPステータス。200/201の違いで分岐する API があるため保持する。 */
+  status: number
+}
+
+export async function apiRequestWithStatus<T>(
   path: string,
   options: RequestOptions = {},
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const { method = 'GET', body, auth = true, signal } = options
   const headers = new Headers()
 
@@ -85,8 +91,16 @@ export async function apiRequest<T>(
   }
 
   if (response.status === 204) {
-    return undefined as T
+    return { data: undefined as T, status: response.status }
   }
 
-  return (await response.json()) as T
+  return { data: (await response.json()) as T, status: response.status }
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const { data } = await apiRequestWithStatus<T>(path, options)
+  return data
 }
