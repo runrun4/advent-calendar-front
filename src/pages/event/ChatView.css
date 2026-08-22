@@ -42,9 +42,63 @@
 .chat-view__header-text {
   flex: 1;
   min-width: 0;
-  padding-right: 44px;
+  padding: 0 88px;
 
   text-align: center;
+}
+
+.chat-view__ws-status {
+  position: absolute;
+  top: 28px;
+  right: 16px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  background: #f5f5f5;
+  color: #666;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.chat-view__ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #aaa;
+}
+
+.chat-view__ws-status--connected {
+  color: #2d7a2d;
+}
+
+.chat-view__ws-status--connected .chat-view__ws-dot {
+  background: #3d9b3d;
+}
+
+.chat-view__ws-status--connecting {
+  color: #888;
+}
+
+.chat-view__ws-status--connecting .chat-view__ws-dot {
+  background: #f5a623;
+}
+
+.chat-view__ws-status--error {
+  color: #b00020;
+}
+
+.chat-view__ws-status--error .chat-view__ws-dot {
+  background: #d32f2f;
+}
+
+.chat-view__ws-label {
+  white-space: nowrap;
 }
 
 .chat-view__title {
@@ -70,17 +124,212 @@
 .chat-view__main {
   display: flex;
   flex: 1;
+  flex-direction: column;
+
+  padding: 16px 16px 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.chat-view__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.chat-view__message {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+
+  width: 100%;
+}
+
+.chat-view__message--own {
+  justify-content: flex-end;
+}
+
+.chat-view__message--other {
+  justify-content: flex-start;
+}
+
+.chat-view__sender-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: calc(100% - 52px);
+}
+
+.chat-view__avatar {
+  display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 
-  padding: 24px 16px;
-  min-height: 0;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+
+  border-radius: 50%;
+  background: #d9d9d9;
+
+  color: #000;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.chat-view__avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-view__avatar-initial {
+  line-height: 1;
+}
+
+.chat-view__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chat-view__sender-name {
+  padding-left: 4px;
+
+  color: #666;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.chat-view__bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+}
+
+.chat-view__bubble--own {
+  max-width: min(72vw, 280px);
+  background: #c2e9b0;
+}
+
+.chat-view__bubble--other {
+  max-width: min(68vw, 260px);
+  background: #fff;
+  border: 1px solid #e8e8e8;
+}
+
+.chat-view__time {
+  flex-shrink: 0;
+
+  padding-bottom: 4px;
+
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.chat-view__text {
+  margin: 0;
+
+  color: #000;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-view__error {
+  margin: 12px 0 0;
+
+  color: #b00020;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
 }
 
 .chat-view__empty {
-  margin: 0;
+  margin: auto 0;
 
   color: #888;
   font-size: 0.95rem;
   font-weight: 500;
+  text-align: center;
+}
+
+.chat-view__composer {
+  flex-shrink: 0;
+
+  padding: 12px 16px 24px;
+}
+
+.chat-view__composer-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px 10px 8px 16px;
+
+  border-radius: 999px;
+  background: #d9d9d9;
+}
+
+.chat-view__input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+
+  background: #fff;
+  color: #000;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.chat-view__input:focus {
+  outline: none;
+}
+
+.chat-view__input::placeholder {
+  color: #aaa;
+}
+
+.chat-view__send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 44px;
+  height: 44px;
+
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+
+  background: #b8e6a0;
+  color: #000;
+
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.chat-view__send-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.chat-view__send-button:not(:disabled):active {
+  transform: scale(0.94);
 }

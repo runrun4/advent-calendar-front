@@ -290,6 +290,7 @@ export function EventMainPage({
     if (adventView === 'chat') {
       return (
         <ChatView
+          eventId={adventTarget.id}
           eventTitle={adventTarget.title}
           onBack={() => setAdventView(chatReturnView)}
         />
