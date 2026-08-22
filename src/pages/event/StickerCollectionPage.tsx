@@ -7,7 +7,12 @@ import {
   Pencil,
   Settings,
 } from 'lucide-react'
-import { getEventCollections, type BoardOrientation, type CollectedSticker } from '../../services/eventApi'
+import {
+  getEventCollections,
+  type BoardOrientation,
+  type CollectedSticker,
+} from '../../services/eventApi'
+import { formatMonthDay } from '../../utils/dateUtils'
 import './StickerCollectionPage.css'
 
 type StickerCollectionPageProps = {
@@ -27,12 +32,6 @@ function boardInnerClass(orientation?: BoardOrientation): string {
 }
 
 const DEFAULT_TITLE_FONT_SIZE = 45
-
-function formatEventDateDisplay(value: string): string {
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  return `${Number(month)}/${Number(day)}`
-}
 
 export function StickerCollectionPage({
   eventId,
@@ -109,12 +108,20 @@ export function StickerCollectionPage({
       setTitleFontSize(Math.max(20, calculatedFontSize))
     }
 
+    let disposed = false
+
     adjustTitleSize()
+    // Webフォントの読み込み前に測ると幅がずれるので、確定後にもう一度合わせる。
+    void document.fonts.ready.then(() => {
+      if (!disposed) adjustTitleSize()
+    })
+
     window.addEventListener('resize', adjustTitleSize)
     const resizeObserver = new ResizeObserver(adjustTitleSize)
     resizeObserver.observe(board)
 
     return () => {
+      disposed = true
       window.removeEventListener('resize', adjustTitleSize)
       resizeObserver.disconnect()
     }
@@ -158,7 +165,7 @@ export function StickerCollectionPage({
 
       <div className="event-board__event-info">
         <p className="event-board__event-date">
-          {formatEventDateDisplay(eventDate)}
+          {formatMonthDay(eventDate)}
         </p>
         <h1
           ref={titleRef}

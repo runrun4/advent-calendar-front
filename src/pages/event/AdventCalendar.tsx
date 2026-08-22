@@ -5,6 +5,7 @@ import {
   MessageCircle,
   Gift,
 } from 'lucide-react'
+import { formatMonthDay } from '../../utils/dateUtils'
 import './AdventCalendar.css'
 
 type AdventCalendarProps = {
@@ -13,12 +14,6 @@ type AdventCalendarProps = {
   onBack: () => void
   onOpenStickers?: () => void
   onOpenSettings?: () => void
-}
-
-function formatEventDateDisplay(value: string): string {
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  return `${Number(month)}/${Number(day)}`
 }
 
 export const AdventCalendar = ({
@@ -215,7 +210,7 @@ export const AdventCalendar = ({
 
         {/* 日付 */}
         <p className="advent-calendar__event-date">
-          {formatEventDateDisplay(eventDate)}
+          {formatMonthDay(eventDate)}
         </p>
 
         {/* 題名 */}
