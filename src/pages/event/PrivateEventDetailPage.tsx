@@ -9,6 +9,7 @@ type PrivateEventDetailPageProps = {
   endDate: string
   countdownDays: number
   category: string
+  iconId?: string
   onCreated?: (event: EventSummary) => void
   onBusyChange?: (isBusy: boolean) => void
 }
@@ -34,6 +35,7 @@ export function PrivateEventDetailPage({
   endDate,
   countdownDays,
   category,
+  iconId,
   onCreated,
   onBusyChange,
 }: PrivateEventDetailPageProps) {
@@ -59,6 +61,7 @@ export function PrivateEventDetailPage({
         mode: 'PERSONAL',
         category,
         description: buildDescription(detail, eventUrl, eventUrl2),
+        ...(iconId ? { iconId } : {}),
       })
       onCreated?.(created)
     } catch (error) {

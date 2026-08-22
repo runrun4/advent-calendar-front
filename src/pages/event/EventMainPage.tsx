@@ -58,7 +58,21 @@ function toMemoryItem(event: EventSummary): MemoryItem {
 }
 
 function toListItem(event: EventSummary): EventListItem {
-  return { ...toMemoryItem(event), status: event.status }
+  return {
+    ...toMemoryItem(event),
+    status: event.status,
+    phase: event.phase,
+  }
+}
+
+/** イベント日時が若い順（同じ日なら id で安定化） */
+function byStartDateAsc<T extends { startDate: string; id: string }>(
+  a: T,
+  b: T,
+): number {
+  const byDate = a.startDate.localeCompare(b.startDate)
+  if (byDate !== 0) return byDate
+  return a.id.localeCompare(b.id)
 }
 
 function toAdventTarget(
@@ -180,17 +194,16 @@ export function EventMainPage({
 
         setActiveEvents(
           summaries
-            .filter(
-              (event) =>
-                event.status === 'ACTIVE',
-            )
-            .map(toListItem),
+            .filter((event) => event.status === 'ACTIVE')
+            .map(toListItem)
+            .sort(byStartDateAsc),
         )
 
         setCompletedEvents(
           summaries
             .filter((event) => event.status === 'COMPLETED')
-            .map(toMemoryItem),
+            .map(toMemoryItem)
+            .sort(byStartDateAsc),
         )
       } catch (error) {
         if (controller.signal.aborted) {
@@ -261,12 +274,14 @@ export function EventMainPage({
         setActiveEvents(
           summaries
             .filter((event) => event.status === 'ACTIVE')
-            .map(toListItem),
+            .map(toListItem)
+            .sort(byStartDateAsc),
         )
         setCompletedEvents(
           summaries
             .filter((event) => event.status === 'COMPLETED')
-            .map(toMemoryItem),
+            .map(toMemoryItem)
+            .sort(byStartDateAsc),
         )
       })
       .catch((error) => {
