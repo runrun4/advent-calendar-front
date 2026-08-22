@@ -43,14 +43,17 @@ export default defineConfig({
 
     basicSsl(),
 
-    VitePWA({
-      registerType: 'autoUpdate',
+VitePWA({
+  registerType: 'autoUpdate',
+  strategies: 'injectManifest',
+  srcDir: 'src',
+  filename: 'sw.ts',
 
-      devOptions: {
-        enabled: true,
-      },
+  devOptions: {
+    enabled: true,
+  },
 
-      includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
+  includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
 
       manifest: {
         name: 'mekulunlun',
