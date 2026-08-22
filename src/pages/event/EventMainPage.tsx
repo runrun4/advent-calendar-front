@@ -260,23 +260,26 @@ export function EventMainPage({
    * 向き変更時の「ボードを消す?」確認がこのフラグを見るので、開いている行にも反映する。
    */
   const handleBoardEditedChange = (boardEdited: boolean) => {
+    /*
+     * 呼び出し元は effect からこれを呼ぶ。ここで毎回 setState すると
+     * 再レンダー → コールバックの同一性が変わる → effect 再実行、と回り続けるので、
+     * 変化が無いときは何もしないで抜ける。
+     */
+    if (!adventTarget || adventTarget.boardEdited === boardEdited) return
+
+    const targetId = adventTarget.id
+
     setAdventTarget((current) =>
-      current && current.boardEdited !== boardEdited
-        ? { ...current, boardEdited }
-        : current,
+      current && current.id === targetId ? { ...current, boardEdited } : current,
     )
     setActiveEvents((events) =>
       events.map((event) =>
-        adventTarget && event.id === adventTarget.id
-          ? { ...event, boardEdited }
-          : event,
+        event.id === targetId ? { ...event, boardEdited } : event,
       ),
     )
     setCompletedEvents((memories) =>
       memories.map((memory) =>
-        adventTarget && memory.id === adventTarget.id
-          ? { ...memory, boardEdited }
-          : memory,
+        memory.id === targetId ? { ...memory, boardEdited } : memory,
       ),
     )
   }
