@@ -269,14 +269,6 @@ export const AdventCalendar = ({
           {unlockedDays} / {cells.length} opened
         </div>
 
-        <button
-          type="button"
-          className="advent-calendar__stickers-button"
-          onClick={onOpenStickers}
-        >
-          獲得ステッカー
-        </button>
-
       </div>
 
 
