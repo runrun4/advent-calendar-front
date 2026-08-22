@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { InviteAcceptResult } from '../../hooks/useInviteAccept'
 import './InviteAcceptModal.css'
 
@@ -21,6 +22,32 @@ export function InviteAcceptModal({
   result,
   onClose,
 }: InviteAcceptModalProps) {
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  /*
+   * ユーザー操作ではなく自動で開くモーダルなので、
+   * Escape で確実に閉じられるようにする(フォーカスは下のボタンが受け取る)。
+   */
+  useEffect(() => {
+    if (result === null) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCloseRef.current()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [result])
+
   if (result === null) return null
 
   return (
@@ -58,6 +85,7 @@ export function InviteAcceptModal({
         <button
           type="button"
           className="invite-accept-modal__button"
+          autoFocus
           onClick={onClose}
         >
           {result.kind === 'failed' ? '閉じる' : 'イベント一覧へ'}
