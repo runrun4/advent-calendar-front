@@ -53,15 +53,19 @@ function App() {
   // アプリ本体
   // ================================
   return (
-    <AppHome
-      user={user}
-      onUserUpdated={setUser}
-      onLoggedOut={() => {
-        setUser(null)
-        setAuthView('login')
-        setPhase('auth')
-      }}
-    />
+    <>
+      <NotificationPermissionButton />
+
+      <AppHome
+        user={user}
+        onUserUpdated={setUser}
+        onLoggedOut={() => {
+          setUser(null)
+          setAuthView('login')
+          setPhase('auth')
+        }}
+      />
+    </>
   )
 }
 

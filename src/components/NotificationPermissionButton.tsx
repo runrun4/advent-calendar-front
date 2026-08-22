@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  getExistingPushSubscription,
   getNotificationPermission,
-  getPushManager,
   getServiceWorkerRegistration,
   requestNotificationPermission,
 } from '../services/pushNotificationService'
@@ -12,9 +10,6 @@ export function NotificationPermissionButton() {
     useState<NotificationPermission>('default')
 
   const [serviceWorkerReady, setServiceWorkerReady] = useState(false)
-  const [pushSupported, setPushSupported] = useState(false)
-  const [subscriptionExists, setSubscriptionExists] = useState(false)
-
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -25,17 +20,9 @@ export function NotificationPermissionButton() {
       try {
         await getServiceWorkerRegistration()
         setServiceWorkerReady(true)
-
-        await getPushManager()
-        setPushSupported(true)
-
-        const subscription = await getExistingPushSubscription()
-
-        setSubscriptionExists(subscription !== null)
-
-        console.log('既存のPush Subscription:', subscription)
       } catch (error) {
-        console.error('Push APIの確認に失敗しました:', error)
+        console.error('Service Workerの確認に失敗しました:', error)
+        setMessage('Service Workerを確認できませんでした')
       }
     }
 
@@ -55,44 +42,20 @@ export function NotificationPermissionButton() {
 
       setPermission(result)
 
-      if (result !== 'granted') {
-        if (result === 'denied') {
-          setMessage('通知が拒否されました')
-        } else {
-          setMessage('通知の許可が選択されませんでした')
-        }
-
-        return
-      }
-
-      const pushManager = await getPushManager()
-
-      console.log('PushManager:', pushManager)
-
-      const existingSubscription =
-        await getExistingPushSubscription()
-
-      setSubscriptionExists(existingSubscription !== null)
-
-      if (existingSubscription) {
-        console.log(
-          '既存のPush Subscription:',
-          existingSubscription,
-        )
-
-        setMessage('既存のPush Subscriptionを確認しました')
+      if (result === 'granted') {
+        setMessage('通知が許可されました')
+      } else if (result === 'denied') {
+        setMessage('通知が拒否されました')
       } else {
-        setMessage(
-          '通知は許可されました。Push Subscriptionはまだ作成していません',
-        )
+        setMessage('通知の許可が選択されませんでした')
       }
     } catch (error) {
-      console.error('通知設定の確認に失敗しました:', error)
+      console.error('通知許可の取得に失敗しました:', error)
 
       if (error instanceof Error) {
         setMessage(error.message)
       } else {
-        setMessage('通知設定の確認に失敗しました')
+        setMessage('通知許可の取得に失敗しました')
       }
     } finally {
       setLoading(false)
@@ -116,17 +79,7 @@ export function NotificationPermissionButton() {
       </p>
 
       <p>
-        Push API:{' '}
-        {pushSupported ? '利用可能' : '確認中...'}
-      </p>
-
-      <p>
         通知許可状態: {permission}
-      </p>
-
-      <p>
-        Push Subscription:{' '}
-        {subscriptionExists ? '存在します' : 'まだありません'}
       </p>
 
       <button

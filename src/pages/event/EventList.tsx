@@ -1,5 +1,3 @@
-import { NotificationPermissionButton } from '../../components/NotificationPermissionButton'
-
 export type EventListItem = {
   id: string
   title: string
@@ -8,7 +6,7 @@ export type EventListItem = {
 
 const EMPTY_EVENTS_MESSAGE = (
   <>
-    参加中のイベントはまだありません<NotificationPermissionButton />
+    参加中のイベントはまだありません
     <br />
     下のプラスボタンからイベントを追加しよう！
   </>
