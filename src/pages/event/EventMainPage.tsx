@@ -14,11 +14,13 @@ import { ShareInviteModal } from './ShareInviteModal'
 import { StickerCollectionPage } from './StickerCollectionPage'
 import { BoardEditPage } from './BoardEditPage'
 import { ChatView } from './ChatView'
+import { InstallAppPrompt } from './InstallAppPrompt'
 
 type EventMainPageProps = {
   profileIconUrl?: string | null
   eventsRefreshKey?: number
   pendingEvent?: EventSummary | null
+  isEventPageActive?: boolean
   onOpenProfile?: () => void
   onOpenEventAdd?: (startDate?: string) => void
   onDetailOpenChange?: (isOpen: boolean) => void
@@ -80,6 +82,7 @@ export function EventMainPage({
   profileIconUrl = null,
   eventsRefreshKey = 0,
   pendingEvent = null,
+  isEventPageActive = false,
   onOpenProfile,
   onOpenEventAdd,
   onDetailOpenChange,
@@ -116,58 +119,89 @@ export function EventMainPage({
   }
 
   useEffect(() => {
-    onDetailOpenChange?.(adventTarget !== null)
+    onDetailOpenChange?.(
+      adventTarget !== null,
+    )
   }, [adventTarget, onDetailOpenChange])
 
   useEffect(() => {
-    if (!pendingEvent) return
+    if (!pendingEvent) {
+      return
+    }
+
     setShowShareInvite(false)
     setAdventView('calendar')
     setAdventTarget(toAdventTarget(toMemoryItem(pendingEvent), 'event'))
 
-    // カレンダー画面の描画後、0.3秒置いてから招待モーダルを開く。
     let openTimer: number | undefined
-    const firstFrame = window.requestAnimationFrame(() => {
-      const secondFrame = window.requestAnimationFrame(() => {
-        openTimer = window.setTimeout(() => {
-          setShowShareInvite(true)
-          onPendingEventConsumed?.()
-        }, 300)
+    const frameIds: number[] = []
+
+    const firstFrame =
+      window.requestAnimationFrame(() => {
+        const secondFrame =
+          window.requestAnimationFrame(() => {
+            openTimer = window.setTimeout(() => {
+              setShowShareInvite(true)
+              onPendingEventConsumed?.()
+            }, 300)
+          })
+
+        frameIds.push(secondFrame)
       })
 
-      frameIds.push(secondFrame)
-    })
-    const frameIds = [firstFrame]
+    frameIds.push(firstFrame)
 
     return () => {
-      frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId))
+      frameIds.forEach((frameId) => {
+        window.cancelAnimationFrame(frameId)
+      })
+
       if (openTimer !== undefined) {
         window.clearTimeout(openTimer)
       }
     }
-  }, [pendingEvent, onPendingEventConsumed])
+  }, [
+    pendingEvent,
+    onPendingEventConsumed,
+  ])
 
   useEffect(() => {
-    const controller = new AbortController()
+    const controller =
+      new AbortController()
 
     const load = async () => {
       setIsLoadingEvents(true)
 
       try {
-        const summaries = await listEvents(controller.signal)
+        const summaries =
+          await listEvents(
+            controller.signal,
+          )
+
         setActiveEvents(
           summaries
-            .filter((event) => event.status === 'ACTIVE')
+            .filter(
+              (event) =>
+                event.status === 'ACTIVE',
+            )
             .map(toListItem),
         )
+
         setCompletedEvents(
           summaries
             .filter((event) => event.status === 'COMPLETED')
             .map(toMemoryItem),
         )
       } catch (error) {
-        if (controller.signal.aborted) return
-        console.error('GET /v1/events failed', error)
+        if (controller.signal.aborted) {
+          return
+        }
+
+        console.error(
+          'GET /v1/events failed',
+          error,
+        )
+
         setActiveEvents([])
         setCompletedEvents([])
       } finally {
@@ -309,11 +343,14 @@ export function EventMainPage({
           onOpenSettings={openSettings}
           onOpenChat={() => openChat('calendar')}
         />
+
         <ShareInviteModal
           isOpen={showShareInvite}
           eventId={adventTarget.id}
           eventName={adventTarget.title}
-          onClose={() => setShowShareInvite(false)}
+          onClose={() =>
+            setShowShareInvite(false)
+          }
         />
         {settingsModal}
       </>
@@ -322,12 +359,17 @@ export function EventMainPage({
 
   return (
     <div className="event-main">
-      <Header iconUrl={profileIconUrl} onOpenProfile={onOpenProfile} />
+      <Header
+        iconUrl={profileIconUrl}
+        onOpenProfile={onOpenProfile}
+      />
 
       <main className="event-main__content">
         <div className="event-main__scroll-area">
           <section className="event-main__section event-main__section--events">
-            <h2 className="page-title event-main__section-title">EVENT</h2>
+            <h2 className="page-title event-main__section-title">
+              EVENT
+            </h2>
 
             <EventList
               events={activeEvents}
@@ -341,7 +383,11 @@ export function EventMainPage({
             <button
               type="button"
               className="event-main__section-toggle"
-              onClick={() => setIsReflectionOpen((open) => !open)}
+              onClick={() =>
+                setIsReflectionOpen(
+                  (open) => !open,
+                )
+              }
               aria-expanded={isReflectionOpen}
               aria-controls="reflection-list"
             >
@@ -352,9 +398,12 @@ export function EventMainPage({
               >
                 Reflection
               </span>
+
               <span
                 className={`event-main__section-chevron${
-                  isReflectionOpen ? ' is-open' : ''
+                  isReflectionOpen
+                    ? ' is-open'
+                    : ''
                 }`}
                 aria-hidden="true"
               >
@@ -388,6 +437,11 @@ export function EventMainPage({
           </section>
         </div>
       </main>
+
+      {/* イベント画面を開いているWebユーザーのみ表示 */}
+      <InstallAppPrompt
+        isActive={isEventPageActive}
+      />
     </div>
   )
 }

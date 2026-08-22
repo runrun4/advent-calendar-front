@@ -1,14 +1,26 @@
 import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { AppHome } from './pages/app/AppHome'
-import { AuthFlow, type AuthView } from './pages/auth/AuthFlow'
+import {
+  AuthFlow,
+  type AuthView,
+} from './pages/auth/AuthFlow'
 import { SplashScreen } from './pages/auth/SplashScreen'
 
 function App() {
-  const { user, setUser, phase, setPhase, isBootstrapped } = useAuth()
+  const {
+    user,
+    setUser,
+    phase,
+    setPhase,
+    isBootstrapped,
+  } = useAuth()
 
-  const [authView, setAuthView] = useState<AuthView>('login')
-  const [showSplash, setShowSplash] = useState(true)
+  const [authView, setAuthView] =
+    useState<AuthView>('login')
+
+  const [showSplash, setShowSplash] =
+    useState(true)
 
   if (!isBootstrapped) {
     return null
@@ -20,8 +32,12 @@ function App() {
   if (showSplash) {
     const finishSplash = () => {
       setShowSplash(false)
-      // PWAは2秒後 / Webはボタン。どちらもログイン済みならアプリへ
-      setPhase(user ? 'app' : 'auth')
+
+      // PWAは2秒後 / Webはボタン。
+      // どちらもログイン済みならアプリへ
+      setPhase(
+        user ? 'app' : 'auth',
+      )
     }
 
     return (
