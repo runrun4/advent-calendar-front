@@ -27,11 +27,8 @@ export function AuthFlow({
   if (phase === 'splash') {
     return (
       <SplashScreen
-        onLoadingComplete={() => {
+        onFinished={() => {
           // ログイン済み → イベント画面 / 未ログイン → 認証画面
-          setPhase(user ? 'app' : 'auth')
-        }}
-        onWebContinue={() => {
           setPhase(user ? 'app' : 'auth')
         }}
       />
