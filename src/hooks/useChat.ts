@@ -33,6 +33,19 @@ function mergeMessages(
   return sortMessages([...byId.values()])
 }
 
+function channelTopic(eventId: string): string {
+  return `chat:${eventId}`
+}
+
+async function removeChatChannels(eventId: string): Promise<void> {
+  const topic = `realtime:${channelTopic(eventId)}`
+  const existing = supabase
+    .getChannels()
+    .filter((channel) => channel.topic === topic)
+
+  await Promise.all(existing.map((channel) => supabase.removeChannel(channel)))
+}
+
 export function useChat(eventId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -122,16 +135,23 @@ export function useChat(eventId: string) {
       setConnectionStatus('connecting')
 
       const token = await getAccessToken()
+      if (cancelled) return
+
       if (!token) {
         setConnectionStatus('error')
         setError('ログインが必要です')
         return
       }
 
-      supabase.realtime.setAuth(token)
+      await supabase.realtime.setAuth(token)
+      if (cancelled) return
+
+      // StrictMode の二重マウントで古いチャンネルが残ると subscribe コールバックが来ない。
+      await removeChatChannels(eventId)
+      if (cancelled) return
 
       channel = supabase
-        .channel(`chat:${eventId}`)
+        .channel(channelTopic(eventId))
         .on(
           'postgres_changes',
           {
@@ -152,7 +172,7 @@ export function useChat(eventId: string) {
             upsertMessage(messageFromRealtimeRow(row, membersRef.current))
           },
         )
-        .subscribe((status) => {
+        .subscribe((status, err) => {
           if (cancelled) return
 
           if (status === 'SUBSCRIBED') {
@@ -164,11 +184,14 @@ export function useChat(eventId: string) {
           }
 
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error('[chat realtime]', status, err)
             setConnectionStatus('error')
             return
           }
 
-          setConnectionStatus('connecting')
+          if (status === 'CLOSED') {
+            setConnectionStatus('connecting')
+          }
         })
     }
 
@@ -176,8 +199,10 @@ export function useChat(eventId: string) {
 
     return () => {
       cancelled = true
-      if (channel) {
-        void supabase.removeChannel(channel)
+      const activeChannel = channel
+      channel = null
+      if (activeChannel) {
+        void supabase.removeChannel(activeChannel)
       }
     }
   }, [eventId, loadHistory, upsertMessage])

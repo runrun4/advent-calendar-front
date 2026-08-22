@@ -37,7 +37,7 @@ export function ChatView({ eventId, eventTitle, onBack }: ChatViewProps) {
     useChat(eventId)
 
   const [draft, setDraft] = useState('')
-  const listEndRef = useRef<HTMLDivElement>(null)
+  const listEndRef = useRef<HTMLLIElement>(null)
 
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' })
