@@ -1,4 +1,5 @@
 import { UserRound } from 'lucide-react'
+import appIcon from '../../assets/appicon.jpg'
 
 type HeaderProps = {
   title?: string
@@ -7,13 +8,21 @@ type HeaderProps = {
 }
 
 export function Header({
-  title = 'タイトル',
+  title = 'mekulunlun',
   iconUrl = null,
   onOpenProfile,
 }: HeaderProps) {
   return (
     <header className="app-header">
-      <h1 className="page-title app-header__title">{title}</h1>
+      <div className="app-header__brand">
+        <img
+          className="app-header__app-icon"
+          src={appIcon}
+          alt="mekulunlun"
+        />
+
+        <h1 className="page-title app-header__title">{title}</h1>
+      </div>
 
       <button
         type="button"
@@ -28,7 +37,10 @@ export function Header({
             alt=""
           />
         ) : (
-          <UserRound className="app-header__profile-icon" aria-hidden="true" />
+          <UserRound
+            className="app-header__profile-icon"
+            aria-hidden="true"
+          />
         )}
       </button>
     </header>

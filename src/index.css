@@ -218,6 +218,19 @@ input {
   border-bottom: 1px solid #ddd;
 }
 
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header__app-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .app-header__title {
   margin: 0;
 }
