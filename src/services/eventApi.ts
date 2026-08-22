@@ -33,10 +33,54 @@ export async function listEvents(signal?: AbortSignal): Promise<EventSummary[]> 
   return data.events ?? []
 }
 
+export type EventNameCandidate = {
+  name: string
+  sourceUrl: string | null
+}
+
+export type SearchEventCandidatesInput = {
+  name: string
+  startDate: string
+  endDate: string
+  location?: string
+}
+
+type EventCandidatesResponse = {
+  candidates: EventNameCandidate[]
+}
+
+export async function searchEventCandidates(
+  input: SearchEventCandidatesInput,
+  signal?: AbortSignal,
+): Promise<EventNameCandidate[]> {
+  const body: Record<string, string> = {
+    visibility: 'PUBLIC',
+    name: input.name.trim(),
+    startDate: input.startDate,
+    endDate: input.endDate,
+  }
+
+  const location = input.location?.trim()
+  if (location) {
+    body.location = location
+  }
+
+  const data = await apiRequest<EventCandidatesResponse>(
+    '/v1/event-candidates',
+    {
+      method: 'POST',
+      body,
+      signal,
+    },
+  )
+
+  return data.candidates ?? []
+}
+
 export async function createEvent(
   input: CreateEventInput,
 ): Promise<EventSummary> {
-  const countdownDays = Math.min(30, Math.max(0, input.countdownDays))
+  const countdownDays = Math.min(29, Math.max(0, input.countdownDays))
 
   return apiRequest<EventSummary>('/v1/events', {
     method: 'POST',

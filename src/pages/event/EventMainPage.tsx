@@ -56,13 +56,33 @@ export function EventMainPage({
 
   useEffect(() => {
     if (!pendingEvent) return
+    setShowShareInvite(false)
     setAdventTarget({
       id: pendingEvent.id,
       title: pendingEvent.name,
       source: 'event',
     })
-    setShowShareInvite(true)
-    onPendingEventConsumed?.()
+
+    // カレンダー画面の描画後、0.3秒置いてから招待モーダルを開く。
+    let openTimer: number | undefined
+    const firstFrame = window.requestAnimationFrame(() => {
+      const secondFrame = window.requestAnimationFrame(() => {
+        openTimer = window.setTimeout(() => {
+          setShowShareInvite(true)
+          onPendingEventConsumed?.()
+        }, 300)
+      })
+
+      frameIds.push(secondFrame)
+    })
+    const frameIds = [firstFrame]
+
+    return () => {
+      frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId))
+      if (openTimer !== undefined) {
+        window.clearTimeout(openTimer)
+      }
+    }
   }, [pendingEvent, onPendingEventConsumed])
 
   useEffect(() => {

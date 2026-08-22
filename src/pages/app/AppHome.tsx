@@ -22,6 +22,8 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [eventAddStartDate, setEventAddStartDate] = useState<string | null>(null)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
   const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
+  const [isWaitingForEventTransition, setIsWaitingForEventTransition] =
+    useState(false)
   const [pendingEvent, setPendingEvent] = useState<{
     id: string
     name: string
@@ -52,6 +54,14 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
       <main className="app-shell__main" {...pointerHandlers}>
         <div
           className="page-slider"
+          onTransitionEnd={(event) => {
+            if (
+              event.propertyName === 'transform' &&
+              activeTab === 'event'
+            ) {
+              setIsWaitingForEventTransition(false)
+            }
+          }}
           style={{
             transform: `translateX(calc(-${currentIndex * 50}% + ${dragOffset}px))`,
             transition: isDragging ? 'none' : 'transform 0.3s ease',
@@ -64,7 +74,9 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
             <EventMainPage
               profileIconUrl={user?.iconUrl}
               eventsRefreshKey={eventsRefreshKey}
-              pendingEvent={pendingEvent}
+              pendingEvent={
+                isWaitingForEventTransition ? null : pendingEvent
+              }
               onOpenProfile={() => setIsProfileOpen(true)}
               onOpenEventAdd={openEventAdd}
               onDetailOpenChange={setIsEventDetailOpen}
@@ -105,6 +117,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
         onCreated={(event) => {
           setEventsRefreshKey((key) => key + 1)
           setPendingEvent({ id: event.id, name: event.name })
+          setIsWaitingForEventTransition(activeTab !== 'event')
           setActiveTab('event')
         }}
       />
