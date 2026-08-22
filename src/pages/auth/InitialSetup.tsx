@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { UserRound } from 'lucide-react'
 import type { User } from '../../types/user'
 import { ApiError } from '../../services/apiClient'
 import { saveInitialProfile } from '../../services/userApi'
@@ -6,26 +7,6 @@ import './InitialSetup.css'
 
 type InitialSetupProps = {
   onComplete?: (user: User) => void
-}
-
-function UserIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="64"
-      height="64"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  )
 }
 
 function PlusIcon() {
@@ -132,9 +113,10 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
                   alt="選択したプロフィール画像"
                 />
               ) : (
-                <span className="initial-setup__avatar-icon">
-                  <UserIcon />
-                </span>
+                <UserRound
+                  className="initial-setup__avatar-icon"
+                  aria-hidden="true"
+                />
               )}
             </div>
 

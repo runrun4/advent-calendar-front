@@ -9,7 +9,7 @@ import { createMonthList, getDays } from './calendarUtils'
 const SWIPE_THRESHOLD = 50
 
 type PrivateCalendarPageProps = {
-  onOpenEventAdd?: () => void
+  onOpenEventAdd?: (startDate?: string) => void
 }
 
 export function PrivateCalendarPage({
@@ -27,6 +27,7 @@ export function PrivateCalendarPage({
 
   const [monthIndex, setMonthIndex] = useState(MONTH_RANGE)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const didSwipe = useRef(false)
 
   const currentMonth = months[monthIndex]
   const previousMonth = monthIndex > 0 ? months[monthIndex - 1] : null
@@ -45,6 +46,7 @@ export function PrivateCalendarPage({
   }
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    didSwipe.current = false
     touchStart.current = {
       x: event.touches[0].clientX,
       y: event.touches[0].clientY,
@@ -60,6 +62,8 @@ export function PrivateCalendarPage({
 
     if (Math.abs(deltaY) <= Math.abs(deltaX)) return
     if (Math.abs(deltaY) < SWIPE_THRESHOLD) return
+
+    didSwipe.current = true
 
     if (deltaY < 0) {
       goToNextMonth()
@@ -85,13 +89,17 @@ export function PrivateCalendarPage({
             days={days}
             currentMonth={currentMonth}
             today={today}
+            onSelectDate={(date) => {
+              if (!didSwipe.current) onOpenEventAdd?.(date)
+              didSwipe.current = false
+            }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           />
         </div>
       </div>
 
-      <CalendarAddButton onClick={onOpenEventAdd} />
+      <CalendarAddButton onClick={() => onOpenEventAdd?.()} />
     </div>
   )
 }

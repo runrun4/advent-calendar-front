@@ -5,6 +5,8 @@ type CalendarDayCellProps = {
   index: number
   currentMonth: CalendarMonth
   today: CalendarToday
+  dateLabel: string
+  onSelect: () => void
 }
 
 function getDayCellClassName(
@@ -38,18 +40,23 @@ export function CalendarDayCell({
   index,
   currentMonth,
   today,
+  dateLabel,
+  onSelect,
 }: CalendarDayCellProps) {
   return (
-    <div
+    <button
+      type="button"
       className={getDayCellClassName(
         calendarDay,
         index,
         currentMonth,
         today,
       )}
+      aria-label={`${dateLabel}からイベントを作成`}
+      onClick={onSelect}
     >
       <div className="private-calendar-day-number">{calendarDay.day}</div>
       <div className="private-calendar-events" />
-    </div>
+    </button>
   )
 }

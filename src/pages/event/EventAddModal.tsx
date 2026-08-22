@@ -16,6 +16,7 @@ type DateField = 'start' | 'end'
 type EventAddModalProps = {
   isOpen: boolean
   onClose: () => void
+  initialStartDate?: string | null
 }
 
 const MIN_COUNTDOWN_DAYS = 0
@@ -329,6 +330,7 @@ function DateSection({
 export function EventAddModal({
   isOpen,
   onClose,
+  initialStartDate = null,
 }: EventAddModalProps) {
   const [eventType, setEventType] =
     useState<EventType>('public')
@@ -396,6 +398,8 @@ export function EventAddModal({
   const [showDiscardConfirm, setShowDiscardConfirm] =
     useState(false)
 
+  const defaultStartDate = initialStartDate ?? ''
+
   const isDirty =
     eventType !== 'public' ||
     showPublicRequest ||
@@ -403,14 +407,14 @@ export function EventAddModal({
     publicEventName !== '' ||
     publicEventIconId !== DEFAULT_EVENT_ICON_ID ||
     publicDateMode !== 'single' ||
-    publicEventStartDate !== '' ||
+    publicEventStartDate !== defaultStartDate ||
     publicEventEndDate !== '' ||
     publicEventLocation !== '' ||
     publicCountdownDays !== 15 ||
     privateEventName !== '' ||
     privateEventIconId !== DEFAULT_EVENT_ICON_ID ||
     privateDateMode !== 'single' ||
-    privateEventStartDate !== '' ||
+    privateEventStartDate !== defaultStartDate ||
     privateEventEndDate !== '' ||
     privateEventLocation !== '' ||
     privateCountdownDays !== 15
@@ -422,19 +426,42 @@ export function EventAddModal({
     setPublicEventName('')
     setPublicEventIconId(DEFAULT_EVENT_ICON_ID)
     setPublicDateMode('single')
-    setPublicEventStartDate('')
+    setPublicEventStartDate(defaultStartDate)
     setPublicEventEndDate('')
     setPublicEventLocation('')
     setPublicCountdownDays(15)
     setPrivateEventName('')
     setPrivateEventIconId(DEFAULT_EVENT_ICON_ID)
     setPrivateDateMode('single')
-    setPrivateEventStartDate('')
+    setPrivateEventStartDate(defaultStartDate)
     setPrivateEventEndDate('')
     setPrivateEventLocation('')
     setPrivateCountdownDays(15)
     setShowDiscardConfirm(false)
   }
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    setEventType('public')
+    setShowPublicRequest(false)
+    setShowPrivateDetail(false)
+    setPublicEventName('')
+    setPublicEventIconId(DEFAULT_EVENT_ICON_ID)
+    setPublicDateMode('single')
+    setPublicEventStartDate(defaultStartDate)
+    setPublicEventEndDate('')
+    setPublicEventLocation('')
+    setPublicCountdownDays(15)
+    setPrivateEventName('')
+    setPrivateEventIconId(DEFAULT_EVENT_ICON_ID)
+    setPrivateDateMode('single')
+    setPrivateEventStartDate(defaultStartDate)
+    setPrivateEventEndDate('')
+    setPrivateEventLocation('')
+    setPrivateCountdownDays(15)
+    setShowDiscardConfirm(false)
+  }, [isOpen, defaultStartDate])
 
   const requestClose = () => {
     if (isDirty) {

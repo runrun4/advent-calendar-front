@@ -244,8 +244,8 @@ input {
 }
 
 .app-header__profile-icon {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 2.5rem;
+  height: 2.5rem;
   color: #333;
 }
 
@@ -678,7 +678,7 @@ input {
 
   grid-template-rows:
     minmax(0, 1fr)
-    5rem;
+    clamp(4rem, 10svh, 5rem);
 
   width: 100%;
   height: 100%;
@@ -699,6 +699,9 @@ input {
 .private-calendar-page-calendar-area {
   grid-row: 1;
 
+  display: flex;
+  justify-content: center;
+
   width: 100%;
 
   min-width: 0;
@@ -715,6 +718,7 @@ input {
   flex-direction: column;
 
   width: 100%;
+  max-width: 48rem;
   height: 100%;
 
   min-width: 0;
@@ -741,9 +745,9 @@ input {
 
   flex-shrink: 0;
 
-  height: 4.5rem;
+  height: clamp(3.75rem, 10svh, 4.5rem);
 
-  padding: 0.75rem 1rem;
+  padding: clamp(0.5rem, 1.5svh, 0.75rem) clamp(0.75rem, 3vw, 1rem);
 
   background: #fff;
 
@@ -760,7 +764,7 @@ input {
 }
 
 .private-calendar-page-header-day {
-  font-size: 3.8rem;
+  font-size: clamp(2.7rem, 10vw, 3.8rem);
   font-weight: 700;
 
   line-height: 0.85;
@@ -877,7 +881,7 @@ input {
   justify-content: center;
   align-items: center;
 
-  height: 2.5rem;
+  height: clamp(2rem, 5.5svh, 2.5rem);
 
   border-right: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
@@ -909,6 +913,7 @@ input {
   min-height: 0;
 
   width: 100%;
+  height: 100%;
 
   padding: 0;
 
@@ -924,17 +929,42 @@ input {
 .private-calendar-day-cell {
   position: relative;
 
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
   min-width: 0;
   min-height: 0;
 
-  padding: 0.4rem;
+  margin: 0;
+  padding: clamp(0.2rem, 1vw, 0.4rem);
 
+  border: 0;
   border-right: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
+  border-radius: 0;
 
   background: #fff;
+  color: inherit;
+
+  font: inherit;
+  text-align: left;
 
   overflow: hidden;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  touch-action: manipulation;
+}
+
+.private-calendar-day-cell:focus-visible {
+  z-index: 1;
+  outline: 2px solid #30b903;
+  outline-offset: -2px;
+}
+
+.private-calendar-day-cell:active {
+  background: #f2ffed;
 }
 
 .private-calendar-day-cell.is-sunday
@@ -1010,8 +1040,8 @@ input {
   align-items: center;
 
   width: 100%;
-  height: 5rem;
-  min-height: 5rem;
+  height: clamp(4rem, 10svh, 5rem);
+  min-height: 0;
 
   padding: 0 1rem;
 

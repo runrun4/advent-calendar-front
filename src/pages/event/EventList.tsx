@@ -54,7 +54,7 @@ export function EventList({
         type="button"
         className="event-list__add-button"
         aria-label="イベントを追加"
-        onClick={onOpenEventAdd}
+        onClick={() => onOpenEventAdd?.()}
       >
         ＋
       </button>

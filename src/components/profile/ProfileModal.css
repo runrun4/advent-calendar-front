@@ -29,8 +29,8 @@
 }
 
 .profile-modal__avatar-fallback {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 5rem;
+  height: 5rem;
   color: #555;
 }
 
@@ -154,4 +154,62 @@
 .profile-modal__logout:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.profile-modal__confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.profile-modal__confirm {
+  width: min(100%, 18.5rem);
+  padding: 1.35rem 1.2rem 1.1rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.profile-modal__confirm-message {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.profile-modal__confirm-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1.2rem;
+}
+
+.profile-modal__confirm-button {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-modal__confirm-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.profile-modal__confirm-button--cancel {
+  background: #ececec;
+  color: #333;
+}
+
+.profile-modal__confirm-button--logout {
+  background: #e53935;
+  color: #fff;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { User } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import type { User as AppUser } from '../../types/user'
 import { logout } from '../../services/authService'
 import { ApiError } from '../../services/apiClient'
@@ -33,6 +33,7 @@ export function ProfileModal({
   const [isSaving, setIsSaving] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export function ProfileModal({
     setNicknameError(null)
     setErrorMessage(null)
     setSuccessMessage(null)
+    setShowLogoutConfirm(false)
 
     let cancelled = false
 
@@ -146,6 +148,7 @@ export function ProfileModal({
 
   const handleLogout = async () => {
     setErrorMessage(null)
+    setShowLogoutConfirm(false)
     setIsLoggingOut(true)
 
     try {
@@ -164,6 +167,7 @@ export function ProfileModal({
   const displayImage = previewUrl ?? iconUrl
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
       title="プロフィール"
@@ -184,7 +188,7 @@ export function ProfileModal({
                     alt="プロフィール画像"
                   />
                 ) : (
-                  <User
+                  <UserRound
                     className="profile-modal__avatar-fallback"
                     aria-hidden="true"
                   />
@@ -277,12 +281,57 @@ export function ProfileModal({
         <button
           type="button"
           className="profile-modal__logout"
-          onClick={() => void handleLogout()}
+          onClick={() => {
+            setErrorMessage(null)
+            setShowLogoutConfirm(true)
+          }}
           disabled={isLoggingOut || isSaving}
         >
           {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
         </button>
       </form>
     </Modal>
+
+      {showLogoutConfirm ? (
+        <div
+          className="profile-modal__confirm-backdrop"
+          role="presentation"
+          onClick={() => !isLoggingOut && setShowLogoutConfirm(false)}
+        >
+          <div
+            className="profile-modal__confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="profile-logout-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p
+              id="profile-logout-confirm-title"
+              className="profile-modal__confirm-message"
+            >
+              本当にログアウトしますか？
+            </p>
+            <div className="profile-modal__confirm-actions">
+              <button
+                type="button"
+                className="profile-modal__confirm-button profile-modal__confirm-button--cancel"
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={isLoggingOut}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="profile-modal__confirm-button profile-modal__confirm-button--logout"
+                onClick={() => void handleLogout()}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }

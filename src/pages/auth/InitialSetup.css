@@ -73,7 +73,8 @@
 }
 
 .initial-setup__avatar-icon {
-  display: flex;
+  width: 7.7rem;
+  height: 7.7rem;
   color: #000;
 }
 

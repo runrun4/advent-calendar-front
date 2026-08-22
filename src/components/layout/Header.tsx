@@ -1,4 +1,4 @@
-import { User } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 
 type HeaderProps = {
   title?: string
@@ -28,7 +28,7 @@ export function Header({
             alt=""
           />
         ) : (
-          <User className="app-header__profile-icon" aria-hidden="true" />
+          <UserRound className="app-header__profile-icon" aria-hidden="true" />
         )}
       </button>
     </header>

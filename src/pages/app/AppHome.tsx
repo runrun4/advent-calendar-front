@@ -19,20 +19,25 @@ type AppHomeProps = {
 export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
+  const [eventAddStartDate, setEventAddStartDate] = useState<string | null>(null)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
-const {
-  activeTab,
-  currentIndex,
-  dragOffset,
-  isDragging,
-  pointerHandlers,
-} = usePageSwipe(
-  TABS,
-  'private',
-  isEventDetailOpen,
-)
+  const {
+    activeTab,
+    currentIndex,
+    dragOffset,
+    isDragging,
+    pointerHandlers,
+  } = usePageSwipe(TABS, 'private', isEventDetailOpen)
 
-  const openEventAdd = () => setIsEventAddOpen(true)
+  const openEventAdd = (startDate?: string) => {
+    setEventAddStartDate(startDate ?? null)
+    setIsEventAddOpen(true)
+  }
+
+  const closeEventAdd = () => {
+    setIsEventAddOpen(false)
+    setEventAddStartDate(null)
+  }
 
   return (
     <div className="app-shell">
@@ -86,7 +91,8 @@ const {
 
       <EventAddModal
         isOpen={isEventAddOpen}
-        onClose={() => setIsEventAddOpen(false)}
+        initialStartDate={eventAddStartDate}
+        onClose={closeEventAdd}
       />
     </div>
   )

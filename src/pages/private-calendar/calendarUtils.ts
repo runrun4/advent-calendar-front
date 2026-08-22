@@ -5,6 +5,35 @@ import {
   type CalendarMonth,
 } from './calendarTypes'
 
+export function formatDateValue(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+export function getCalendarDayDate(
+  calendarDay: CalendarDay,
+  currentMonth: CalendarMonth,
+  index: number,
+): Date {
+  if (calendarDay.isCurrentMonth) {
+    return new Date(
+      currentMonth.year,
+      currentMonth.month,
+      calendarDay.day,
+    )
+  }
+
+  // 先頭7マス内の月外日は前月、それ以外は翌月。
+  const monthOffset = index < 7 ? -1 : 1
+  return new Date(
+    currentMonth.year,
+    currentMonth.month + monthOffset,
+    calendarDay.day,
+  )
+}
+
 export function createMonthList(): CalendarMonth[] {
   const today = new Date()
   const currentYear = today.getFullYear()
