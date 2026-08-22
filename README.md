@@ -11,6 +11,8 @@ Windows PowerShell／CMD、Windows WSL2、Mac、LinuxからDocker開発環境を
 
 **スマホ確認・チーム向けの詳細手順:** [docs/team-setup-and-mobile.md](docs/team-setup-and-mobile.md)
 
+**本番URL・デプロイ手順・バックエンド繋ぎ込み:** [docs/deployment.md](docs/deployment.md)（本番: https://advent-calendar-front.pages.dev/ ）
+
 ## Docker で開発する（推奨）
 
 ### 準備（Windows）
