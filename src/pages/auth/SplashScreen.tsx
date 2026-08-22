@@ -60,13 +60,13 @@ export function SplashScreen({
 
           <p className="splash-pwa-product">
             <span className="splash-pwa-product-name">
-              プロダクト名
+              めくるんるん
             </span>
             へ
           </p>
 
           <div className="splash-pwa-description">
-            <p>プロダクト名は</p>
+            <p>めくるんるんは</p>
             <p>あなたの予定管理を</p>
             <p>楽しくサポートします</p>
           </div>
@@ -101,7 +101,7 @@ export function SplashScreen({
 
         <p className="splash-product">
           <span className="splash-product-name">
-            プロダクト名
+            めくるんるん
           </span>
           へ
         </p>
