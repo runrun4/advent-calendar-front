@@ -1,4 +1,4 @@
-# Windows -> WSL2 のポート転送とファイアウォール許可を設定する。
+﻿# Windows -> WSL2 のポート転送とファイアウォール許可を設定する。
 # WSL2 で Docker を使わず npm run dev するとき、スマホ（同一Wi-Fi / テザリング）から
 # Windows ホストの IPv4 経由で Vite (5173) に届くようにする。
 #
