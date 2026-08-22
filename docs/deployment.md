@@ -51,6 +51,7 @@ npx wrangler pages deploy ./dist --project-name advent-calendar-front --branch m
 - `--branch main` を付けると本番URL（`advent-calendar-front.pages.dev`）が更新される。付けない・別ブランチ名の場合はプレビューURL（`<hash>.advent-calendar-front.pages.dev`）になる。
 - Service Worker は `autoUpdate` 設定のため、再デプロイすれば利用者側も自動で新バージョンに切り替わる。
 - 設定は [wrangler.jsonc](../wrangler.jsonc)（`pages_build_output_dir: ./dist`）。
+- `npm run build` は最後に `build:proto` で検証用プロトタイプ（[constellation-proto/](../constellation-proto/)）もビルドし、`dist/constellation-proto/` に出力する。本番・プレビューとも **`/constellation-proto/`** で開ける（例: `https://advent-calendar-front.pages.dev/constellation-proto/`）。本体の Service Worker は `navigateFallbackDenylist` でこのパスを除外している。
 
 ## フロント⇔バック繋ぎ込みに必要なもの
 

@@ -40,6 +40,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
+      workbox: {
+        // /constellation-proto/ (検証用プロトタイプ) は本体とは別アプリなので、
+        // SPA の navigateFallback で本体の index.html を返さない・precache もしない
+        navigateFallbackDenylist: [/^\/constellation-proto\//],
+        globIgnores: ['constellation-proto/**'],
+      },
       manifest: {
         name: 'mekulunlun',
         short_name: 'めくるん',
