@@ -4,6 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl' 
 
 const hostLanIp = process.env.HOST_LAN_IP
+const pwaIcon192 = 'pwa-192x192.png'
+const pwaIcon512 = 'pwa-512x512.png'
 const logger = createLogger()
 const logInfo = logger.info
 
@@ -37,26 +39,26 @@ export default defineConfig({
     basicSsl(), 
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
       manifest: {
-        name: 'アドベントカレンダーアプリ',
-        short_name: 'アドベント',
+        name: 'mekulunlun',
+        short_name: 'めくるん',
         description: 'カレンダー・チャット・思い出共有PWA',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: pwaIcon192,
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: pwaIcon512,
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: pwaIcon512,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

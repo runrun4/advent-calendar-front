@@ -1,0 +1,30 @@
+# develop へのマージ(push)のたびに本番URLへ自動デプロイする。
+# 必要な設定: リポジトリSecretsに CLOUDFLARE_API_TOKEN(Cloudflare Pages 編集権限)。
+# 詳細は docs/deployment.md を参照。
+name: deploy
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Cloudflare Pages へデプロイ
+        run: npx wrangler@4 pages deploy ./dist --project-name advent-calendar-front --branch main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 904ca712168ab8ac1f60b53bf1690eaa

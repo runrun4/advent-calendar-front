@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type WheelEvent } from 'react'
 import { Modal } from '../../components/common/Modal'
+import { ApiError } from '../../services/apiClient'
+import {
+  createEvent,
+  type EventNameCandidate,
+  type EventSummary,
+  searchEventCandidates,
+} from '../../services/eventApi'
 import {
   DEFAULT_EVENT_ICON_ID,
   EventNameField,
@@ -17,11 +24,11 @@ type EventAddModalProps = {
   isOpen: boolean
   onClose: () => void
   initialStartDate?: string | null
-  onCreated?: (event: { id: string; name: string }) => void
+  onCreated?: (event: EventSummary) => void
 }
 
 const MIN_COUNTDOWN_DAYS = 0
-const MAX_COUNTDOWN_DAYS = 30
+const MAX_COUNTDOWN_DAYS = 29
 /** 何pxドラッグしたら1日分動くか */
 const COUNTDOWN_DRAG_STEP_PX = 26
 const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日'] as const
@@ -376,6 +383,18 @@ export function EventAddModal({
    */
   const [showPublicRequest, setShowPublicRequest] =
     useState(false)
+  const [publicCandidates, setPublicCandidates] = useState<
+    EventNameCandidate[]
+  >([])
+  const [publicSearchPerformed, setPublicSearchPerformed] =
+    useState(false)
+  const [isSearchingPublic, setIsSearchingPublic] = useState(false)
+  const [publicSearchError, setPublicSearchError] = useState<
+    string | null
+  >(null)
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<EventNameCandidate | null>(null)
+  const publicSearchAbortRef = useRef<AbortController | null>(null)
 
   const [showPrivateDetail, setShowPrivateDetail] =
     useState(false)
@@ -461,8 +480,15 @@ export function EventAddModal({
     privateCountdownDays !== defaultCountdownDays
 
   const resetForm = () => {
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
     setEventType('public')
     setShowPublicRequest(false)
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setIsSearchingPublic(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
     setShowPrivateDetail(false)
     setPublicEventName('')
     setPublicEventIconId(DEFAULT_EVENT_ICON_ID)
@@ -485,8 +511,15 @@ export function EventAddModal({
   useEffect(() => {
     if (!isOpen) return
 
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
     setEventType('public')
     setShowPublicRequest(false)
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setIsSearchingPublic(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
     setShowPrivateDetail(false)
     setPublicEventName('')
     setPublicEventIconId(DEFAULT_EVENT_ICON_ID)
@@ -505,6 +538,108 @@ export function EventAddModal({
     setShowDiscardConfirm(false)
     setIsWaitingCreate(false)
   }, [isOpen, defaultStartDate])
+
+  useEffect(() => {
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
+    setIsSearchingPublic(false)
+  }, [
+    publicEventName,
+    publicEventLocation,
+    publicEventStartDate,
+    publicEventEndDate,
+    publicDateMode,
+  ])
+
+  const resolvePublicEndDate = () =>
+    publicDateMode === 'single'
+      ? publicEventStartDate
+      : publicEventEndDate
+
+  const canSearchPublic =
+    publicEventName.trim() !== '' &&
+    publicEventLocation.trim() !== '' &&
+    publicEventStartDate !== '' &&
+    publicEventStartDate >= minStartDate &&
+    (publicDateMode === 'single' || publicEventEndDate !== '')
+
+  const handlePublicSearch = async () => {
+    if (!canSearchPublic || isSearchingPublic || isWaitingCreate) return
+
+    const endDate = resolvePublicEndDate()
+    publicSearchAbortRef.current?.abort()
+    const controller = new AbortController()
+    publicSearchAbortRef.current = controller
+
+    setIsSearchingPublic(true)
+    setPublicSearchError(null)
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setSelectedCandidate(null)
+
+    try {
+      const candidates = await searchEventCandidates(
+        {
+          name: publicEventName,
+          startDate: publicEventStartDate,
+          endDate,
+          location: publicEventLocation,
+        },
+        controller.signal,
+      )
+      if (controller.signal.aborted) return
+      setPublicCandidates(candidates)
+      setPublicSearchPerformed(true)
+    } catch (error) {
+      if (controller.signal.aborted) return
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : '検索に失敗しました'
+      setPublicSearchError(message)
+      setPublicSearchPerformed(false)
+    } finally {
+      if (!controller.signal.aborted) {
+        setIsSearchingPublic(false)
+      }
+    }
+  }
+
+  const handleCreateFromCandidate = async () => {
+    if (!selectedCandidate || isWaitingCreate) return
+
+    setIsWaitingCreate(true)
+
+    try {
+      const created = await createEvent({
+        name: selectedCandidate.name,
+        startDate: publicEventStartDate,
+        endDate: resolvePublicEndDate(),
+        countdownDays: publicCountdownDays,
+        mode: 'GROUP',
+        category: publicEventLocation,
+      })
+      resetForm()
+      onClose()
+      onCreated?.(created)
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'イベントの作成に失敗しました'
+      setPublicSearchError(message)
+      setSelectedCandidate(null)
+      setIsWaitingCreate(false)
+    }
+  }
 
   const requestClose = () => {
     if (isWaitingCreate) return
@@ -701,7 +836,19 @@ export function EventAddModal({
             ======================================== */}
 
         {showPublicRequest ? (
-          <PublicEventRequestPage />
+          <PublicEventRequestPage
+            eventName={publicEventName}
+            startDate={publicEventStartDate}
+            endDate={resolvePublicEndDate()}
+            countdownDays={publicCountdownDays}
+            location={publicEventLocation}
+            onBusyChange={setIsWaitingCreate}
+            onCreated={(event) => {
+              resetForm()
+              onClose()
+              onCreated?.(event)
+            }}
+          />
         ) : showPrivateDetail ? (
           <PrivateEventDetailPage
             eventName={privateEventName}
@@ -861,12 +1008,61 @@ export function EventAddModal({
                   <button
                     type="button"
                     className="event-add-modal__submit-button"
-                    onClick={() =>
-                      setShowPublicRequest(true)
+                    disabled={
+                      !canSearchPublic ||
+                      isSearchingPublic ||
+                      isWaitingCreate
                     }
+                    onClick={() => void handlePublicSearch()}
                   >
-                    検索する
+                    {isSearchingPublic ? '検索中…' : '検索する'}
                   </button>
+
+                  {isSearchingPublic ? (
+                    <p className="event-add-modal__search-status">
+                      イベント名を検索しています…
+                    </p>
+                  ) : null}
+
+                  {publicSearchError ? (
+                    <p
+                      className="event-add-modal__search-error"
+                      role="alert"
+                    >
+                      {publicSearchError}
+                    </p>
+                  ) : null}
+
+                  {publicSearchPerformed ? (
+                    <div className="event-add-modal__candidates">
+                      <p className="event-add-modal__candidates-label">
+                        検索結果
+                      </p>
+
+                      {publicCandidates.map((candidate, index) => (
+                        <button
+                          key={`${candidate.name}-${index}`}
+                          type="button"
+                          className="event-add-modal__candidate-button"
+                          disabled={isWaitingCreate}
+                          onClick={() =>
+                            setSelectedCandidate(candidate)
+                          }
+                        >
+                          {candidate.name}
+                        </button>
+                      ))}
+
+                      <button
+                        type="button"
+                        className="event-add-modal__candidate-miss"
+                        disabled={isWaitingCreate}
+                        onClick={() => setShowPublicRequest(true)}
+                      >
+                        この中にない
+                      </button>
+                    </div>
+                  ) : null}
 
                 </div>
               ) : (
@@ -993,6 +1189,62 @@ export function EventAddModal({
         )}
       </div>
       </Modal>
+
+      {selectedCandidate ? (
+        <div
+          className="event-add-modal__confirm-backdrop"
+          style={{ zIndex: 50 }}
+          role="presentation"
+          onClick={() => {
+            if (!isWaitingCreate) setSelectedCandidate(null)
+          }}
+        >
+          <div
+            className="event-add-modal__confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="event-add-candidate-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {isWaitingCreate ? (
+              <>
+                <div
+                  className="event-add-modal__confirm-spinner"
+                  aria-hidden="true"
+                />
+                <p className="event-add-modal__confirm-message">
+                  アドベントカレンダーを作成しています
+                </p>
+              </>
+            ) : (
+              <>
+                <p
+                  id="event-add-candidate-title"
+                  className="event-add-modal__confirm-title"
+                >
+                  {selectedCandidate.name}
+                </p>
+                <div className="event-add-modal__confirm-actions">
+                  <button
+                    type="button"
+                    className="event-add-modal__confirm-button event-add-modal__confirm-button--cancel"
+                    onClick={() => setSelectedCandidate(null)}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    className="event-add-modal__confirm-button event-add-modal__confirm-button--create"
+                    onClick={() => void handleCreateFromCandidate()}
+                  >
+                    イベントを作成する
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {showDiscardConfirm ? (
         <div
