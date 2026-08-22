@@ -647,8 +647,7 @@ export function EventNameField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="イベント名(最大10文字)"
-          maxLength={10}
+          placeholder="イベント名"
           inputMode="text"
           enterKeyHint="done"
         />
