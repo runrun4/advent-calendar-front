@@ -467,7 +467,6 @@ export function EventAddModal({
   )
 
   const isDirty =
-    eventType !== 'public' ||
     showPublicRequest ||
     showPrivateDetail ||
     publicEventIconId !== DEFAULT_EVENT_ICON_ID ||
