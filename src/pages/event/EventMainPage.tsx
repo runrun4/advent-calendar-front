@@ -11,7 +11,7 @@ type EventMainPageProps = {
 }
 
 type AdventTarget = {
-  id: number
+  id: string
   title: string
   source: 'event' | 'memory'
 }
@@ -103,7 +103,7 @@ export function EventMainPage({
                 <MemoriesPage
                   onSelectMemory={(memory) =>
                     setAdventTarget({
-                      id: memory.id,
+                      id: String(memory.id),
                       title: memory.title,
                       source: 'memory',
                     })

@@ -1085,6 +1085,19 @@ input {
   padding: 0.75rem 1rem 1.5rem;
 }
 
+.event-list__status {
+  margin: 0;
+  width: min(100%, 22rem);
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.event-list__status--error {
+  color: #b00020;
+}
+
 .event-list__item {
   position: relative;
 
@@ -1118,7 +1131,7 @@ input {
 
   inset: 0;
 
-  border: 0.35rem solid var(--event-color, #777);
+  border: 0.35rem solid #9bff7a;
   border-radius: 999px;
 
   pointer-events: none;
@@ -1259,7 +1272,7 @@ input {
 
   inset: 0;
 
-  border: 0.35rem solid var(--memory-color, #777);
+  border: 0.35rem solid #9bff7a;
   border-radius: 999px;
 
   pointer-events: none;

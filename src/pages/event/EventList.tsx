@@ -1,73 +1,98 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
+import { listEvents, type EventSummary } from '../../services/eventApi'
+import { ApiError } from '../../services/apiClient'
 
-type EventItem = {
-  id: number
+export type EventListItem = {
+  id: string
   title: string
-  color: string
+  status: string
 }
-
-const events: EventItem[] = [
-  {
-    id: 1,
-    title: 'ライブ',
-    color: '#FFD166',
-  },
-  {
-    id: 2,
-    title: 'あああああああああああああああああああああああああああ',
-    color: '#8ECAE6',
-  },
-  {
-    id: 3,
-    title: 'イベント3',
-    color: '#FFADAD',
-  },
-  {
-    id: 4,
-    title: 'イベント4',
-    color: '#B5EAD7',
-  },
-  {
-    id: 5,
-    title: 'イベント5',
-    color: '#CDB4DB',
-  },
-]
 
 type EventListProps = {
   onOpenEventAdd?: () => void
-  onSelectEvent?: (event: EventItem) => void
+  onSelectEvent?: (event: EventListItem) => void
+}
+
+function toListItem(event: EventSummary): EventListItem {
+  return {
+    id: event.id,
+    title: event.name,
+    status: event.status,
+  }
 }
 
 export function EventList({ onOpenEventAdd, onSelectEvent }: EventListProps) {
+  const [events, setEvents] = useState<EventListItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const load = async () => {
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const summaries = await listEvents(controller.signal)
+        const active = summaries
+          .filter((event) => event.status === 'ACTIVE')
+          .map(toListItem)
+        setEvents(active)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        const message =
+          error instanceof ApiError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : 'イベント一覧の取得に失敗しました'
+        setErrorMessage(message)
+        setEvents([])
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      controller.abort()
+    }
+  }, [])
+
   return (
     <div className="event-list">
-      {events.map((event) => {
-        const style = {
-          '--event-color': event.color,
-        } as CSSProperties
+      {isLoading ? (
+        <p className="event-list__status">読み込み中…</p>
+      ) : null}
 
-        return (
-          <button
-            key={event.id}
-            type="button"
-            className="event-list__item"
-            style={style}
-            onClick={() => onSelectEvent?.(event)}
-          >
-            <span className="event-list__item-title">
-              {event.title}
-            </span>
+      {!isLoading && errorMessage ? (
+        <p className="event-list__status event-list__status--error" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
 
-            <span
-              className="event-list__item-arrow"
-              aria-hidden="true"
-            >
-              »
-            </span>
-          </button>
-        )
-      })}
+      {!isLoading && !errorMessage && events.length === 0 ? (
+        <p className="event-list__status">参加中のイベントはまだありません</p>
+      ) : null}
+
+      {events.map((event) => (
+        <button
+          key={event.id}
+          type="button"
+          className="event-list__item"
+          onClick={() => onSelectEvent?.(event)}
+        >
+          <span className="event-list__item-title">{event.title}</span>
+
+          <span className="event-list__item-arrow" aria-hidden="true">
+            »
+          </span>
+        </button>
+      ))}
 
       <button
         type="button"
