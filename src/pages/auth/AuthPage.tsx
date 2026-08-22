@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { loginWithEmailPassword } from '../../services/authService'
+import { getMe, mergeMeIntoUser } from '../../services/userApi'
 import type { User } from '../../types/user'
 import './AuthPage.css'
 
@@ -41,8 +42,16 @@ export function AuthPage({ onAuthenticated, onGoRegister }: AuthPageProps) {
     setIsSubmitting(true)
 
     try {
-      const user = await loginWithEmailPassword(email, password)
-      onAuthenticated?.(user)
+      const authUser = await loginWithEmailPassword(email, password)
+      let nextUser = authUser
+      try {
+        const me = await getMe()
+        nextUser = mergeMeIntoUser(authUser, me)
+      } catch (error) {
+        // ログイン自体は成功しているので、プロフィール取得失敗でも進める
+        console.error('GET /v1/me failed', error)
+      }
+      onAuthenticated?.(nextUser)
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'ログインに失敗しました'
