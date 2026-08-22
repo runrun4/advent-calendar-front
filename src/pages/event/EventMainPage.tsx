@@ -96,6 +96,8 @@ export function EventMainPage({
     'calendar' | 'stickers'
   >('calendar')
   const [showShareInvite, setShowShareInvite] = useState(false)
+  /* ルーム設定の保存(向き変更・ボード全消し)後にボードを取り直させるためのキー。 */
+  const [boardRefreshKey, setBoardRefreshKey] = useState(0)
   const [showEventSettings, setShowEventSettings] = useState(false)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
   const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
@@ -235,6 +237,7 @@ export function EventMainPage({
       boardEdited: updated.boardEdited,
     }
 
+    setBoardRefreshKey((key) => key + 1)
     setAdventTarget((current) => (current ? { ...current, ...patch } : null))
     setActiveEvents((events) =>
       events.map((event) =>
@@ -247,6 +250,32 @@ export function EventMainPage({
       memories.map((memory) =>
         adventTarget && memory.id === adventTarget.id
           ? { ...memory, ...patch }
+          : memory,
+      ),
+    )
+  }
+
+  /*
+   * ボードに1つでも描かれるとサーバー側で events.board_edited が立つ。
+   * 向き変更時の「ボードを消す?」確認がこのフラグを見るので、開いている行にも反映する。
+   */
+  const handleBoardEditedChange = (boardEdited: boolean) => {
+    setAdventTarget((current) =>
+      current && current.boardEdited !== boardEdited
+        ? { ...current, boardEdited }
+        : current,
+    )
+    setActiveEvents((events) =>
+      events.map((event) =>
+        adventTarget && event.id === adventTarget.id
+          ? { ...event, boardEdited }
+          : event,
+      ),
+    )
+    setCompletedEvents((memories) =>
+      memories.map((memory) =>
+        adventTarget && memory.id === adventTarget.id
+          ? { ...memory, boardEdited }
           : memory,
       ),
     )
@@ -309,8 +338,12 @@ export function EventMainPage({
     if (adventView === 'board-edit') {
       return (
         <BoardEditPage
+          eventId={adventTarget.id}
           boardOrientation={adventTarget.boardOrientation}
+          eventRole={adventTarget.role}
+          refreshKey={boardRefreshKey}
           onBack={() => setAdventView('stickers')}
+          onBoardEditedChange={handleBoardEditedChange}
         />
       )
     }
@@ -323,10 +356,12 @@ export function EventMainPage({
             eventTitle={adventTarget.title}
             eventDate={adventTarget.startDate}
             boardOrientation={adventTarget.boardOrientation}
+            refreshKey={boardRefreshKey}
             onBack={() => setAdventView('calendar')}
             onOpenSettings={openSettings}
             onOpenBoardEdit={() => setAdventView('board-edit')}
             onOpenChat={() => openChat('stickers')}
+            onBoardEditedChange={handleBoardEditedChange}
           />
           {settingsModal}
         </>

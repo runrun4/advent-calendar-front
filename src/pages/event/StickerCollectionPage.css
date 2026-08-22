@@ -122,12 +122,23 @@
   background: #fff;
 }
 
+/*
+ * ボードの座標は 0..1 の正規化座標で、契約上 PORTRAIT=3:4 / LANDSCAPE=4:3 に
+ * 引き伸ばして描く。閲覧ビューと編集ビューで比率がずれると同じ絵に見えないので、
+ * 枠の比率もその値に合わせている。
+ */
 .event-board__card-inner--portrait {
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 3 / 4;
 }
 
 .event-board__card-inner--landscape {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
+}
+
+/* ボード本体は枠の内側いっぱいに置く(編集画面と同じ見え方にする)。 */
+.event-board__card-inner .board-canvas.event-board__canvas {
+  width: 100%;
+  height: auto;
 }
 
 .event-board__card-status {
