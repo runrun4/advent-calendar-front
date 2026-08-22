@@ -1,3 +1,4 @@
+import { getEventIcon } from './EventNameField'
 import type { BoardOrientation } from '../../services/eventApi'
 
 export type EventListItem = {
@@ -10,6 +11,7 @@ export type EventListItem = {
   boardEdited: boolean
   mode: string
   role: string
+  phase?: string
 }
 
 const EMPTY_EVENTS_MESSAGE = (
@@ -43,20 +45,33 @@ export function EventList({
         <p className="event-list__status">{EMPTY_EVENTS_MESSAGE}</p>
       ) : null}
 
-      {events.map((event) => (
-        <button
-          key={event.id}
-          type="button"
-          className="event-list__item"
-          onClick={() => onSelectEvent?.(event)}
-        >
-          <span className="event-list__item-title">{event.title}</span>
+      {events.map((event) => {
+        const Icon = getEventIcon(event.iconId)
+        const isUpcoming = event.phase === 'UPCOMING'
 
-          <span className="event-list__item-arrow" aria-hidden="true">
-            »
-          </span>
-        </button>
-      ))}
+        return (
+          <button
+            key={event.id}
+            type="button"
+            className={
+              isUpcoming
+                ? 'event-list__item event-list__item--upcoming'
+                : 'event-list__item'
+            }
+            onClick={() => onSelectEvent?.(event)}
+          >
+            <span className="event-list__item-icon" aria-hidden="true">
+              <Icon size={22} strokeWidth={2} />
+            </span>
+
+            <span className="event-list__item-title">{event.title}</span>
+
+            <span className="event-list__item-arrow" aria-hidden="true">
+              »
+            </span>
+          </button>
+        )
+      })}
 
       <button
         type="button"

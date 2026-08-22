@@ -9,6 +9,7 @@ type PublicEventRequestPageProps = {
   endDate: string
   countdownDays: number
   location: string
+  iconId?: string
   onCreated?: (event: EventSummary) => void
   onBusyChange?: (isBusy: boolean) => void
 }
@@ -34,6 +35,7 @@ export function PublicEventRequestPage({
   endDate,
   countdownDays,
   location,
+  iconId,
   onCreated,
   onBusyChange,
 }: PublicEventRequestPageProps) {
@@ -59,6 +61,7 @@ export function PublicEventRequestPage({
         mode: 'GROUP',
         category: location,
         description: buildDescription(detail, eventUrl, eventUrl2),
+        ...(iconId ? { iconId } : {}),
       })
       onCreated?.(created)
     } catch (error) {
