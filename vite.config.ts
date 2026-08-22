@@ -73,6 +73,16 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      // 星座カレンダー検証ページを別 HTML エントリとして同梱する
+      // (dist/constellation-proto/index.html → /constellation-proto/ で配信)
+      input: {
+        main: 'index.html',
+        constellationLab: 'constellation-proto/index.html',
+      },
+    },
+  },
   server: {
     host: true,
     watch: {

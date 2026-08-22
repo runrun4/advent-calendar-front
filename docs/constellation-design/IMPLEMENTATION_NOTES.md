@@ -1,6 +1,6 @@
 # 星座アドベントカレンダー ─ 演出強化とバグ修正の実装メモ
 
-対象: `constellation-proto/src`
+対象: `constellation-proto/src`（→ 現在は `src/pages/constellation-lab/` に移植済み）
 成果物: `ConstellationCalendar.dc.html`（夜空テーマ単一 / 星座ビューのみ）
 
 ---

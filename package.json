@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && npm run build:proto",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "build:proto": "npm ci --prefix constellation-proto && npm run build --prefix constellation-proto"
+    "preview": "vite preview"
   },
   "dependencies": {
     "lucide-react": "^1.33.0",

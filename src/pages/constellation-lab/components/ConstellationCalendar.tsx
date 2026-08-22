@@ -62,7 +62,12 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
     phaseRef.current = phase
   }, [phase])
 
-  const burstHook = useBurstCanvas({ starColor: FALLBACK_STAR_COLOR, effectLevel: 'balanced', reducedMotion })
+  // オブジェクトのまま持つと lint (react-hooks/refs) が burst() 呼び出しまで ref アクセス扱いにするため分割代入する
+  const {
+    canvasRef: burstCanvasRef,
+    burst: playBurst,
+    stop: stopBurst,
+  } = useBurstCanvas({ starColor: FALLBACK_STAR_COLOR, effectLevel: 'balanced', reducedMotion })
 
   /*
    * ==========================================
@@ -72,16 +77,16 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
 
   const onIgnite = useCallback(() => {
     setJustOpenedDay(COOP_DAYS[0])
-    burstHook.burst()
+    playBurst()
     later(() => setJustOpenedDay(null), 900)
-  }, [burstHook, later])
+  }, [playBurst, later])
 
   const onReleaseCardReady = useCallback((day: number) => {
     setPhase('card')
     setCardDay(day)
   }, [])
 
-  const coop = useCoopDay({ later, burst: burstHook.burst, onIgnite, onReleaseCardReady })
+  const coop = useCoopDay({ later, burst: playBurst, onIgnite, onReleaseCardReady })
 
   const advanceOpened = useCallback((day: number) => {
     setOpenedCount((current) => Math.max(current, day))
@@ -108,10 +113,10 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
       setOpenedCount(day)
       setJustOpenedDay(day)
       later(() => setJustOpenedDay(null), 900)
-      burstHook.burst()
+      playBurst()
       later(() => finishOpening(), 760)
     },
-    [phase, later, burstHook, finishOpening]
+    [phase, later, playBurst, finishOpening]
   )
 
   const handleTap = useCallback(() => {
@@ -156,15 +161,17 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
     onCommit: handleCommit,
   })
 
+  // camera.glide(...) とメソッド呼び出しにすると camera 全体が依存に要求されるため関数を取り出す
+  const glideCamera = camera.glide
   const closeCard = useCallback(() => {
     const day = cardDay
     setPhase('daily')
     setCardDay(null)
     // 開封後は次の星へ自前でカメラを送る
     if (day !== null && day === openedCount && day < TOTAL_DAYS) {
-      camera.glide(GLIDE_MS)
+      glideCamera(GLIDE_MS)
     }
-  }, [cardDay, openedCount, camera.glide])
+  }, [cardDay, openedCount, glideCamera])
 
   /*
    * ==========================================
@@ -244,11 +251,11 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         cancelAnimationFrame(finaleRafRef.current)
         finaleRafRef.current = null
       }
-      burstHook.stop()
+      stopBurst()
       coop.stopAll()
       clearAllTimers()
 
-      const c = burstHook.canvasRef.current
+      const c = burstCanvasRef.current
       if (c) {
         const ctx = c.getContext('2d')
         ctx?.clearRect(0, 0, c.width, c.height)
@@ -268,7 +275,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         coopUnlocked: count > coopDay,
       })
     },
-    [camera, burstHook, coop, clearAllTimers]
+    [camera, stopBurst, burstCanvasRef, coop, clearAllTimers]
   )
 
   const onDebugRange = useCallback((count: number) => applyOpened(clamp(count, 0, TOTAL_DAYS)), [applyOpened])
@@ -415,7 +422,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         )}
         {coop.notice && <CoopNoticeCard remain={coopRemain} onClose={coop.closeNotice} />}
 
-        <canvas ref={burstHook.canvasRef} className="constellation-calendar__burst-canvas" />
+        <canvas ref={burstCanvasRef} className="constellation-calendar__burst-canvas" />
       </div>
 
       {/* 進捗 */}

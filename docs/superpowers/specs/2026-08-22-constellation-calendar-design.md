@@ -1,9 +1,9 @@
 # 星座アドベントカレンダー プロトタイプ 設計書
 
 日付: 2026-08-22
-対象: `advent-calendar-front/constellation-proto/`（検証用の独立 Vite プロトタイプ。フロントリポジトリ内に同居）
+対象: `src/pages/constellation-lab/`（検証用ページ。本体アプリの第2 HTML エントリとして同梱）
 デザイン正: Claude Design カンバス「星座アドベントカレンダー」
-（作業ファイル: `constellation-proto/design/` — `gen.mjs` に星座座標と配色トークンの正がある）
+（作業ファイル: `docs/constellation-design/` — `gen.mjs` に星座座標と配色トークンの正がある）
 
 ## 目的
 
@@ -156,3 +156,19 @@ SVG は星座座標系（390×520）をスクリーンへ射影する:
   フローを追加（`hooks/useCoopDay.ts`、`components/CoopDay.tsx`）。タップ/長押しでの内訳確認、
   確認カード、解放演出（弾ける→吸い込まれる鎖の破片）まで実装
 - 星座の座標データ・数値定数は変更していない。SVG の `<text>` は React 実装ではそのまま使用（HTMLオーバーレイ化は不要）
+
+## 2026-08-23 改訂2（本体アプリへの統合）
+
+独立した Vite プロジェクト（`constellation-proto/` 配下に package.json を持つ構成）は
+「1 リポジトリ 1 アプリ、`src/pages/<機能>/`」というフロントの構成に反するため、
+本体アプリの一部として配置し直した。上記「ディレクトリ構成」「技術方針」の該当箇所はこの節が優先する。
+
+- コード: `src/pages/constellation-lab/`（components / hooks / data / themes / types / utils）。
+  依存・tsconfig・ESLint・ビルドはすべて本体と共通
+- エントリ: `constellation-proto/index.html`（Vite のマルチページ入力。`vite.config.ts` の
+  `build.rollupOptions.input`）→ `dist/constellation-proto/index.html` に出力され、
+  本番・プレビューとも `/constellation-proto/` で開ける。本体の `index.css` は読み込まない
+- デザインの正: `docs/constellation-design/`（Claude Design の dc.html・実装メモ・カンバス作業ファイル）
+- ローカル確認: 本体の dev サーバー（`https://localhost:5173/constellation-proto/`）。専用サーバーは廃止
+- PWA: 本体の Service Worker が `/constellation-proto/` を SPA フォールバックしないよう
+  `navigateFallbackDenylist` で除外（`globIgnores` で precache も対象外）
