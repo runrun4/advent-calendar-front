@@ -89,6 +89,7 @@
   border-radius: 999px;
   background: rgb(255 255 255 / 92%);
   color: var(--auth-title);
+  font-size: 16px;
 }
 
 .auth-page__input::placeholder {
