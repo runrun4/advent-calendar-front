@@ -8,9 +8,10 @@ export function PublicEventRequestPage() {
 
   return (
     <div className="public-event-request">
-      {/* パブリックイベント表示 */}
-      <div className="public-event-request__type">
-        パブリックイベント
+      <div className="public-event-request__type-wrap">
+        <div className="public-event-request__type">
+          パブリックイベント
+        </div>
       </div>
 
       {/* メッセージ */}

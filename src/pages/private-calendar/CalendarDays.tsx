@@ -20,6 +20,10 @@ export function CalendarDays({
   onTouchStart,
   onTouchEnd,
 }: CalendarDaysProps) {
+  const todayValue = formatDateValue(
+    new Date(today.year, today.month, today.day),
+  )
+
   return (
     <div
       className="private-calendar-days"
@@ -40,6 +44,7 @@ export function CalendarDays({
             currentMonth={currentMonth}
             today={today}
             dateLabel={dateLabel}
+            disabled={dateValue < todayValue}
             onSelect={() => onSelectDate(dateValue)}
           />
         )

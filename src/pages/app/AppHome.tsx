@@ -21,12 +21,18 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
   const [eventAddStartDate, setEventAddStartDate] = useState<string | null>(null)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
+  const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
+  const [pendingEvent, setPendingEvent] = useState<{
+    id: string
+    name: string
+  } | null>(null)
   const {
     activeTab,
     currentIndex,
     dragOffset,
     isDragging,
     pointerHandlers,
+    setActiveTab,
   } = usePageSwipe(TABS, 'private', isEventDetailOpen)
 
   const openEventAdd = (startDate?: string) => {
@@ -57,9 +63,12 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
           <div className="page-slider__page">
             <EventMainPage
               profileIconUrl={user?.iconUrl}
+              eventsRefreshKey={eventsRefreshKey}
+              pendingEvent={pendingEvent}
               onOpenProfile={() => setIsProfileOpen(true)}
               onOpenEventAdd={openEventAdd}
               onDetailOpenChange={setIsEventDetailOpen}
+              onPendingEventConsumed={() => setPendingEvent(null)}
             />
           </div>
         </div>
@@ -93,6 +102,11 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
         isOpen={isEventAddOpen}
         initialStartDate={eventAddStartDate}
         onClose={closeEventAdd}
+        onCreated={(event) => {
+          setEventsRefreshKey((key) => key + 1)
+          setPendingEvent({ id: event.id, name: event.name })
+          setActiveTab('event')
+        }}
       />
     </div>
   )

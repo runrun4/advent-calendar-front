@@ -6,6 +6,7 @@ type CalendarDayCellProps = {
   currentMonth: CalendarMonth
   today: CalendarToday
   dateLabel: string
+  disabled?: boolean
   onSelect: () => void
 }
 
@@ -41,6 +42,7 @@ export function CalendarDayCell({
   currentMonth,
   today,
   dateLabel,
+  disabled = false,
   onSelect,
 }: CalendarDayCellProps) {
   return (
@@ -52,7 +54,12 @@ export function CalendarDayCell({
         currentMonth,
         today,
       )}
-      aria-label={`${dateLabel}からイベントを作成`}
+      aria-label={
+        disabled
+          ? `${dateLabel}はイベントを追加できません`
+          : `${dateLabel}からイベントを作成`
+      }
+      disabled={disabled}
       onClick={onSelect}
     >
       <div className="private-calendar-day-number">{calendarDay.day}</div>

@@ -967,6 +967,15 @@ input {
   background: #f2ffed;
 }
 
+.private-calendar-day-cell:disabled {
+  background: #f7f7f7;
+  cursor: not-allowed;
+}
+
+.private-calendar-day-cell:disabled:active {
+  background: #f7f7f7;
+}
+
 .private-calendar-day-cell.is-sunday
   .private-calendar-day-number {
   color: #e53935;
@@ -980,6 +989,11 @@ input {
 .private-calendar-day-cell.is-outside-month
   .private-calendar-day-number {
   color: #c8c8c8;
+}
+
+.private-calendar-day-cell:disabled
+  .private-calendar-day-number {
+  color: #d2d2d2;
 }
 
 /* =========================

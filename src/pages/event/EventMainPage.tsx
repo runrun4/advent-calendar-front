@@ -4,12 +4,16 @@ import { listEvents } from '../../services/eventApi'
 import { AdventCalendar } from './AdventCalendar'
 import { EventList, type EventListItem } from './EventList'
 import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
+import { ShareInviteModal } from './ShareInviteModal'
 
 type EventMainPageProps = {
   profileIconUrl?: string | null
+  eventsRefreshKey?: number
+  pendingEvent?: { id: string; name: string } | null
   onOpenProfile?: () => void
-  onOpenEventAdd?: () => void
+  onOpenEventAdd?: (startDate?: string) => void
   onDetailOpenChange?: (isOpen: boolean) => void
+  onPendingEventConsumed?: () => void
 }
 
 type AdventTarget = {
@@ -32,11 +36,15 @@ function toListItem(event: {
 
 export function EventMainPage({
   profileIconUrl = null,
+  eventsRefreshKey = 0,
+  pendingEvent = null,
   onOpenProfile,
   onOpenEventAdd,
   onDetailOpenChange,
+  onPendingEventConsumed,
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
+  const [showShareInvite, setShowShareInvite] = useState(false)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
   const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
   const [completedEvents, setCompletedEvents] = useState<MemoryItem[]>([])
@@ -45,6 +53,17 @@ export function EventMainPage({
   useEffect(() => {
     onDetailOpenChange?.(adventTarget !== null)
   }, [adventTarget, onDetailOpenChange])
+
+  useEffect(() => {
+    if (!pendingEvent) return
+    setAdventTarget({
+      id: pendingEvent.id,
+      title: pendingEvent.name,
+      source: 'event',
+    })
+    setShowShareInvite(true)
+    onPendingEventConsumed?.()
+  }, [pendingEvent, onPendingEventConsumed])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -84,14 +103,25 @@ export function EventMainPage({
     return () => {
       controller.abort()
     }
-  }, [])
+  }, [eventsRefreshKey])
 
   if (adventTarget !== null) {
     return (
-      <AdventCalendar
-        title={adventTarget.title}
-        onBack={() => setAdventTarget(null)}
-      />
+      <>
+        <AdventCalendar
+          title={adventTarget.title}
+          onBack={() => {
+            setShowShareInvite(false)
+            setAdventTarget(null)
+          }}
+        />
+        <ShareInviteModal
+          isOpen={showShareInvite}
+          eventId={adventTarget.id}
+          eventName={adventTarget.title}
+          onClose={() => setShowShareInvite(false)}
+        />
+      </>
     )
   }
 

@@ -1,0 +1,103 @@
+.share-invite-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.share-invite-modal {
+  width: min(100%, 21rem);
+  padding: 1.5rem 1.25rem 1.2rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.share-invite-modal__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.share-invite-modal__message {
+  margin: 0.75rem 0 0;
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.share-invite-modal__status {
+  margin: 1rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.share-invite-modal__error {
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #b00020;
+  font-size: 0.85rem;
+}
+
+.share-invite-modal__url {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.85rem;
+  overflow-wrap: anywhere;
+  border-radius: 0.75rem;
+  background: #f4f4f4;
+  color: #333;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.share-invite-modal__actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1.2rem;
+}
+
+.share-invite-modal__button {
+  flex: 1;
+  padding: 0.8rem 0.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.share-invite-modal__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.share-invite-modal__button--secondary {
+  background: #ececec;
+  color: #333;
+}
+
+.share-invite-modal__button--primary {
+  background: #36be09;
+  color: #fff;
+}
+
+.share-invite-modal__skip {
+  display: block;
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  color: #777;
+  font-size: 0.9rem;
+  cursor: pointer;
+}

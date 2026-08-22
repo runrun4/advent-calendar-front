@@ -192,5 +192,6 @@ const onPointerDown = (event: PointerEvent<HTMLElement>) => {
       onPointerUp,
       onPointerCancel,
     },
+    setActiveTab,
   }
 }

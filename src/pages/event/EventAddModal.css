@@ -92,6 +92,10 @@
   font-size: 16px;
 }
 
+.event-add-modal__input--hint::placeholder {
+  color: #c8c8c8;
+}
+
 /* ========================================
    日付
    ======================================== */
@@ -414,6 +418,16 @@
 
 .event-add-modal__submit-button:active {
   transform: scale(0.98);
+}
+
+.event-add-modal__submit-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.event-add-modal__submit-button:disabled:hover {
+  background-color: #78c878;
 }
 
 /* ========================================
