@@ -20,26 +20,45 @@ export function useAuth() {
     let cancelled = false
 
     const bootstrap = async () => {
+      console.log('[AUTH] bootstrap start')
+
       try {
+        console.log('[AUTH] getSession start')
+
         const session = await getSession()
+
+        console.log('[AUTH] getSession complete', session)
+
         if (cancelled) return
 
         if (session?.user) {
+          console.log('[AUTH] getCurrentUser start')
+
           const current = await getCurrentUser()
+
+          console.log('[AUTH] getCurrentUser complete', current)
+
           if (cancelled) return
+
           setUser(current)
         } else {
+          console.log('[AUTH] no session')
           setUser(null)
         }
 
-        // ログイン有無に関わらず、起動時は必ずスプラッシュから
+        console.log('[AUTH] set phase splash')
+
         setPhase('splash')
-      } catch {
+      } catch (error) {
+        console.error('[AUTH] bootstrap error', error)
+
         if (!cancelled) {
           setUser(null)
           setPhase('splash')
         }
       } finally {
+        console.log('[AUTH] bootstrap finally')
+
         if (!cancelled) {
           setIsLoading(false)
           setIsBootstrapped(true)
@@ -53,10 +72,13 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
+        console.log('[AUTH] auth state changed', _event)
+
         if (!session?.user) {
           setUser(null)
           return
         }
+
         setUser(mapUser(session.user))
       },
     )

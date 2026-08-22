@@ -22,9 +22,20 @@ function App() {
   const [showSplash, setShowSplash] =
     useState(true)
 
-  if (!isBootstrapped) {
-    return null
-  }
+if (!isBootstrapped) {
+  return (
+    <div
+      style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      アプリを起動しています...
+    </div>
+  )
+}
 
   // ================================
   // SplashScreen
