@@ -14,20 +14,31 @@ type AppHomeProps = {
   user: User | null
   onLoggedOut: () => void
   onUserUpdated?: (user: User) => void
+  onOpenPwaGuide?: () => void
 }
 
-export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
+export function AppHome({
+  user,
+  onLoggedOut,
+  onUserUpdated,
+  onOpenPwaGuide,
+}: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
-  const [eventAddStartDate, setEventAddStartDate] = useState<string | null>(null)
+  const [eventAddStartDate, setEventAddStartDate] =
+    useState<string | null>(null)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
   const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
-  const [isWaitingForEventTransition, setIsWaitingForEventTransition] =
-    useState(false)
+  const [
+    isWaitingForEventTransition,
+    setIsWaitingForEventTransition,
+  ] = useState(false)
+
   const [pendingEvent, setPendingEvent] = useState<{
     id: string
     name: string
   } | null>(null)
+
   const {
     activeTab,
     currentIndex,
@@ -35,7 +46,11 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
     isDragging,
     pointerHandlers,
     setActiveTab,
-  } = usePageSwipe(TABS, 'event', isEventDetailOpen)
+  } = usePageSwipe(
+    TABS,
+    'event',
+    isEventDetailOpen,
+  )
 
   const openEventAdd = (startDate?: string) => {
     setEventAddStartDate(startDate ?? null)
@@ -49,9 +64,15 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
 
   return (
     <div className="app-shell">
-      <div className="app-shell__top" aria-hidden="true" />
+      <div
+        className="app-shell__top"
+        aria-hidden="true"
+      />
 
-      <main className="app-shell__main" {...pointerHandlers}>
+      <main
+        className="app-shell__main"
+        {...pointerHandlers}
+      >
         <div
           className="page-slider"
           onTransitionEnd={(event) => {
@@ -63,43 +84,63 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
             }
           }}
           style={{
-            transform: `translateX(calc(-${currentIndex * 50}% + ${dragOffset}px))`,
-            transition: isDragging ? 'none' : 'transform 0.3s ease',
+            transform: `translateX(calc(-${
+              currentIndex * 50
+            }% + ${dragOffset}px))`,
+            transition: isDragging
+              ? 'none'
+              : 'transform 0.3s ease',
           }}
         >
           <div className="page-slider__page">
-            <PrivateCalendarPage onOpenEventAdd={openEventAdd} />
+            <PrivateCalendarPage
+              onOpenEventAdd={openEventAdd}
+            />
           </div>
+
           <div className="page-slider__page">
             <EventMainPage
               profileIconUrl={user?.iconUrl}
               eventsRefreshKey={eventsRefreshKey}
               pendingEvent={
-                isWaitingForEventTransition ? null : pendingEvent
+                isWaitingForEventTransition
+                  ? null
+                  : pendingEvent
               }
-              onOpenProfile={() => setIsProfileOpen(true)}
+              onOpenProfile={() =>
+                setIsProfileOpen(true)
+              }
               onOpenEventAdd={openEventAdd}
-              onDetailOpenChange={setIsEventDetailOpen}
-              onPendingEventConsumed={() => setPendingEvent(null)}
+              onDetailOpenChange={
+                setIsEventDetailOpen
+              }
+              onPendingEventConsumed={() =>
+                setPendingEvent(null)
+              }
+              onOpenPwaGuide={onOpenPwaGuide}
             />
           </div>
         </div>
 
         {(activeTab === 'private' ||
-          (activeTab === 'event' && !isEventDetailOpen)) && (
-            <div className="page-indicator" aria-label="ページ位置">
-              {TABS.map((tab) => (
-                <span
-                  key={tab}
-                  className={
-                    activeTab === tab
-                      ? 'page-indicator__dot is-active'
-                      : 'page-indicator__dot'
-                  }
-                />
-              ))}
-            </div>
-          )}
+          (activeTab === 'event' &&
+            !isEventDetailOpen)) && (
+          <div
+            className="page-indicator"
+            aria-label="ページ位置"
+          >
+            {TABS.map((tab) => (
+              <span
+                key={tab}
+                className={
+                  activeTab === tab
+                    ? 'page-indicator__dot is-active'
+                    : 'page-indicator__dot'
+                }
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       <ProfileModal
@@ -116,8 +157,13 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
         onClose={closeEventAdd}
         onCreated={(event) => {
           setEventsRefreshKey((key) => key + 1)
-          setPendingEvent({ id: event.id, name: event.name })
-          setIsWaitingForEventTransition(activeTab !== 'event')
+          setPendingEvent({
+            id: event.id,
+            name: event.name,
+          })
+          setIsWaitingForEventTransition(
+            activeTab !== 'event',
+          )
           setActiveTab('event')
         }}
       />
