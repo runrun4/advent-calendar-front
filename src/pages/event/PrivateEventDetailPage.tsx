@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ApiError } from '../../services/apiClient'
 import { createEvent } from '../../services/eventApi'
+import { type EventIconId } from './EventNameField'
 import './PrivateEventDetailPage.css'
 
 type PrivateEventDetailPageProps = {
@@ -9,6 +10,7 @@ type PrivateEventDetailPageProps = {
   endDate: string
   countdownDays: number
   category: string
+  iconId: EventIconId
   onCreated?: (event: { id: string; name: string }) => void
   onBusyChange?: (isBusy: boolean) => void
 }
@@ -34,6 +36,7 @@ export function PrivateEventDetailPage({
   endDate,
   countdownDays,
   category,
+  iconId,
   onCreated,
   onBusyChange,
 }: PrivateEventDetailPageProps) {
@@ -59,6 +62,7 @@ export function PrivateEventDetailPage({
         mode: 'PERSONAL',
         category,
         description: buildDescription(detail, eventUrl, eventUrl2),
+        iconId,
       })
       onCreated?.(created)
     } catch (error) {

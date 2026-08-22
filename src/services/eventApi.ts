@@ -11,6 +11,7 @@ export type EventSummary = {
   role: string
   daysRemaining: number
   coverImageUrl: string | null
+  iconId?: string
 }
 
 type ListEventsResponse = {
@@ -26,6 +27,7 @@ export type CreateEventInput = {
   mode: 'GROUP' | 'PERSONAL'
   category?: string | null
   description?: string | null
+  iconId?: string
 }
 
 export async function listEvents(signal?: AbortSignal): Promise<EventSummary[]> {
@@ -93,6 +95,7 @@ export async function createEvent(
       mode: input.mode,
       ...(input.category ? { category: input.category } : {}),
       ...(input.description ? { description: input.description } : {}),
+      ...(input.iconId ? { iconId: input.iconId } : {}),
     },
   })
 }
@@ -112,5 +115,32 @@ export async function createInvitation(
   return apiRequest<Invitation>(`/v1/events/${eventId}/invitations`, {
     method: 'POST',
     body: { expiresInHours },
+  })
+}
+
+export type EventMemberUser = {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export type EventMember = {
+  user: EventMemberUser
+  role: string
+  joinedAt: string
+  openedToday: boolean | null
+}
+
+type EventMembersResponse = {
+  eventId: string
+  members: EventMember[]
+}
+
+export async function listEventMembers(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventMembersResponse> {
+  return apiRequest<EventMembersResponse>(`/v1/events/${eventId}/members`, {
+    signal,
   })
 }

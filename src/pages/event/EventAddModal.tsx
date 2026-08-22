@@ -623,6 +623,7 @@ export function EventAddModal({
         countdownDays: publicCountdownDays,
         mode: 'GROUP',
         category: publicEventLocation,
+        iconId: publicEventIconId,
       })
       resetForm()
       onClose()
@@ -841,6 +842,7 @@ export function EventAddModal({
             endDate={resolvePublicEndDate()}
             countdownDays={publicCountdownDays}
             location={publicEventLocation}
+            iconId={publicEventIconId}
             onBusyChange={setIsWaitingCreate}
             onCreated={(event) => {
               resetForm()
@@ -859,6 +861,7 @@ export function EventAddModal({
             }
             countdownDays={privateCountdownDays}
             category={privateEventLocation}
+            iconId={privateEventIconId}
             onBusyChange={setIsWaitingCreate}
             onCreated={(event) => {
               resetForm()

@@ -73,6 +73,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
           <div className="page-slider__page">
             <EventMainPage
               profileIconUrl={user?.iconUrl}
+              currentUserId={user?.id ?? null}
               eventsRefreshKey={eventsRefreshKey}
               pendingEvent={
                 isWaitingForEventTransition ? null : pendingEvent

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ApiError } from '../../services/apiClient'
 import { createEvent } from '../../services/eventApi'
+import { type EventIconId } from './EventNameField'
 import './PublicEventRequestPage.css'
 
 type PublicEventRequestPageProps = {
@@ -9,6 +10,7 @@ type PublicEventRequestPageProps = {
   endDate: string
   countdownDays: number
   location: string
+  iconId: EventIconId
   onCreated?: (event: { id: string; name: string }) => void
   onBusyChange?: (isBusy: boolean) => void
 }
@@ -34,6 +36,7 @@ export function PublicEventRequestPage({
   endDate,
   countdownDays,
   location,
+  iconId,
   onCreated,
   onBusyChange,
 }: PublicEventRequestPageProps) {
@@ -59,6 +62,7 @@ export function PublicEventRequestPage({
         mode: 'GROUP',
         category: location,
         description: buildDescription(detail, eventUrl, eventUrl2),
+        iconId,
       })
       onCreated?.(created)
     } catch (error) {

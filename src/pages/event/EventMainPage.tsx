@@ -5,9 +5,11 @@ import { AdventCalendar } from './AdventCalendar'
 import { EventList, type EventListItem } from './EventList'
 import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
 import { ShareInviteModal } from './ShareInviteModal'
+import { ChatView } from './ChatView'
 
 type EventMainPageProps = {
   profileIconUrl?: string | null
+  currentUserId?: string | null
   eventsRefreshKey?: number
   pendingEvent?: { id: string; name: string } | null
   onOpenProfile?: () => void
@@ -36,6 +38,7 @@ function toListItem(event: {
 
 export function EventMainPage({
   profileIconUrl = null,
+  currentUserId = null,
   eventsRefreshKey = 0,
   pendingEvent = null,
   onOpenProfile,
@@ -44,6 +47,7 @@ export function EventMainPage({
   onPendingEventConsumed,
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
+  const [adventView, setAdventView] = useState<'calendar' | 'chat'>('calendar')
   const [showShareInvite, setShowShareInvite] = useState(false)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
   const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
@@ -52,6 +56,9 @@ export function EventMainPage({
 
   useEffect(() => {
     onDetailOpenChange?.(adventTarget !== null)
+    if (adventTarget === null) {
+      setAdventView('calendar')
+    }
   }, [adventTarget, onDetailOpenChange])
 
   useEffect(() => {
@@ -126,6 +133,17 @@ export function EventMainPage({
   }, [eventsRefreshKey])
 
   if (adventTarget !== null) {
+    if (adventView === 'chat') {
+      return (
+        <ChatView
+          eventId={adventTarget.id}
+          eventTitle={adventTarget.title}
+          currentUserId={currentUserId}
+          onBack={() => setAdventView('calendar')}
+        />
+      )
+    }
+
     return (
       <>
         <AdventCalendar
@@ -134,6 +152,7 @@ export function EventMainPage({
             setShowShareInvite(false)
             setAdventTarget(null)
           }}
+          onOpenChat={() => setAdventView('chat')}
         />
         <ShareInviteModal
           isOpen={showShareInvite}
