@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type WheelEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { Modal } from '../../components/common/Modal'
 import { ApiError } from '../../services/apiClient'
 import {
@@ -467,8 +468,11 @@ export function EventAddModal({
   )
 
   const isDirty =
+    eventType !== 'public' ||
     showPublicRequest ||
     showPrivateDetail ||
+    publicEventName.trim() !== '' ||
+    privateEventName.trim() !== '' ||
     publicEventIconId !== DEFAULT_EVENT_ICON_ID ||
     publicDateMode !== 'single' ||
     publicEventStartDate !== defaultStartDate ||
@@ -1203,100 +1207,107 @@ export function EventAddModal({
       </div>
       </Modal>
 
-      {selectedCandidate ? (
-        <div
-          className="event-add-modal__confirm-backdrop"
-          style={{ zIndex: 50 }}
-          role="presentation"
-          onClick={() => {
-            if (!isWaitingCreate) setSelectedCandidate(null)
-          }}
-        >
-          <div
-            className="event-add-modal__confirm"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="event-add-candidate-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            {isWaitingCreate ? (
-              <>
-                <div
-                  className="event-add-modal__confirm-spinner"
-                  aria-hidden="true"
-                />
-                <p className="event-add-modal__confirm-message">
-                  アドベントカレンダーを作成しています
-                </p>
-              </>
-            ) : (
-              <>
+      {selectedCandidate
+        ? createPortal(
+            <div
+              className="event-add-modal__confirm-backdrop"
+              role="presentation"
+              onClick={() => {
+                if (!isWaitingCreate) setSelectedCandidate(null)
+              }}
+            >
+              <div
+                className="event-add-modal__confirm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="event-add-candidate-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {isWaitingCreate ? (
+                  <>
+                    <div
+                      className="event-add-modal__confirm-spinner"
+                      aria-hidden="true"
+                    />
+                    <p className="event-add-modal__confirm-message">
+                      アドベントカレンダーを作成しています
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p
+                      id="event-add-candidate-title"
+                      className="event-add-modal__confirm-title"
+                    >
+                      {selectedCandidate.name}
+                    </p>
+                    <div className="event-add-modal__confirm-actions">
+                      <button
+                        type="button"
+                        className="event-add-modal__confirm-button event-add-modal__confirm-button--cancel"
+                        onClick={() => setSelectedCandidate(null)}
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        type="button"
+                        className="event-add-modal__confirm-button event-add-modal__confirm-button--create"
+                        onClick={() => void handleCreateFromCandidate()}
+                      >
+                        イベントを作成する
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {showDiscardConfirm
+        ? createPortal(
+            <div
+              className="event-add-modal__confirm-backdrop"
+              role="presentation"
+              onClick={() => setShowDiscardConfirm(false)}
+            >
+              <div
+                className="event-add-modal__confirm"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="event-add-discard-title"
+                onClick={(event) => event.stopPropagation()}
+              >
                 <p
-                  id="event-add-candidate-title"
-                  className="event-add-modal__confirm-title"
+                  id="event-add-discard-title"
+                  className="event-add-modal__confirm-message"
                 >
-                  {selectedCandidate.name}
+                  変更内容が破棄されます
+                  <br />
+                  大丈夫ですか？
                 </p>
                 <div className="event-add-modal__confirm-actions">
                   <button
                     type="button"
                     className="event-add-modal__confirm-button event-add-modal__confirm-button--cancel"
-                    onClick={() => setSelectedCandidate(null)}
+                    onClick={() => setShowDiscardConfirm(false)}
                   >
                     キャンセル
                   </button>
                   <button
                     type="button"
-                    className="event-add-modal__confirm-button event-add-modal__confirm-button--create"
-                    onClick={() => void handleCreateFromCandidate()}
+                    className="event-add-modal__confirm-button event-add-modal__confirm-button--discard"
+                    onClick={confirmDiscard}
                   >
-                    イベントを作成する
+                    破棄する
                   </button>
                 </div>
-              </>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      {showDiscardConfirm ? (
-        <div
-          className="event-add-modal__confirm-backdrop"
-          role="presentation"
-          onClick={() => setShowDiscardConfirm(false)}
-        >
-          <div
-            className="event-add-modal__confirm"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="event-add-discard-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p
-              id="event-add-discard-title"
-              className="event-add-modal__confirm-message"
-            >
-              入力内容を破棄してもよろしいですか？
-            </p>
-            <div className="event-add-modal__confirm-actions">
-              <button
-                type="button"
-                className="event-add-modal__confirm-button event-add-modal__confirm-button--cancel"
-                onClick={() => setShowDiscardConfirm(false)}
-              >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                className="event-add-modal__confirm-button event-add-modal__confirm-button--discard"
-                onClick={confirmDiscard}
-              >
-                破棄する
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   )
 }

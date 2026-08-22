@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { UserRound } from 'lucide-react'
 import type { User as AppUser } from '../../types/user'
 import { logout } from '../../services/authService'
@@ -292,46 +293,49 @@ export function ProfileModal({
       </form>
     </Modal>
 
-      {showLogoutConfirm ? (
-        <div
-          className="profile-modal__confirm-backdrop"
-          role="presentation"
-          onClick={() => !isLoggingOut && setShowLogoutConfirm(false)}
-        >
-          <div
-            className="profile-modal__confirm"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="profile-logout-confirm-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p
-              id="profile-logout-confirm-title"
-              className="profile-modal__confirm-message"
+      {showLogoutConfirm
+        ? createPortal(
+            <div
+              className="profile-modal__confirm-backdrop"
+              role="presentation"
+              onClick={() => !isLoggingOut && setShowLogoutConfirm(false)}
             >
-              本当にログアウトしますか？
-            </p>
-            <div className="profile-modal__confirm-actions">
-              <button
-                type="button"
-                className="profile-modal__confirm-button profile-modal__confirm-button--cancel"
-                onClick={() => setShowLogoutConfirm(false)}
-                disabled={isLoggingOut}
+              <div
+                className="profile-modal__confirm"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="profile-logout-confirm-title"
+                onClick={(event) => event.stopPropagation()}
               >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                className="profile-modal__confirm-button profile-modal__confirm-button--logout"
-                onClick={() => void handleLogout()}
-                disabled={isLoggingOut}
-              >
-                {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+                <p
+                  id="profile-logout-confirm-title"
+                  className="profile-modal__confirm-message"
+                >
+                  本当にログアウトしますか？
+                </p>
+                <div className="profile-modal__confirm-actions">
+                  <button
+                    type="button"
+                    className="profile-modal__confirm-button profile-modal__confirm-button--cancel"
+                    onClick={() => setShowLogoutConfirm(false)}
+                    disabled={isLoggingOut}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-modal__confirm-button profile-modal__confirm-button--logout"
+                    onClick={() => void handleLogout()}
+                    disabled={isLoggingOut}
+                  >
+                    {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   )
 }
