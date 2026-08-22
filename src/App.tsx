@@ -18,18 +18,16 @@ function App() {
   // SplashScreen
   // ================================
   if (showSplash) {
+    const finishSplash = () => {
+      setShowSplash(false)
+      // PWAは2秒後 / Webはボタン。どちらもログイン済みならアプリへ
+      setPhase(user ? 'app' : 'auth')
+    }
+
     return (
       <SplashScreen
-        onLoadingComplete={() => {
-          console.log('SplashScreen終了')
-
-          setShowSplash(false)
-        }}
-        onWebContinue={() => {
-          console.log('Webのまま進みます')
-
-          setShowSplash(false)
-        }}
+        onLoadingComplete={finishSplash}
+        onWebContinue={finishSplash}
       />
     )
   }
