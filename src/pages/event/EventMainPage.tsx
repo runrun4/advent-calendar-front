@@ -95,6 +95,7 @@ export function EventMainPage({
   const [chatReturnView, setChatReturnView] = useState<
     'calendar' | 'stickers'
   >('calendar')
+  const [boardViewKey, setBoardViewKey] = useState(0)
   const [showShareInvite, setShowShareInvite] = useState(false)
   const [showEventSettings, setShowEventSettings] = useState(false)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
@@ -309,8 +310,18 @@ export function EventMainPage({
     if (adventView === 'board-edit') {
       return (
         <BoardEditPage
+          eventId={adventTarget.id}
           boardOrientation={adventTarget.boardOrientation}
-          onBack={() => setAdventView('stickers')}
+          onBack={() => {
+            // 編集から戻ったらボード画面を開き直して最新を読み込む
+            setBoardViewKey((key) => key + 1)
+            setAdventView('stickers')
+          }}
+          onBoardSaved={(boardEdited) => {
+            setAdventTarget((current) =>
+              current ? { ...current, boardEdited } : null,
+            )
+          }}
         />
       )
     }
@@ -319,6 +330,7 @@ export function EventMainPage({
       return (
         <>
           <StickerCollectionPage
+            key={`${adventTarget.id}-${boardViewKey}`}
             eventId={adventTarget.id}
             eventTitle={adventTarget.title}
             eventDate={adventTarget.startDate}

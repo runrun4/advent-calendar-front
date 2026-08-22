@@ -56,6 +56,7 @@
 .board-edit__main {
   display: flex;
   flex: 1;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 
@@ -63,25 +64,94 @@
   min-height: 0;
 }
 
-.board-edit__canvas {
+.board-edit__canvas-wrap {
   width: min(100%, 340px);
   border-radius: 4px;
   background: var(--board-edit-canvas-bg);
   box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  overflow: hidden;
 }
 
-.board-edit__canvas--portrait {
+.board-edit__canvas-wrap--portrait {
   aspect-ratio: 9 / 16;
   max-height: min(58vh, 520px);
   width: auto;
   height: min(58vh, 520px);
 }
 
-.board-edit__canvas--landscape {
+.board-edit__canvas-wrap--landscape {
   aspect-ratio: 16 / 9;
   width: min(100%, 420px);
   height: auto;
 }
+
+.board-edit__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.board-edit__ws-status {
+  position: absolute;
+  top: 28px;
+  right: 16px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.board-edit__ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #888;
+}
+
+.board-edit__ws-status--connected {
+  color: #2d7a2d;
+}
+
+.board-edit__ws-status--connected .board-edit__ws-dot {
+  background: #3d9b3d;
+}
+
+.board-edit__ws-status--connecting {
+  color: #888;
+}
+
+.board-edit__ws-status--connecting .board-edit__ws-dot {
+  background: #f5a623;
+}
+
+.board-edit__ws-status--error {
+  color: #b00020;
+}
+
+.board-edit__ws-status--error .board-edit__ws-dot {
+  background: #d32f2f;
+}
+
+.board-edit__error {
+  margin: 8px 0 0;
+  color: #b00020;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.board-edit__hint {
+  margin: 10px 0 0;
+  color: #666;
+  font-size: 0.8125rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
 
 .board-edit__toolbar {
   display: flex;
@@ -116,6 +186,12 @@
   background: var(--board-edit-tool-active);
 }
 
-.board-edit__tool-button:active {
-  transform: scale(0.94);
+.board-edit__back-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.board-edit__tool-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

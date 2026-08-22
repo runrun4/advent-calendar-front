@@ -7,6 +7,7 @@ import {
   Pencil,
   Settings,
 } from 'lucide-react'
+import { fetchBoard } from '../../services/boardService'
 import {
   getEventCollections,
   type BoardOrientation,
@@ -45,6 +46,7 @@ export function StickerCollectionPage({
   onOpenChat,
 }: StickerCollectionPageProps) {
   const [stickers, setStickers] = useState<CollectedSticker[]>([])
+  const [boardImageData, setBoardImageData] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [titleFontSize, setTitleFontSize] = useState(DEFAULT_TITLE_FONT_SIZE)
@@ -64,6 +66,7 @@ export function StickerCollectionPage({
           eventId,
           controller.signal,
         )
+        if (controller.signal.aborted) return
         setStickers(collections.stickers ?? [])
       } catch (error) {
         if (controller.signal.aborted) return
@@ -74,6 +77,17 @@ export function StickerCollectionPage({
         if (!controller.signal.aborted) {
           setIsLoading(false)
         }
+      }
+
+      // ボード画像は別取得。失敗してもステッカー表示は落とさない。
+      try {
+        const board = await fetchBoard(eventId, controller.signal)
+        if (controller.signal.aborted) return
+        setBoardImageData(board.imageData || null)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.warn('board image load skipped', error)
+        setBoardImageData(null)
       }
     }
 
@@ -129,7 +143,8 @@ export function StickerCollectionPage({
     }
   }, [eventTitle])
 
-  const isBoardEmpty = !isLoading && !errorMessage && stickers.length === 0
+  const isBoardEmpty =
+    !isLoading && !errorMessage && stickers.length === 0 && !boardImageData
 
   const openBoardEdit = () => {
     onOpenBoardEdit?.()
@@ -200,24 +215,35 @@ export function StickerCollectionPage({
               ここを押して編集しよう
             </button>
           ) : (
-            <ul className="event-board__sticker-grid">
-              {stickers.map((item) => (
-                <li key={item.grantId} className="event-board__sticker-item">
-                  {item.sticker.imageUrl ? (
-                    <img
-                      src={item.sticker.imageUrl}
-                      alt={item.sticker.name}
-                      className="event-board__sticker-image"
-                    />
-                  ) : (
-                    <div
-                      className="event-board__sticker-placeholder"
-                      aria-hidden="true"
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
+            <>
+              {boardImageData ? (
+                <img
+                  src={boardImageData}
+                  alt="保存済みのイベントボード"
+                  className="event-board__saved-image"
+                />
+              ) : null}
+              {stickers.length > 0 ? (
+                <ul className="event-board__sticker-grid">
+                  {stickers.map((item) => (
+                    <li key={item.grantId} className="event-board__sticker-item">
+                      {item.sticker.imageUrl ? (
+                        <img
+                          src={item.sticker.imageUrl}
+                          alt={item.sticker.name}
+                          className="event-board__sticker-image"
+                        />
+                      ) : (
+                        <div
+                          className="event-board__sticker-placeholder"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
           )}
 
           <button
