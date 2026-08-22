@@ -621,11 +621,16 @@ export function EventAddModal({
   const handleCreateFromCandidate = async () => {
     if (!selectedCandidate || isWaitingCreate) return
 
+    const eventTitle = publicEventName.trim()
+    if (!eventTitle) return
+
     setIsWaitingCreate(true)
+    setPublicSearchError(null)
 
     try {
       const created = await createEvent({
-        name: selectedCandidate.name,
+        // イベントタイトルはユーザー入力名。候補名は確認表示用のみ。
+        name: eventTitle,
         startDate: publicEventStartDate,
         endDate: resolvePublicEndDate(),
         countdownDays: publicCountdownDays,
@@ -643,7 +648,6 @@ export function EventAddModal({
             ? error.message
             : 'イベントの作成に失敗しました'
       setPublicSearchError(message)
-      setSelectedCandidate(null)
       setIsWaitingCreate(false)
     }
   }
@@ -1023,9 +1027,10 @@ export function EventAddModal({
                           type="button"
                           className="event-add-modal__candidate-button"
                           disabled={isWaitingCreate}
-                          onClick={() =>
+                          onClick={() => {
+                            setPublicSearchError(null)
                             setSelectedCandidate(candidate)
-                          }
+                          }}
                         >
                           {candidate.name}
                         </button>
@@ -1207,7 +1212,7 @@ export function EventAddModal({
       </div>
       </Modal>
 
-      {selectedCandidate
+      {selectedCandidate && isOpen
         ? createPortal(
             <div
               className="event-add-modal__confirm-backdrop"
@@ -1241,11 +1246,22 @@ export function EventAddModal({
                     >
                       {selectedCandidate.name}
                     </p>
+                    {publicSearchError ? (
+                      <p
+                        className="event-add-modal__search-error"
+                        role="alert"
+                      >
+                        {publicSearchError}
+                      </p>
+                    ) : null}
                     <div className="event-add-modal__confirm-actions">
                       <button
                         type="button"
                         className="event-add-modal__confirm-button event-add-modal__confirm-button--cancel"
-                        onClick={() => setSelectedCandidate(null)}
+                        onClick={() => {
+                          setSelectedCandidate(null)
+                          setPublicSearchError(null)
+                        }}
                       >
                         キャンセル
                       </button>
@@ -1254,7 +1270,9 @@ export function EventAddModal({
                         className="event-add-modal__confirm-button event-add-modal__confirm-button--create"
                         onClick={() => void handleCreateFromCandidate()}
                       >
-                        イベントを作成する
+                        カレンダーを
+                        <br />
+                        作成する
                       </button>
                     </div>
                   </>
