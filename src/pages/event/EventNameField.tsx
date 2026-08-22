@@ -277,6 +277,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
+import changeIcon from '../../assets/change.svg'
 import './EventNameField.css'
 
 export type EventIconId = string
@@ -629,6 +630,12 @@ export function EventNameField({
           <SelectedIcon
             className="event-name-field__icon"
             strokeWidth={1.75}
+            aria-hidden="true"
+          />
+          <img
+            className="event-name-field__change-icon"
+            src={changeIcon}
+            alt=""
             aria-hidden="true"
           />
         </button>
