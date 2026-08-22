@@ -93,16 +93,21 @@ function formatDateDisplay(value: string): string {
 
 type InlineCalendarProps = {
   selected: string
+  initialViewDate?: string
   minDate?: string
   onSelect: (value: string) => void
 }
 
 function InlineCalendar({
   selected,
+  initialViewDate,
   minDate,
   onSelect,
 }: InlineCalendarProps) {
-  const initial = parseDateValue(selected) ?? new Date()
+  const initial =
+    parseDateValue(selected) ??
+    parseDateValue(initialViewDate ?? '') ??
+    new Date()
   const [viewYear, setViewYear] = useState(initial.getFullYear())
   const [viewMonth, setViewMonth] = useState(initial.getMonth())
 
@@ -358,6 +363,7 @@ function DateSection({
           {activeField === 'end' ? (
             <InlineCalendar
               selected={endDate}
+              initialViewDate={startDate}
               minDate={startDate || undefined}
               onSelect={onEndDateChange}
             />
@@ -1004,35 +1010,6 @@ export function EventAddModal({
                     </span>
                   </div>
 
-                  {/* 検索する */}
-                  <button
-                    type="button"
-                    className="event-add-modal__submit-button"
-                    disabled={
-                      !canSearchPublic ||
-                      isSearchingPublic ||
-                      isWaitingCreate
-                    }
-                    onClick={() => void handlePublicSearch()}
-                  >
-                    {isSearchingPublic ? '検索中…' : '検索する'}
-                  </button>
-
-                  {isSearchingPublic ? (
-                    <p className="event-add-modal__search-status">
-                      イベント名を検索しています…
-                    </p>
-                  ) : null}
-
-                  {publicSearchError ? (
-                    <p
-                      className="event-add-modal__search-error"
-                      role="alert"
-                    >
-                      {publicSearchError}
-                    </p>
-                  ) : null}
-
                   {publicSearchPerformed ? (
                     <div className="event-add-modal__candidates">
                       <p className="event-add-modal__candidates-label">
@@ -1062,6 +1039,45 @@ export function EventAddModal({
                         この中にない
                       </button>
                     </div>
+                  ) : null}
+
+                  {isSearchingPublic ? (
+                    <div
+                      className="event-add-modal__search-loading"
+                      role="status"
+                      aria-label="検索中"
+                    >
+                      {[0, 1, 2].map((index) => (
+                        <span
+                          key={index}
+                          className="event-add-modal__search-loading-dot"
+                          aria-hidden="true"
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* 検索する */}
+                  <button
+                    type="button"
+                    className="event-add-modal__submit-button"
+                    disabled={
+                      !canSearchPublic ||
+                      isSearchingPublic ||
+                      isWaitingCreate
+                    }
+                    onClick={() => void handlePublicSearch()}
+                  >
+                    {isSearchingPublic ? '検索中…' : '検索する'}
+                  </button>
+
+                  {publicSearchError ? (
+                    <p
+                      className="event-add-modal__search-error"
+                      role="alert"
+                    >
+                      {publicSearchError}
+                    </p>
                   ) : null}
 
                 </div>
