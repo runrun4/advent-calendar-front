@@ -13,25 +13,39 @@ const TABS: AppTab[] = ['private', 'event']
 type AppHomeProps = {
   user: User | null
   onLoggedOut: () => void
+  onUserUpdated?: (user: User) => void
 }
 
-export function AppHome({ user, onLoggedOut }: AppHomeProps) {
+export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
+  const [eventAddStartDate, setEventAddStartDate] = useState<string | null>(null)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
-const {
-  activeTab,
-  currentIndex,
-  dragOffset,
-  isDragging,
-  pointerHandlers,
-} = usePageSwipe(
-  TABS,
-  'private',
-  isEventDetailOpen,
-)
+  const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
+  const [isWaitingForEventTransition, setIsWaitingForEventTransition] =
+    useState(false)
+  const [pendingEvent, setPendingEvent] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+  const {
+    activeTab,
+    currentIndex,
+    dragOffset,
+    isDragging,
+    pointerHandlers,
+    setActiveTab,
+  } = usePageSwipe(TABS, 'private', isEventDetailOpen)
 
-  const openEventAdd = () => setIsEventAddOpen(true)
+  const openEventAdd = (startDate?: string) => {
+    setEventAddStartDate(startDate ?? null)
+    setIsEventAddOpen(true)
+  }
+
+  const closeEventAdd = () => {
+    setIsEventAddOpen(false)
+    setEventAddStartDate(null)
+  }
 
   return (
     <div className="app-shell">
@@ -40,6 +54,14 @@ const {
       <main className="app-shell__main" {...pointerHandlers}>
         <div
           className="page-slider"
+          onTransitionEnd={(event) => {
+            if (
+              event.propertyName === 'transform' &&
+              activeTab === 'event'
+            ) {
+              setIsWaitingForEventTransition(false)
+            }
+          }}
           style={{
             transform: `translateX(calc(-${currentIndex * 50}% + ${dragOffset}px))`,
             transition: isDragging ? 'none' : 'transform 0.3s ease',
@@ -50,9 +72,15 @@ const {
           </div>
           <div className="page-slider__page">
             <EventMainPage
+              profileIconUrl={user?.iconUrl}
+              eventsRefreshKey={eventsRefreshKey}
+              pendingEvent={
+                isWaitingForEventTransition ? null : pendingEvent
+              }
               onOpenProfile={() => setIsProfileOpen(true)}
               onOpenEventAdd={openEventAdd}
               onDetailOpenChange={setIsEventDetailOpen}
+              onPendingEventConsumed={() => setPendingEvent(null)}
             />
           </div>
         </div>
@@ -79,11 +107,19 @@ const {
         user={user}
         onClose={() => setIsProfileOpen(false)}
         onLoggedOut={onLoggedOut}
+        onUserUpdated={onUserUpdated}
       />
 
       <EventAddModal
         isOpen={isEventAddOpen}
-        onClose={() => setIsEventAddOpen(false)}
+        initialStartDate={eventAddStartDate}
+        onClose={closeEventAdd}
+        onCreated={(event) => {
+          setEventsRefreshKey((key) => key + 1)
+          setPendingEvent({ id: event.id, name: event.name })
+          setIsWaitingForEventTransition(activeTab !== 'event')
+          setActiveTab('event')
+        }}
       />
     </div>
   )

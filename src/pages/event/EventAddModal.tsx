@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type WheelEvent } from 'react'
 import { Modal } from '../../components/common/Modal'
+import { ApiError } from '../../services/apiClient'
+import {
+  createEvent,
+  type EventNameCandidate,
+  searchEventCandidates,
+} from '../../services/eventApi'
 import {
   DEFAULT_EVENT_ICON_ID,
   EventNameField,
@@ -16,27 +22,15 @@ type DateField = 'start' | 'end'
 type EventAddModalProps = {
   isOpen: boolean
   onClose: () => void
+  initialStartDate?: string | null
+  onCreated?: (event: { id: string; name: string }) => void
 }
 
 const MIN_COUNTDOWN_DAYS = 0
-const MAX_COUNTDOWN_DAYS = 30
+const MAX_COUNTDOWN_DAYS = 29
 /** 何pxドラッグしたら1日分動くか */
 const COUNTDOWN_DRAG_STEP_PX = 26
 const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日'] as const
-
-function clampCountdownDays(value: number): number {
-  return Math.min(
-    MAX_COUNTDOWN_DAYS,
-    Math.max(MIN_COUNTDOWN_DAYS, value),
-  )
-}
-
-function formatDateDisplay(value: string): string {
-  if (!value) return '----/--/--'
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return '----/--/--'
-  return `${year}/${month}/${day}`
-}
 
 function toDateValue(date: Date): string {
   const year = date.getFullYear()
@@ -50,6 +44,50 @@ function parseDateValue(value: string): Date | null {
   const [year, month, day] = value.split('-').map(Number)
   if (!year || !month || !day) return null
   return new Date(year, month - 1, day)
+}
+
+function startOfLocalDate(date = new Date()): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function todayValue(): string {
+  return toDateValue(startOfLocalDate())
+}
+
+function daysFromToday(value: string): number | null {
+  const date = parseDateValue(value)
+  if (!date) return null
+  const today = startOfLocalDate()
+  return Math.round(
+    (date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+  )
+}
+
+function maxCountdownForStart(startDate: string): number {
+  const days = daysFromToday(startDate)
+  if (days == null) return MAX_COUNTDOWN_DAYS
+  if (days < MIN_COUNTDOWN_DAYS) return MIN_COUNTDOWN_DAYS
+  return Math.min(MAX_COUNTDOWN_DAYS, days)
+}
+
+function clampCountdownDays(
+  value: number,
+  maxDays = MAX_COUNTDOWN_DAYS,
+): number {
+  return Math.min(maxDays, Math.max(MIN_COUNTDOWN_DAYS, value))
+}
+
+function normalizeStartDate(value: string | null | undefined): string {
+  if (!value) return ''
+  const minStart = todayValue()
+  return value < minStart ? minStart : value
+}
+
+function formatDateDisplay(value: string): string {
+  if (!value) return '----/--/--'
+  const [year, month, day] = value.split('-')
+  if (!year || !month || !day) return '----/--/--'
+  return `${year}/${month}/${day}`
 }
 
 type InlineCalendarProps = {
@@ -186,6 +224,7 @@ type DateSectionProps = {
   onModeChange: (mode: DateSpanMode) => void
   startDate: string
   endDate: string
+  minStartDate: string
   onStartDateChange: (value: string) => void
   onEndDateChange: (value: string) => void
 }
@@ -195,6 +234,7 @@ function DateSection({
   onModeChange,
   startDate,
   endDate,
+  minStartDate,
   onStartDateChange,
   onEndDateChange,
 }: DateSectionProps) {
@@ -277,6 +317,7 @@ function DateSection({
       {activeField === 'start' ? (
         <InlineCalendar
           selected={startDate}
+          minDate={minStartDate}
           onSelect={(value) => {
             onStartDateChange(value)
             if (
@@ -329,6 +370,8 @@ function DateSection({
 export function EventAddModal({
   isOpen,
   onClose,
+  initialStartDate = null,
+  onCreated,
 }: EventAddModalProps) {
   const [eventType, setEventType] =
     useState<EventType>('public')
@@ -339,6 +382,18 @@ export function EventAddModal({
    */
   const [showPublicRequest, setShowPublicRequest] =
     useState(false)
+  const [publicCandidates, setPublicCandidates] = useState<
+    EventNameCandidate[]
+  >([])
+  const [publicSearchPerformed, setPublicSearchPerformed] =
+    useState(false)
+  const [isSearchingPublic, setIsSearchingPublic] = useState(false)
+  const [publicSearchError, setPublicSearchError] = useState<
+    string | null
+  >(null)
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<EventNameCandidate | null>(null)
+  const publicSearchAbortRef = useRef<AbortController | null>(null)
 
   const [showPrivateDetail, setShowPrivateDetail] =
     useState(false)
@@ -395,6 +450,14 @@ export function EventAddModal({
 
   const [showDiscardConfirm, setShowDiscardConfirm] =
     useState(false)
+  const [isWaitingCreate, setIsWaitingCreate] = useState(false)
+
+  const minStartDate = todayValue()
+  const defaultStartDate = normalizeStartDate(initialStartDate)
+  const defaultCountdownDays = clampCountdownDays(
+    15,
+    maxCountdownForStart(defaultStartDate),
+  )
 
   const isDirty =
     eventType !== 'public' ||
@@ -403,40 +466,182 @@ export function EventAddModal({
     publicEventName !== '' ||
     publicEventIconId !== DEFAULT_EVENT_ICON_ID ||
     publicDateMode !== 'single' ||
-    publicEventStartDate !== '' ||
+    publicEventStartDate !== defaultStartDate ||
     publicEventEndDate !== '' ||
     publicEventLocation !== '' ||
-    publicCountdownDays !== 15 ||
+    publicCountdownDays !== defaultCountdownDays ||
     privateEventName !== '' ||
     privateEventIconId !== DEFAULT_EVENT_ICON_ID ||
     privateDateMode !== 'single' ||
-    privateEventStartDate !== '' ||
+    privateEventStartDate !== defaultStartDate ||
     privateEventEndDate !== '' ||
     privateEventLocation !== '' ||
-    privateCountdownDays !== 15
+    privateCountdownDays !== defaultCountdownDays
 
   const resetForm = () => {
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
     setEventType('public')
     setShowPublicRequest(false)
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setIsSearchingPublic(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
     setShowPrivateDetail(false)
     setPublicEventName('')
     setPublicEventIconId(DEFAULT_EVENT_ICON_ID)
     setPublicDateMode('single')
-    setPublicEventStartDate('')
+    setPublicEventStartDate(defaultStartDate)
     setPublicEventEndDate('')
     setPublicEventLocation('')
-    setPublicCountdownDays(15)
+    setPublicCountdownDays(defaultCountdownDays)
     setPrivateEventName('')
     setPrivateEventIconId(DEFAULT_EVENT_ICON_ID)
     setPrivateDateMode('single')
-    setPrivateEventStartDate('')
+    setPrivateEventStartDate(defaultStartDate)
     setPrivateEventEndDate('')
     setPrivateEventLocation('')
-    setPrivateCountdownDays(15)
+    setPrivateCountdownDays(defaultCountdownDays)
     setShowDiscardConfirm(false)
+    setIsWaitingCreate(false)
+  }
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
+    setEventType('public')
+    setShowPublicRequest(false)
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setIsSearchingPublic(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
+    setShowPrivateDetail(false)
+    setPublicEventName('')
+    setPublicEventIconId(DEFAULT_EVENT_ICON_ID)
+    setPublicDateMode('single')
+    setPublicEventStartDate(defaultStartDate)
+    setPublicEventEndDate('')
+    setPublicEventLocation('')
+    setPublicCountdownDays(defaultCountdownDays)
+    setPrivateEventName('')
+    setPrivateEventIconId(DEFAULT_EVENT_ICON_ID)
+    setPrivateDateMode('single')
+    setPrivateEventStartDate(defaultStartDate)
+    setPrivateEventEndDate('')
+    setPrivateEventLocation('')
+    setPrivateCountdownDays(defaultCountdownDays)
+    setShowDiscardConfirm(false)
+    setIsWaitingCreate(false)
+  }, [isOpen, defaultStartDate])
+
+  useEffect(() => {
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
+    setIsSearchingPublic(false)
+  }, [
+    publicEventName,
+    publicEventLocation,
+    publicEventStartDate,
+    publicEventEndDate,
+    publicDateMode,
+  ])
+
+  const resolvePublicEndDate = () =>
+    publicDateMode === 'single'
+      ? publicEventStartDate
+      : publicEventEndDate
+
+  const canSearchPublic =
+    publicEventName.trim() !== '' &&
+    publicEventLocation.trim() !== '' &&
+    publicEventStartDate !== '' &&
+    publicEventStartDate >= minStartDate &&
+    (publicDateMode === 'single' || publicEventEndDate !== '')
+
+  const handlePublicSearch = async () => {
+    if (!canSearchPublic || isSearchingPublic || isWaitingCreate) return
+
+    const endDate = resolvePublicEndDate()
+    publicSearchAbortRef.current?.abort()
+    const controller = new AbortController()
+    publicSearchAbortRef.current = controller
+
+    setIsSearchingPublic(true)
+    setPublicSearchError(null)
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setSelectedCandidate(null)
+
+    try {
+      const candidates = await searchEventCandidates(
+        {
+          name: publicEventName,
+          startDate: publicEventStartDate,
+          endDate,
+          location: publicEventLocation,
+        },
+        controller.signal,
+      )
+      if (controller.signal.aborted) return
+      setPublicCandidates(candidates)
+      setPublicSearchPerformed(true)
+    } catch (error) {
+      if (controller.signal.aborted) return
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : '検索に失敗しました'
+      setPublicSearchError(message)
+      setPublicSearchPerformed(false)
+    } finally {
+      if (!controller.signal.aborted) {
+        setIsSearchingPublic(false)
+      }
+    }
+  }
+
+  const handleCreateFromCandidate = async () => {
+    if (!selectedCandidate || isWaitingCreate) return
+
+    setIsWaitingCreate(true)
+
+    try {
+      const created = await createEvent({
+        name: selectedCandidate.name,
+        startDate: publicEventStartDate,
+        endDate: resolvePublicEndDate(),
+        countdownDays: publicCountdownDays,
+        mode: 'GROUP',
+        category: publicEventLocation,
+      })
+      resetForm()
+      onClose()
+      onCreated?.(created)
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'イベントの作成に失敗しました'
+      setPublicSearchError(message)
+      setSelectedCandidate(null)
+      setIsWaitingCreate(false)
+    }
   }
 
   const requestClose = () => {
+    if (isWaitingCreate) return
     if (isDirty) {
       setShowDiscardConfirm(true)
       return
@@ -463,10 +668,26 @@ export function EventAddModal({
       ? publicCountdownDays
       : privateCountdownDays
 
+  const currentStartDate =
+    eventType === 'public'
+      ? publicEventStartDate
+      : privateEventStartDate
+  const maxCountdownDays = maxCountdownForStart(currentStartDate)
+
   currentCountdownDaysRef.current = currentCountdownDays
 
+  useEffect(() => {
+    const maxPublic = maxCountdownForStart(publicEventStartDate)
+    setPublicCountdownDays((days) => clampCountdownDays(days, maxPublic))
+  }, [publicEventStartDate])
+
+  useEffect(() => {
+    const maxPrivate = maxCountdownForStart(privateEventStartDate)
+    setPrivateCountdownDays((days) => clampCountdownDays(days, maxPrivate))
+  }, [privateEventStartDate])
+
   const setCurrentCountdownDays = (value: number) => {
-    const next = clampCountdownDays(value)
+    const next = clampCountdownDays(value, maxCountdownDays)
     if (eventType === 'public') {
       setPublicCountdownDays(next)
     } else {
@@ -498,6 +719,7 @@ export function EventAddModal({
     // 右へドラッグ → 日数を減らす / 左へ → 増やす
     const next = clampCountdownDays(
       countdownDragOriginValue.current - steps,
+      maxCountdownDays,
     )
 
     if (next !== currentCountdownDaysRef.current) {
@@ -562,7 +784,7 @@ export function EventAddModal({
   ) {
     if (
       day >= MIN_COUNTDOWN_DAYS &&
-      day <= MAX_COUNTDOWN_DAYS
+      day <= maxCountdownDays
     ) {
       countdownNumbers.push(day)
     }
@@ -604,7 +826,7 @@ export function EventAddModal({
         title="イベント追加"
         onClose={requestClose}
         variant="sheet"
-        disableSwipeClose={isDirty}
+        disableSwipeClose={isDirty || isWaitingCreate}
       >
         <div className="event-add-modal">
 
@@ -613,12 +835,35 @@ export function EventAddModal({
             ======================================== */}
 
         {showPublicRequest ? (
-          <PublicEventRequestPage />
-        ) : showPrivateDetail ? (
-          <PrivateEventDetailPage
-            onCreate={() => {
+          <PublicEventRequestPage
+            eventName={publicEventName}
+            startDate={publicEventStartDate}
+            endDate={resolvePublicEndDate()}
+            countdownDays={publicCountdownDays}
+            location={publicEventLocation}
+            onBusyChange={setIsWaitingCreate}
+            onCreated={(event) => {
               resetForm()
               onClose()
+              onCreated?.(event)
+            }}
+          />
+        ) : showPrivateDetail ? (
+          <PrivateEventDetailPage
+            eventName={privateEventName}
+            startDate={privateEventStartDate}
+            endDate={
+              privateDateMode === 'single'
+                ? privateEventStartDate
+                : privateEventEndDate
+            }
+            countdownDays={privateCountdownDays}
+            category={privateEventLocation}
+            onBusyChange={setIsWaitingCreate}
+            onCreated={(event) => {
+              resetForm()
+              onClose()
+              onCreated?.(event)
             }}
           />
         ) : (
@@ -690,6 +935,7 @@ export function EventAddModal({
                       }}
                       startDate={publicEventStartDate}
                       endDate={publicEventEndDate}
+                      minStartDate={minStartDate}
                       onStartDateChange={
                         setPublicEventStartDate
                       }
@@ -761,12 +1007,61 @@ export function EventAddModal({
                   <button
                     type="button"
                     className="event-add-modal__submit-button"
-                    onClick={() =>
-                      setShowPublicRequest(true)
+                    disabled={
+                      !canSearchPublic ||
+                      isSearchingPublic ||
+                      isWaitingCreate
                     }
+                    onClick={() => void handlePublicSearch()}
                   >
-                    検索する
+                    {isSearchingPublic ? '検索中…' : '検索する'}
                   </button>
+
+                  {isSearchingPublic ? (
+                    <p className="event-add-modal__search-status">
+                      イベント名を検索しています…
+                    </p>
+                  ) : null}
+
+                  {publicSearchError ? (
+                    <p
+                      className="event-add-modal__search-error"
+                      role="alert"
+                    >
+                      {publicSearchError}
+                    </p>
+                  ) : null}
+
+                  {publicSearchPerformed ? (
+                    <div className="event-add-modal__candidates">
+                      <p className="event-add-modal__candidates-label">
+                        検索結果
+                      </p>
+
+                      {publicCandidates.map((candidate, index) => (
+                        <button
+                          key={`${candidate.name}-${index}`}
+                          type="button"
+                          className="event-add-modal__candidate-button"
+                          disabled={isWaitingCreate}
+                          onClick={() =>
+                            setSelectedCandidate(candidate)
+                          }
+                        >
+                          {candidate.name}
+                        </button>
+                      ))}
+
+                      <button
+                        type="button"
+                        className="event-add-modal__candidate-miss"
+                        disabled={isWaitingCreate}
+                        onClick={() => setShowPublicRequest(true)}
+                      >
+                        この中にない
+                      </button>
+                    </div>
+                  ) : null}
 
                 </div>
               ) : (
@@ -801,6 +1096,7 @@ export function EventAddModal({
                       }}
                       startDate={privateEventStartDate}
                       endDate={privateEventEndDate}
+                      minStartDate={minStartDate}
                       onStartDateChange={
                         setPrivateEventStartDate
                       }
@@ -822,7 +1118,7 @@ export function EventAddModal({
                     <input
                       id="private-event-location"
                       type="text"
-                      className="event-add-modal__input"
+                      className="event-add-modal__input event-add-modal__input--hint"
                       value={privateEventLocation}
                       onChange={(e) =>
                         setPrivateEventLocation(
@@ -830,7 +1126,7 @@ export function EventAddModal({
                         )
                       }
                       onKeyDown={handleInputKeyDown}
-                      placeholder="会場名などを入力"
+                      placeholder="大阪府、兵庫県、京都府など"
                       inputMode="text"
                       enterKeyHint="done"
                     />
@@ -872,6 +1168,14 @@ export function EventAddModal({
                   <button
                     type="button"
                     className="event-add-modal__submit-button"
+                    disabled={
+                      !privateEventName.trim() ||
+                      !privateEventStartDate ||
+                      privateEventStartDate < minStartDate ||
+                      (privateDateMode === 'multi' &&
+                        !privateEventEndDate) ||
+                      !privateEventLocation
+                    }
                     onClick={() => setShowPrivateDetail(true)}
                   >
                     次に進む
@@ -884,6 +1188,62 @@ export function EventAddModal({
         )}
       </div>
       </Modal>
+
+      {selectedCandidate ? (
+        <div
+          className="event-add-modal__confirm-backdrop"
+          style={{ zIndex: 50 }}
+          role="presentation"
+          onClick={() => {
+            if (!isWaitingCreate) setSelectedCandidate(null)
+          }}
+        >
+          <div
+            className="event-add-modal__confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="event-add-candidate-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {isWaitingCreate ? (
+              <>
+                <div
+                  className="event-add-modal__confirm-spinner"
+                  aria-hidden="true"
+                />
+                <p className="event-add-modal__confirm-message">
+                  アドベントカレンダーを作成しています
+                </p>
+              </>
+            ) : (
+              <>
+                <p
+                  id="event-add-candidate-title"
+                  className="event-add-modal__confirm-title"
+                >
+                  {selectedCandidate.name}
+                </p>
+                <div className="event-add-modal__confirm-actions">
+                  <button
+                    type="button"
+                    className="event-add-modal__confirm-button event-add-modal__confirm-button--cancel"
+                    onClick={() => setSelectedCandidate(null)}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    className="event-add-modal__confirm-button event-add-modal__confirm-button--create"
+                    onClick={() => void handleCreateFromCandidate()}
+                  >
+                    イベントを作成する
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {showDiscardConfirm ? (
         <div

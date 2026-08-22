@@ -1,6 +1,5 @@
 import type { AuthPhase } from '../../hooks/useAuth'
 import type { User } from '../../types/user'
-import { completeInitialSetup } from '../../services/authService'
 import { AuthPage } from './AuthPage'
 import { InitialSetup } from './InitialSetup'
 import { RegisterPage } from './RegisterPage'
@@ -28,8 +27,11 @@ export function AuthFlow({
   if (phase === 'splash') {
     return (
       <SplashScreen
-        onFinished={() => {
+        onLoadingComplete={() => {
           // ログイン済み → イベント画面 / 未ログイン → 認証画面
+          setPhase(user ? 'app' : 'auth')
+        }}
+        onWebContinue={() => {
           setPhase(user ? 'app' : 'auth')
         }}
       />
@@ -63,16 +65,9 @@ export function AuthFlow({
   if (phase === 'setup') {
     return (
       <InitialSetup
-        onComplete={(nickname) => {
-          void (async () => {
-            try {
-              const updated = await completeInitialSetup(nickname)
-              setUser(updated)
-            } catch {
-              // メタデータ更新に失敗してもイベント画面へは進める
-            }
-            setPhase('app')
-          })()
+        onComplete={(nextUser) => {
+          setUser(nextUser)
+          setPhase('app')
         }}
       />
     )

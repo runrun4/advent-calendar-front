@@ -3,9 +3,17 @@
 }
 
 /* パブリックイベント表示 */
+.public-event-request__type-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .public-event-request__type {
-  display: inline-block;
-  padding: 8px 18px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 18px;
 
   background-color: #4caf50;
   color: #ffffff;
@@ -14,6 +22,7 @@
 
   font-size: 16px;
   font-weight: bold;
+  text-align: center;
 }
 
 /* メッセージ */
@@ -102,5 +111,78 @@
 /* URL入力欄を選択したとき */
 .public-event-request__input:focus {
   border-color: #006b3c;
+}
+
+.public-event-request__submit {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.95rem 1.2rem;
+  border: none;
+  border-radius: 0.85rem;
+  background: #36be09;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.public-event-request__submit:active {
+  transform: scale(0.98);
+}
+
+.public-event-request__error {
+  margin: 1.2rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #b00020;
+  font-size: 0.875rem;
+}
+
+.public-event-request__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.public-event-request--waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 18rem;
+  padding: 2rem 0.5rem 3rem;
+  text-align: center;
+}
+
+.public-event-request__spinner {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 1.5rem 0 1.25rem;
+  border: 3px solid #d8f5c8;
+  border-top-color: #36be09;
+  border-radius: 50%;
+  animation: public-event-request-spin 0.8s linear infinite;
+}
+
+.public-event-request__waiting-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.public-event-request__waiting-text {
+  margin: 0.6rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+@keyframes public-event-request-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
     

@@ -1,13 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Header } from '../../components/layout/Header'
+import { listEvents } from '../../services/eventApi'
 import { AdventCalendar } from './AdventCalendar'
-import { EventList } from './EventList'
-import { MemoriesPage } from '../memories/MemoriesPage'
+import { EventList, type EventListItem } from './EventList'
+import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
+import { ShareInviteModal } from './ShareInviteModal'
 
 type EventMainPageProps = {
+  profileIconUrl?: string | null
+  eventsRefreshKey?: number
+  pendingEvent?: { id: string; name: string } | null
   onOpenProfile?: () => void
-  onOpenEventAdd?: () => void
+  onOpenEventAdd?: (startDate?: string) => void
   onDetailOpenChange?: (isOpen: boolean) => void
+  onPendingEventConsumed?: () => void
 }
 
 type AdventTarget = {
@@ -16,40 +22,141 @@ type AdventTarget = {
   source: 'event' | 'memory'
 }
 
+function toListItem(event: {
+  id: string
+  name: string
+  status: string
+}): EventListItem {
+  return {
+    id: event.id,
+    title: event.name,
+    status: event.status,
+  }
+}
+
 export function EventMainPage({
+  profileIconUrl = null,
+  eventsRefreshKey = 0,
+  pendingEvent = null,
   onOpenProfile,
   onOpenEventAdd,
   onDetailOpenChange,
+  onPendingEventConsumed,
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
+  const [showShareInvite, setShowShareInvite] = useState(false)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
-
+  const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
+  const [completedEvents, setCompletedEvents] = useState<MemoryItem[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true)
 
   useEffect(() => {
-  onDetailOpenChange?.(adventTarget !== null)
-}, [adventTarget, onDetailOpenChange])
+    onDetailOpenChange?.(adventTarget !== null)
+  }, [adventTarget, onDetailOpenChange])
+
+  useEffect(() => {
+    if (!pendingEvent) return
+    setShowShareInvite(false)
+    setAdventTarget({
+      id: pendingEvent.id,
+      title: pendingEvent.name,
+      source: 'event',
+    })
+
+    // カレンダー画面の描画後、0.3秒置いてから招待モーダルを開く。
+    let openTimer: number | undefined
+    const firstFrame = window.requestAnimationFrame(() => {
+      const secondFrame = window.requestAnimationFrame(() => {
+        openTimer = window.setTimeout(() => {
+          setShowShareInvite(true)
+          onPendingEventConsumed?.()
+        }, 300)
+      })
+
+      frameIds.push(secondFrame)
+    })
+    const frameIds = [firstFrame]
+
+    return () => {
+      frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId))
+      if (openTimer !== undefined) {
+        window.clearTimeout(openTimer)
+      }
+    }
+  }, [pendingEvent, onPendingEventConsumed])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const load = async () => {
+      setIsLoadingEvents(true)
+
+      try {
+        const summaries = await listEvents(controller.signal)
+        setActiveEvents(
+          summaries
+            .filter((event) => event.status === 'ACTIVE')
+            .map(toListItem),
+        )
+        setCompletedEvents(
+          summaries
+            .filter((event) => event.status === 'COMPLETED')
+            .map((event) => ({
+              id: event.id,
+              title: event.name,
+            })),
+        )
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.error('GET /v1/events failed', error)
+        setActiveEvents([])
+        setCompletedEvents([])
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingEvents(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      controller.abort()
+    }
+  }, [eventsRefreshKey])
 
   if (adventTarget !== null) {
     return (
-      <AdventCalendar
-        title={adventTarget.title}
-        onBack={() => setAdventTarget(null)}
-      />
+      <>
+        <AdventCalendar
+          title={adventTarget.title}
+          onBack={() => {
+            setShowShareInvite(false)
+            setAdventTarget(null)
+          }}
+        />
+        <ShareInviteModal
+          isOpen={showShareInvite}
+          eventId={adventTarget.id}
+          eventName={adventTarget.title}
+          onClose={() => setShowShareInvite(false)}
+        />
+      </>
     )
   }
 
   return (
     <div className="event-main">
-      <Header onOpenProfile={onOpenProfile} />
+      <Header iconUrl={profileIconUrl} onOpenProfile={onOpenProfile} />
 
       <main className="event-main__content">
         <div className="event-main__scroll-area">
           <section className="event-main__section event-main__section--events">
-            <h2 className="page-title event-main__section-title">
-              EVENT
-            </h2>
+            <h2 className="page-title event-main__section-title">EVENT</h2>
 
             <EventList
+              events={activeEvents}
+              isLoading={isLoadingEvents}
               onOpenEventAdd={onOpenEventAdd}
               onSelectEvent={(event) =>
                 setAdventTarget({
@@ -101,9 +208,11 @@ export function EventMainPage({
             {isReflectionOpen ? (
               <div id="reflection-list">
                 <MemoriesPage
+                  memories={completedEvents}
+                  isLoading={isLoadingEvents}
                   onSelectMemory={(memory) =>
                     setAdventTarget({
-                      id: String(memory.id),
+                      id: memory.id,
                       title: memory.title,
                       source: 'memory',
                     })
