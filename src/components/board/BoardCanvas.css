@@ -1,0 +1,69 @@
+.board-canvas {
+  position: relative;
+
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+
+  overflow: hidden;
+}
+
+.board-canvas--portrait {
+  aspect-ratio: 3 / 4;
+}
+
+.board-canvas--landscape {
+  aspect-ratio: 4 / 3;
+}
+
+.board-canvas__svg {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  /* 閲覧時はSVGを素通りさせ、下の要素(空案内など)を押せるようにする。 */
+  pointer-events: none;
+}
+
+.board-canvas__svg--interactive {
+  pointer-events: auto;
+
+  /* スクロールやピンチに取られず、ポインタイベントを最後まで受け取るため。 */
+  touch-action: none;
+}
+
+.board-canvas__item image,
+.board-canvas__draft-sticker image {
+  pointer-events: none;
+}
+
+.board-canvas__hit {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+rect.board-canvas__hit {
+  pointer-events: fill;
+}
+
+.board-canvas__item--pending {
+  opacity: 0.55;
+}
+
+.board-canvas__item--dimmed {
+  opacity: 0.35;
+}
+
+.board-canvas__draft-sticker {
+  opacity: 0.8;
+}
+
+.board-canvas__empty {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
