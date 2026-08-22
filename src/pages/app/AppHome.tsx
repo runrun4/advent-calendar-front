@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ProfileModal } from '../../components/profile/ProfileModal'
+import { useInviteAccept } from '../../hooks/useInviteAccept'
 import { usePageSwipe } from '../../hooks/usePageSwipe'
 import type { User } from '../../types/user'
 import { EventAddModal } from '../event/EventAddModal'
 import { EventMainPage } from '../event/EventMainPage'
+import { InviteAcceptModal } from '../event/InviteAcceptModal'
 import { PrivateCalendarPage } from '../private-calendar/PrivateCalendarPage'
 
 type AppTab = 'private' | 'event'
@@ -36,6 +38,21 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
     pointerHandlers,
     setActiveTab,
   } = usePageSwipe(TABS, 'event', isEventDetailOpen)
+
+  const refreshEvents = useCallback(() => {
+    setEventsRefreshKey((key) => key + 1)
+  }, [])
+
+  /*
+   * 招待リンクで開かれていた場合の承認。
+   * AppHome は認証が済んだ後にしか描画されないので、
+   * ここに来た時点で承認APIを叩いてよい。
+   */
+  const { result: inviteResult, dismissResult: dismissInviteResult } =
+    useInviteAccept({
+      enabled: user !== null,
+      onJoined: refreshEvents,
+    })
 
   const openEventAdd = (startDate?: string) => {
     setEventAddStartDate(startDate ?? null)
@@ -119,6 +136,17 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
           setPendingEvent({ id: event.id, name: event.name })
           setIsWaitingForEventTransition(activeTab !== 'event')
           setActiveTab('event')
+        }}
+      />
+
+      <InviteAcceptModal
+        result={inviteResult}
+        onClose={() => {
+          // 参加できたときは参加先を探せるイベント一覧へ寄せる。
+          if (inviteResult?.kind !== 'failed') {
+            setActiveTab('event')
+          }
+          dismissInviteResult()
         }}
       />
     </div>
