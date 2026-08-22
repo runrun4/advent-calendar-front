@@ -35,7 +35,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
     isDragging,
     pointerHandlers,
     setActiveTab,
-  } = usePageSwipe(TABS, 'private', isEventDetailOpen)
+  } = usePageSwipe(TABS, 'event', isEventDetailOpen)
 
   const openEventAdd = (startDate?: string) => {
     setEventAddStartDate(startDate ?? null)
