@@ -1,23 +1,37 @@
-type MemoryItem = {
-  id: number
+export type MemoryItem = {
+  id: string
   title: string
 }
 
-const memories: MemoryItem[] = [
-  { id: 1, title: '思い出1' },
-  { id: 2, title: '思い出2' },
-  { id: 3, title: '思い出3' },
-  { id: 4, title: '思い出4' },
-  { id: 5, title: '思い出5' },
-]
+const EMPTY_MEMORIES_MESSAGE = (
+  <>
+    終わったイベントはまだありません
+    <br />
+    イベントが完了するとここに表示されます
+  </>
+)
 
 type MemoriesPageProps = {
+  memories: MemoryItem[]
+  isLoading?: boolean
   onSelectMemory?: (memory: MemoryItem) => void
 }
 
-export function MemoriesPage({ onSelectMemory }: MemoriesPageProps) {
+export function MemoriesPage({
+  memories,
+  isLoading = false,
+  onSelectMemory,
+}: MemoriesPageProps) {
   return (
     <div className="memories-list">
+      {isLoading ? (
+        <p className="memories-list__status">読み込み中…</p>
+      ) : null}
+
+      {!isLoading && memories.length === 0 ? (
+        <p className="memories-list__status">{EMPTY_MEMORIES_MESSAGE}</p>
+      ) : null}
+
       {memories.map((memory) => (
         <button
           key={memory.id}

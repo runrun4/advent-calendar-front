@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Header } from '../../components/layout/Header'
+import { listEvents } from '../../services/eventApi'
 import { AdventCalendar } from './AdventCalendar'
-import { EventList } from './EventList'
-import { MemoriesPage } from '../memories/MemoriesPage'
+import { EventList, type EventListItem } from './EventList'
+import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
 
 type EventMainPageProps = {
   onOpenProfile?: () => void
@@ -16,6 +17,18 @@ type AdventTarget = {
   source: 'event' | 'memory'
 }
 
+function toListItem(event: {
+  id: string
+  name: string
+  status: string
+}): EventListItem {
+  return {
+    id: event.id,
+    title: event.name,
+    status: event.status,
+  }
+}
+
 export function EventMainPage({
   onOpenProfile,
   onOpenEventAdd,
@@ -23,11 +36,53 @@ export function EventMainPage({
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
   const [isReflectionOpen, setIsReflectionOpen] = useState(true)
-
+  const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
+  const [completedEvents, setCompletedEvents] = useState<MemoryItem[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true)
 
   useEffect(() => {
-  onDetailOpenChange?.(adventTarget !== null)
-}, [adventTarget, onDetailOpenChange])
+    onDetailOpenChange?.(adventTarget !== null)
+  }, [adventTarget, onDetailOpenChange])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const load = async () => {
+      setIsLoadingEvents(true)
+
+      try {
+        const summaries = await listEvents(controller.signal)
+        setActiveEvents(
+          summaries
+            .filter((event) => event.status === 'ACTIVE')
+            .map(toListItem),
+        )
+        setCompletedEvents(
+          summaries
+            .filter((event) => event.status === 'COMPLETED')
+            .map((event) => ({
+              id: event.id,
+              title: event.name,
+            })),
+        )
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.error('GET /v1/events failed', error)
+        setActiveEvents([])
+        setCompletedEvents([])
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingEvents(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      controller.abort()
+    }
+  }, [])
 
   if (adventTarget !== null) {
     return (
@@ -45,11 +100,11 @@ export function EventMainPage({
       <main className="event-main__content">
         <div className="event-main__scroll-area">
           <section className="event-main__section event-main__section--events">
-            <h2 className="page-title event-main__section-title">
-              EVENT
-            </h2>
+            <h2 className="page-title event-main__section-title">EVENT</h2>
 
             <EventList
+              events={activeEvents}
+              isLoading={isLoadingEvents}
               onOpenEventAdd={onOpenEventAdd}
               onSelectEvent={(event) =>
                 setAdventTarget({
@@ -101,9 +156,11 @@ export function EventMainPage({
             {isReflectionOpen ? (
               <div id="reflection-list">
                 <MemoriesPage
+                  memories={completedEvents}
+                  isLoading={isLoadingEvents}
                   onSelectMemory={(memory) =>
                     setAdventTarget({
-                      id: String(memory.id),
+                      id: memory.id,
                       title: memory.title,
                       source: 'memory',
                     })

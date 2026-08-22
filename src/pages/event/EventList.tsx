@@ -1,6 +1,3 @@
-import { useEffect, useState } from 'react'
-import { listEvents, type EventSummary } from '../../services/eventApi'
-
 export type EventListItem = {
   id: string
   title: string
@@ -16,52 +13,18 @@ const EMPTY_EVENTS_MESSAGE = (
 )
 
 type EventListProps = {
+  events: EventListItem[]
+  isLoading?: boolean
   onOpenEventAdd?: () => void
   onSelectEvent?: (event: EventListItem) => void
 }
 
-function toListItem(event: EventSummary): EventListItem {
-  return {
-    id: event.id,
-    title: event.name,
-    status: event.status,
-  }
-}
-
-export function EventList({ onOpenEventAdd, onSelectEvent }: EventListProps) {
-  const [events, setEvents] = useState<EventListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const load = async () => {
-      setIsLoading(true)
-
-      try {
-        const summaries = await listEvents(controller.signal)
-        const active = summaries
-          .filter((event) => event.status === 'ACTIVE')
-          .map(toListItem)
-        setEvents(active)
-      } catch (error) {
-        if (controller.signal.aborted) return
-        console.error('GET /v1/events failed', error)
-        setEvents([])
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      controller.abort()
-    }
-  }, [])
-
+export function EventList({
+  events,
+  isLoading = false,
+  onOpenEventAdd,
+  onSelectEvent,
+}: EventListProps) {
   return (
     <div className="event-list">
       {isLoading ? (
