@@ -3,7 +3,6 @@ import { useAuth } from './hooks/useAuth'
 import { AppHome } from './pages/app/AppHome'
 import { AuthFlow, type AuthView } from './pages/auth/AuthFlow'
 import { SplashScreen } from './pages/auth/SplashScreen'
-import { NotificationPermissionButton } from './components/NotificationPermissionButton'
 
 function App() {
   const { user, setUser, phase, setPhase, isBootstrapped } = useAuth()
@@ -54,7 +53,6 @@ function App() {
   // ================================
   return (
     <>
-      <NotificationPermissionButton />
 
       <AppHome
         user={user}
