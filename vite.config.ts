@@ -1,7 +1,7 @@
 import { createLogger, defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import basicSsl from '@vitejs/plugin-basic-ssl' 
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 const hostLanIp = process.env.HOST_LAN_IP
 const pwaIcon192 = 'pwa-192x192.png'
@@ -10,9 +10,10 @@ const logger = createLogger()
 const logInfo = logger.info
 
 logger.info = (message, options) => {
-  const displayedMessage = hostLanIp && message.includes('Network')
-    ? message.replace(/eth0/g, 'PC IPv4')
-    : message
+  const displayedMessage =
+    hostLanIp && message.includes('Network')
+      ? message.replace(/eth0/g, 'PC IPv4')
+      : message
 
   logInfo(displayedMessage, options)
 }
@@ -27,48 +28,62 @@ export default defineConfig({
         if (!hostLanIp) return
 
         const printUrls = server.printUrls
+
         server.printUrls = () => {
           if (server.resolvedUrls) {
             server.resolvedUrls.network = [`https://${hostLanIp}:5173/`]
           }
+
           printUrls()
         }
       },
     },
+
     react(),
-    basicSsl(), 
+
+    basicSsl(),
+
     VitePWA({
       registerType: 'autoUpdate',
+
+      devOptions: {
+        enabled: true,
+      },
+
       includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
+
       manifest: {
         name: 'mekulunlun',
         short_name: 'めくるん',
         description: 'カレンダー・チャット・思い出共有PWA',
         theme_color: '#ffffff',
         background_color: '#ffffff',
+
         icons: [
           {
             src: pwaIcon192,
             sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: pwaIcon512,
-            sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: pwaIcon512,
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
-      }
-    })
+          },
+          {
+            src: pwaIcon512,
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+      },
+    }),
   ],
+
   server: {
     host: true,
+
     watch: {
       usePolling: true,
     },
