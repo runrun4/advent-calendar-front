@@ -9,6 +9,7 @@ export type EventListItem = {
   iconId: string
   boardEdited: boolean
   mode: string
+  role: string
 }
 
 const EMPTY_EVENTS_MESSAGE = (

@@ -21,21 +21,25 @@ import './EventSettingsModal.css'
 
 const ROOM_NAME_MAX = 10
 
+type EventSettingsSaved = {
+  name: string
+  iconId: string
+  boardOrientation: BoardOrientation
+  boardEdited: boolean
+}
+
 type EventSettingsModalProps = {
   isOpen: boolean
   eventId: string
   eventTitle: string
   eventMode: string
+  /** EventSummary.role。PATCH /v1/events/{id} は OWNER のみ許される。 */
+  eventRole: string
   eventIconId: string
   boardOrientation: BoardOrientation
   boardEdited: boolean
   onClose: () => void
-  onBoardOrientationSaved: (
-    boardOrientation: BoardOrientation,
-    boardEdited: boolean,
-  ) => void
-  onEventNameSaved: (name: string) => void
-  onEventIconSaved: (iconId: string) => void
+  onSaved: (updated: EventSettingsSaved) => void
   onLeftRoom: () => void
 }
 
@@ -44,13 +48,12 @@ export function EventSettingsModal({
   eventId,
   eventTitle,
   eventMode,
+  eventRole,
   eventIconId,
   boardOrientation,
   boardEdited,
   onClose,
-  onBoardOrientationSaved,
-  onEventNameSaved,
-  onEventIconSaved,
+  onSaved,
   onLeftRoom,
 }: EventSettingsModalProps) {
   const [roomName, setRoomName] = useState(eventTitle)
@@ -77,13 +80,17 @@ export function EventSettingsModal({
   const isNameValid =
     trimmedName.length > 0 && [...trimmedName].length <= ROOM_NAME_MAX
   const isGroupEvent = eventMode === 'GROUP'
+  // PATCH /v1/events/{id} は OWNER 限定。MEMBER には編集UI自体を出さない。
+  const isOwner = eventRole === 'OWNER'
   const SelectedIcon = getEventIcon(selectedIconId)
 
   const hasNameChange = trimmedName !== eventTitle
   const hasIconChange = selectedIconId !== eventIconId
   const hasOrientationChange = selectedOrientation !== boardOrientation
-  const hasChanges = hasNameChange || hasIconChange || hasOrientationChange
+  const hasChanges =
+    isOwner && (hasNameChange || hasIconChange || hasOrientationChange)
   const canSave = isNameValid && hasChanges && !isSaving && !isLeaving
+  const isFormDisabled = isSaving || !isOwner
 
   useEffect(() => {
     if (!isOpen) return
@@ -93,9 +100,38 @@ export function EventSettingsModal({
     setErrorMessage(null)
     setShowLeaveConfirm(false)
     setShowOrientationConfirm(false)
-    setInviteUrl(null)
     setIsIconPickerOpen(false)
   }, [isOpen, eventTitle, eventIconId, boardOrientation])
+
+  /*
+   * 招待リンクは開いた時点で先に発行しておく。
+   * タップ後に await を挟むと iOS Safari がユーザー操作の文脈を失って
+   * navigator.clipboard.writeText を拒否するため(ShareInviteModal と同じ方針)。
+   */
+  useEffect(() => {
+    if (!isOpen || !isGroupEvent) return
+
+    let cancelled = false
+    setIsLoadingInvite(true)
+
+    void createInvitation(eventId)
+      .then((invitation) => {
+        if (cancelled) return
+        setInviteUrl(invitation.inviteUrl)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        console.error('POST /v1/events/invitations failed', error)
+        setInviteUrl(null)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingInvite(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, isGroupEvent, eventId])
 
   useEffect(() => {
     if (!isOpen) return
@@ -157,18 +193,12 @@ export function EventSettingsModal({
           : {}),
       })
 
-      if (hasNameChange) {
-        onEventNameSaved(updated.name)
-      }
-      if (hasIconChange) {
-        onEventIconSaved(updated.iconId || DEFAULT_EVENT_ICON_ID)
-      }
-      if (hasOrientationChange) {
-        onBoardOrientationSaved(
-          updated.boardOrientation ?? 'PORTRAIT',
-          updated.boardEdited ?? false,
-        )
-      }
+      onSaved({
+        name: updated.name,
+        iconId: updated.iconId || DEFAULT_EVENT_ICON_ID,
+        boardOrientation: updated.boardOrientation ?? 'PORTRAIT',
+        boardEdited: updated.boardEdited ?? false,
+      })
 
       setShowOrientationConfirm(false)
       onClose()
@@ -203,27 +233,16 @@ export function EventSettingsModal({
   const handleCopyInviteLink = async () => {
     setErrorMessage(null)
 
-    try {
-      let url = inviteUrl
-      if (!url) {
-        setIsLoadingInvite(true)
-        const invitation = await createInvitation(eventId)
-        url = invitation.inviteUrl
-        setInviteUrl(url)
-      }
+    if (!inviteUrl) {
+      setErrorMessage('招待リンクの作成に失敗しました')
+      return
+    }
 
-      await navigator.clipboard.writeText(url)
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
       showCopyToast()
-    } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : 'リンクのコピーに失敗しました'
-      setErrorMessage(message)
-    } finally {
-      setIsLoadingInvite(false)
+    } catch {
+      setErrorMessage('リンクのコピーに失敗しました')
     }
   }
 
@@ -369,6 +388,12 @@ export function EventSettingsModal({
         disableSwipeClose={hasChanges || isSaving}
       >
         <div className="room-settings">
+          {isOwner ? null : (
+            <p className="room-settings__readonly-note">
+              ルーム名・アイコン・ボードの向きを変更できるのは作成者のみです
+            </p>
+          )}
+
           <div className="room-settings__identity">
             <button
               type="button"
@@ -376,7 +401,7 @@ export function EventSettingsModal({
               aria-label="ルームアイコンを変更"
               aria-expanded={isIconPickerOpen}
               onClick={() => setIsIconPickerOpen((open) => !open)}
-              disabled={isSaving}
+              disabled={isFormDisabled}
             >
               <SelectedIcon
                 className="room-settings__icon-image"
@@ -408,7 +433,7 @@ export function EventSettingsModal({
                         setSelectedIconId(optionId)
                         setIsIconPickerOpen(false)
                       }}
-                      disabled={isSaving}
+                      disabled={isFormDisabled}
                     >
                       <Icon strokeWidth={1.75} aria-hidden="true" />
                     </button>
@@ -432,7 +457,7 @@ export function EventSettingsModal({
                   value={roomName}
                   maxLength={ROOM_NAME_MAX}
                   onChange={(event) => setRoomName(event.target.value)}
-                  disabled={isSaving}
+                  disabled={isFormDisabled}
                 />
                 {isNameValid ? (
                   <Check
@@ -468,7 +493,7 @@ export function EventSettingsModal({
                   selectedOrientation === 'PORTRAIT' ? ' is-selected' : ''
                 }`}
                 onClick={() => setSelectedOrientation('PORTRAIT')}
-                disabled={isSaving}
+                disabled={isFormDisabled}
               >
                 縦
               </button>
@@ -480,7 +505,7 @@ export function EventSettingsModal({
                   selectedOrientation === 'LANDSCAPE' ? ' is-selected' : ''
                 }`}
                 onClick={() => setSelectedOrientation('LANDSCAPE')}
-                disabled={isSaving}
+                disabled={isFormDisabled}
               >
                 横
               </button>
@@ -549,14 +574,16 @@ export function EventSettingsModal({
             </p>
           ) : null}
 
-          <button
-            type="button"
-            className="room-settings__save-button"
-            onClick={handleSaveChanges}
-            disabled={!canSave}
-          >
-            {isSaving ? '保存中…' : '変更完了'}
-          </button>
+          {isOwner ? (
+            <button
+              type="button"
+              className="room-settings__save-button"
+              onClick={handleSaveChanges}
+              disabled={!canSave}
+            >
+              {isSaving ? '保存中…' : '変更完了'}
+            </button>
+          ) : null}
 
           <button
             type="button"

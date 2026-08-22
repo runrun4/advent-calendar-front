@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ProfileModal } from '../../components/profile/ProfileModal'
 import { usePageSwipe } from '../../hooks/usePageSwipe'
 import type { User } from '../../types/user'
-import type { BoardOrientation } from '../../services/eventApi'
+import type { EventSummary } from '../../services/eventApi'
 import { EventAddModal } from '../event/EventAddModal'
 import { EventMainPage } from '../event/EventMainPage'
 import { PrivateCalendarPage } from '../private-calendar/PrivateCalendarPage'
@@ -25,15 +25,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
   const [isWaitingForEventTransition, setIsWaitingForEventTransition] =
     useState(false)
-  const [pendingEvent, setPendingEvent] = useState<{
-    id: string
-    name: string
-    startDate: string
-    boardOrientation?: BoardOrientation
-    mode?: string
-    iconId?: string
-    boardEdited?: boolean
-  } | null>(null)
+  const [pendingEvent, setPendingEvent] = useState<EventSummary | null>(null)
   const {
     activeTab,
     currentIndex,
@@ -122,15 +114,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
         onClose={closeEventAdd}
         onCreated={(event) => {
           setEventsRefreshKey((key) => key + 1)
-          setPendingEvent({
-            id: event.id,
-            name: event.name,
-            startDate: event.startDate,
-            boardOrientation: event.boardOrientation,
-            mode: event.mode,
-            iconId: event.iconId,
-            boardEdited: event.boardEdited,
-          })
+          setPendingEvent(event)
           setIsWaitingForEventTransition(activeTab !== 'event')
           setActiveTab('event')
         }}

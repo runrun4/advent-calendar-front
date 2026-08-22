@@ -8,6 +8,7 @@ export type MemoryItem = {
   iconId: string
   boardEdited: boolean
   mode: string
+  role: string
 }
 
 const EMPTY_MEMORIES_MESSAGE = (

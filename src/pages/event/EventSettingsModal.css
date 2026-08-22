@@ -37,7 +37,7 @@
 
 .room-settings__icon-button:disabled {
   opacity: 0.65;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .room-settings__icon-image {
@@ -90,7 +90,7 @@
 
 .room-settings__icon-option:disabled {
   opacity: 0.65;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .room-settings__name-field {
@@ -124,6 +124,12 @@
 
   font-size: 0.98rem;
   font-weight: 500;
+}
+
+.room-settings__name-input:disabled {
+  border-color: #d9d9d9;
+  background: #f7f7f7;
+  color: #555;
 }
 
 .room-settings__name-input:focus {
@@ -328,6 +334,18 @@
 
   color: #b00020;
   font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.room-settings__readonly-note {
+  margin: 0;
+  padding: 10px 14px;
+
+  border-radius: 12px;
+  background: #f3f3f3;
+
+  color: #555;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
 
