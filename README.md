@@ -67,10 +67,20 @@ docker compose -f docker-compose.prod.yml up --build
 
 ## ローカル（Docker なし）で開発する
 
+**Mac / Linux:**
+
 ```bash
 npm ci
 npm run dev
 ```
+
+**Windows WSL2:** WSL2はNAT内にいるため、スマホ確認には Windows→WSL のポート転送が必要。初回に管理者PowerShellで `scripts\wsl-portproxy.ps1` を実行してから、WSL側で起動する:
+
+```bash
+./scripts/wsl-dev.sh
+```
+
+詳細: [docs/team-setup-and-mobile.md](docs/team-setup-and-mobile.md) のセクション8.2
 
 ## よく使うスクリプト
 

@@ -17,6 +17,17 @@ alwaysApply: true
 
 本番相当確認は `docker compose -f docker-compose.prod.yml up --build` → `http://localhost:8080`（スマホは `:8080`）。
 
+## Docker なしの WSL2
+
+- WSL2 で Docker を使わず `npm run dev` する場合は、初回に Windows 管理者 PowerShell で `scripts/wsl-portproxy.ps1`（Windows→WSL のポート転送＋FW許可）、以後 WSL 側で `./scripts/wsl-dev.sh` を使う
+- WSL 再起動で WSL の IP が変わり portproxy が切れる。届かなくなったら `wsl-portproxy.ps1` を再実行する
+
+## Wi-Fi がない会場（テザリング）
+
+- PC をスマホのテザリングに接続すれば同一ネットワークになり、スマホ確認はそのまま成立する（親機スマホ自身から PC へアクセス可能）
+- iPhone テザリングでは PC の IP が `172.20.10.x` になる。起動スクリプトが表示する「スマホ確認URL」を正とし、「172 で始まる＝WSL の IP で間違い」と即断しない
+- Windows はテザリングをパブリックネットワーク扱いするため、FW 許可はパブリックプロファイルを含める必要がある（`wsl-portproxy.ps1` は対応済み）
+
 ## 制約（必ず伝える）
 
 - **別 Wi-Fi のチーム同士**は、ローカルIPでは互いに見えない。共有確認は GitHub + Vercel/Netlify 等の **HTTPS URL** を使う
