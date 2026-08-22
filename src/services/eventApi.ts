@@ -230,3 +230,102 @@ export async function acceptInvitation(
 
   return { event: data, alreadyJoined: status === 200 }
 }
+
+/** GET /v1/events/{eventId}/calendar */
+export type CalendarDayState = 'LOCKED' | 'AVAILABLE' | 'OPENED' | 'EXPIRED' | string
+
+export type CalendarDaySummary = {
+  id: string
+  date: string
+  position: number
+  state: CalendarDayState
+  contentKind: 'KNOWLEDGE' | 'STICKER' | null
+  isCooperationDay: boolean
+  openedAt: string | null
+}
+
+export type CooperationProgress = {
+  status: 'NOT_APPLICABLE' | 'IN_PROGRESS' | 'ACHIEVED' | 'FAILED' | string
+  openedCount: number
+  requiredCount: number
+  achievedAt: string | null
+}
+
+export type EventCalendar = {
+  event: EventDetail
+  serverNow: string
+  today: string
+  days: CalendarDaySummary[]
+  todayCooperation: CooperationProgress | null
+}
+
+export async function getEventCalendar(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventCalendar> {
+  return apiRequest<EventCalendar>(`/v1/events/${eventId}/calendar`, { signal })
+}
+
+export type OpenedDayContent =
+  | {
+      kind: 'KNOWLEDGE'
+      knowledgeId: string
+      title: string
+      body: string
+      imageUrl?: string | null
+      category?: string | null
+    }
+  | {
+      kind: 'STICKER'
+      sticker: {
+        id: string
+        name: string
+        imageUrl: string
+        rarity: string
+        flavorText: string
+      }
+    }
+
+export type OpenedDayResponse = {
+  eventId: string
+  dayId: string
+  date: string
+  content: OpenedDayContent
+}
+
+export type OpenDayResponse = OpenedDayResponse & {
+  grant?: {
+    id: string
+    kind: string
+    grantedAt: string
+    source: string
+  }
+  cooperation: {
+    progress: CooperationProgress
+    newlyAchieved: boolean
+  } | null
+}
+
+/** POST /v1/events/{eventId}/days/{dayId}/open */
+export async function openEventDay(
+  eventId: string,
+  dayId: string,
+): Promise<OpenDayResponse> {
+  return apiRequest<OpenDayResponse>(
+    `/v1/events/${eventId}/days/${dayId}/open`,
+    { method: 'POST' },
+  )
+}
+
+/** GET /v1/events/{eventId}/days/{dayId} */
+export async function getOpenedDay(
+  eventId: string,
+  dayId: string,
+  signal?: AbortSignal,
+): Promise<OpenedDayResponse> {
+  return apiRequest<OpenedDayResponse>(
+    `/v1/events/${eventId}/days/${dayId}`,
+    { signal },
+  )
+}
+

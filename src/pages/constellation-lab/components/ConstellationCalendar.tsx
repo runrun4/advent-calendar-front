@@ -5,6 +5,14 @@
 // ==========================================
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Gift, MessageCircle, Settings } from 'lucide-react'
+import { formatMonthDay } from '../../../utils/dateUtils'
+import {
+  getEventCalendar,
+  getOpenedDay,
+  listEventMembers,
+  openEventDay,
+  type CalendarDaySummary,
+} from '../../../services/eventApi'
 import {
   CONSTELLATION_CENTROID,
   FINALE_K,
@@ -14,9 +22,21 @@ import {
   K_IDLE,
   STARS,
   TOTAL_DAYS,
-  dayStateOf,
 } from '../data/constellationLayout'
 import { COOP_DAYS, LONG_PRESS_MS, MEMBER_TOTAL } from '../data/coop'
+import {
+  buildDayStatesFromCalendar,
+  buildDayStatesFromOpenedCount,
+  coopDaysFromCalendar,
+  countOpened,
+  dayContentFromApi,
+  dayIdByPosition,
+  focusDayFromStates,
+  hydrateCoopFromCalendar,
+  markDayOpened,
+  maxAccessibleDayOf,
+  resolveTotalDays,
+} from '../data/calendarBridge'
 import { INITIAL_OPENED_COUNT, MOCK_CONTENTS } from '../data/mockDays'
 import { useBurstCanvas } from '../hooks/useBurstCanvas'
 import { useCamera } from '../hooks/useCamera'
@@ -24,7 +44,7 @@ import type { CameraState } from '../hooks/useCamera'
 import { useCoopDay } from '../hooks/useCoopDay'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useTimers } from '../hooks/useTimers'
-import type { Phase } from '../types/constellation'
+import type { DayContent, DayState, Phase } from '../types/constellation'
 import { clamp, clamp01, easeOutCubic, lerp } from '../utils/easing'
 import { AmbientBackground } from './AmbientBackground'
 import { CoopHud, CoopMemberPanel, CoopNoticeCard, CoopReleaseButton } from './CoopDay'
@@ -36,20 +56,60 @@ import './ConstellationCalendar.css'
 
 type ConstellationCalendarProps = {
   title: string
+  eventDate?: string
+  /** 渡すと GET /calendar・開封 API に接続する（本体イベント画面） */
+  eventId?: string
   onBack: () => void
+  onOpenStickers?: () => void
+  onOpenSettings?: () => void
+  onOpenChat?: () => void
+  /** 検証用 DebugPanel。本体では false */
+  showDebug?: boolean
 }
 
 const FALLBACK_STAR_COLOR = '#ffd98a'
 
-export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarProps) => {
-  const [openedCount, setOpenedCount] = useState(INITIAL_OPENED_COUNT)
-  const [focusDay, setFocusDay] = useState(Math.min(INITIAL_OPENED_COUNT + 1, TOTAL_DAYS))
+export const ConstellationCalendar = ({
+  title,
+  eventDate,
+  eventId,
+  onBack,
+  onOpenStickers,
+  onOpenSettings,
+  onOpenChat,
+  showDebug = true,
+}: ConstellationCalendarProps) => {
+  const [dayStates, setDayStates] = useState<Record<number, DayState>>(() =>
+    buildDayStatesFromOpenedCount(INITIAL_OPENED_COUNT, TOTAL_DAYS),
+  )
+  const [totalDays, setTotalDays] = useState(TOTAL_DAYS)
+  const [focusDay, setFocusDay] = useState(
+    focusDayFromStates(
+      buildDayStatesFromOpenedCount(INITIAL_OPENED_COUNT, TOTAL_DAYS),
+      TOTAL_DAYS,
+    ),
+  )
   const [phase, setPhase] = useState<Phase>('daily')
   const [cardDay, setCardDay] = useState<number | null>(null)
   const [justOpenedDay, setJustOpenedDay] = useState<number | null>(null)
   const [finaleT, setFinaleT] = useState(0)
+  const [calendarDays, setCalendarDays] = useState<CalendarDaySummary[]>([])
+  const [coopDayNumbers, setCoopDayNumbers] = useState<readonly number[]>(COOP_DAYS)
+  const [coopMemberTotal, setCoopMemberTotal] = useState(MEMBER_TOTAL)
+  const [memberNames, setMemberNames] = useState<readonly string[] | undefined>(undefined)
+  const [dayContents, setDayContents] = useState<Record<number, DayContent>>({})
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [isOpeningRemote, setIsOpeningRemote] = useState(false)
 
-  const maxAccessibleDay = Math.min(openedCount + 1, TOTAL_DAYS)
+  const openedCount = useMemo(() => countOpened(dayStates), [dayStates])
+  const maxAccessibleDay = useMemo(
+    () => maxAccessibleDayOf(dayStates, totalDays),
+    [dayStates, totalDays],
+  )
+  const getDayState = useCallback(
+    (day: number) => dayStates[day] ?? 'locked',
+    [dayStates],
+  )
 
   const reducedMotion = useReducedMotion()
   const { later, clearAll: clearAllTimers } = useTimers()
@@ -76,21 +136,92 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
    */
 
   const onIgnite = useCallback(() => {
-    setJustOpenedDay(COOP_DAYS[0])
+    setJustOpenedDay(coopDayNumbers[0] ?? COOP_DAYS[0])
     playBurst()
     later(() => setJustOpenedDay(null), 900)
-  }, [playBurst, later])
+  }, [playBurst, later, coopDayNumbers])
 
   const onReleaseCardReady = useCallback((day: number) => {
     setPhase('card')
     setCardDay(day)
   }, [])
 
-  const coop = useCoopDay({ later, burst: playBurst, onIgnite, onReleaseCardReady })
+  const coop = useCoopDay({
+    later,
+    burst: playBurst,
+    onIgnite,
+    onReleaseCardReady,
+    coopDays: coopDayNumbers,
+    memberTotal: coopMemberTotal,
+  })
 
   const advanceOpened = useCallback((day: number) => {
-    setOpenedCount((current) => Math.max(current, day))
+    setDayStates((current) => markDayOpened(current, day))
   }, [])
+
+  /*
+   * ==========================================
+   * 本体イベント: カレンダー取得
+   * ==========================================
+   */
+
+  useEffect(() => {
+    if (!eventId) return
+
+    const controller = new AbortController()
+
+    const load = async () => {
+      setLoadError(null)
+      try {
+        const [calendar, members] = await Promise.all([
+          getEventCalendar(eventId, controller.signal),
+          listEventMembers(eventId, controller.signal).catch(() => null),
+        ])
+        if (controller.signal.aborted) return
+
+        setCalendarDays(calendar.days)
+        const nextTotal = resolveTotalDays(calendar.days, calendar.event)
+        setTotalDays(nextTotal)
+
+        const states = buildDayStatesFromCalendar(calendar.days, nextTotal)
+        setDayStates(states)
+        setFocusDay(focusDayFromStates(states, nextTotal))
+
+        const coopPositions = coopDaysFromCalendar(calendar.days)
+        if (coopPositions.length > 0) {
+          setCoopDayNumbers(coopPositions)
+        }
+
+        const hydrated = hydrateCoopFromCalendar(calendar)
+        if (hydrated) {
+          setCoopMemberTotal(hydrated.memberTotal)
+          coop.resetForDebug({
+            myWritten: hydrated.myWritten,
+            othersWritten: hydrated.othersWritten,
+            // ACHIEVED 済みなら鎖は解く。未達成のうちは明示解放まで鎖を維持
+            coopUnlocked: hydrated.coopUnlocked,
+          })
+        }
+
+        if (members?.members?.length) {
+          const names = members.members.map((member) => member.user.displayName)
+          setMemberNames(names)
+          setCoopMemberTotal((current) =>
+            Math.max(current, members.members.length),
+          )
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
+        const message =
+          error instanceof Error ? error.message : 'カレンダーの取得に失敗しました'
+        setLoadError(message)
+      }
+    }
+
+    void load()
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId])
 
   /*
    * ==========================================
@@ -106,34 +237,138 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
     setCardDay(focusDay)
   }, [focusDay])
 
-  const openDay = useCallback(
+  const playOpenAnimation = useCallback(
     (day: number) => {
-      if (phase !== 'daily') return // 多重タップ防止 (IMPLEMENTATION_NOTES §1-7)
       setPhase('opening')
-      setOpenedCount(day)
+      setDayStates((current) => markDayOpened(current, day))
       setJustOpenedDay(day)
       later(() => setJustOpenedDay(null), 900)
       playBurst()
       later(() => finishOpening(), 760)
     },
-    [phase, later, playBurst, finishOpening]
+    [later, playBurst, finishOpening],
+  )
+
+  const openDay = useCallback(
+    (day: number) => {
+      if (phase !== 'daily' || isOpeningRemote) return
+
+      if (!eventId) {
+        playOpenAnimation(day)
+        return
+      }
+
+      const dayId = dayIdByPosition(calendarDays, day)
+      if (!dayId) {
+        setLoadError('開封対象のデイが見つかりません')
+        return
+      }
+
+      setIsOpeningRemote(true)
+      void openEventDay(eventId, dayId)
+        .then((response) => {
+          setDayContents((current) => ({
+            ...current,
+            [day]: dayContentFromApi(response.content),
+          }))
+          playOpenAnimation(day)
+        })
+        .catch((error) => {
+          const message =
+            error instanceof Error ? error.message : '開封に失敗しました'
+          setLoadError(message)
+        })
+        .finally(() => setIsOpeningRemote(false))
+    },
+    [phase, isOpeningRemote, eventId, calendarDays, playOpenAnimation],
+  )
+
+  const writeCoopPart = useCallback(
+    (day: number) => {
+      if (coop.myWritten || isOpeningRemote) return
+
+      if (!eventId) {
+        coop.writeMyPart(day, advanceOpened)
+        return
+      }
+
+      const dayId = dayIdByPosition(calendarDays, day)
+      if (!dayId) {
+        setLoadError('開封対象のデイが見つかりません')
+        return
+      }
+
+      setIsOpeningRemote(true)
+      void openEventDay(eventId, dayId)
+        .then((response) => {
+          const progress = response.cooperation?.progress
+          if (progress) {
+            setCoopMemberTotal(progress.requiredCount)
+            coop.resetForDebug({
+              myWritten: true,
+              othersWritten: Math.max(0, progress.openedCount - 1),
+              coopUnlocked: false,
+            })
+          } else {
+            coop.writeMyPart(day, advanceOpened)
+          }
+          advanceOpened(day)
+          setDayContents((current) => ({
+            ...current,
+            [day]: dayContentFromApi(response.content),
+          }))
+        })
+        .catch((error) => {
+          const message =
+            error instanceof Error ? error.message : '書き込みに失敗しました'
+          setLoadError(message)
+        })
+        .finally(() => setIsOpeningRemote(false))
+    },
+    [
+      coop,
+      isOpeningRemote,
+      eventId,
+      calendarDays,
+      advanceOpened,
+    ],
+  )
+
+  const openCardForDay = useCallback(
+    (day: number) => {
+      setCardDay(day)
+      setPhase('card')
+
+      if (!eventId || dayContents[day]) return
+      const dayId = dayIdByPosition(calendarDays, day)
+      if (!dayId) return
+
+      void getOpenedDay(eventId, dayId)
+        .then((response) => {
+          setDayContents((current) => ({
+            ...current,
+            [day]: dayContentFromApi(response.content),
+          }))
+        })
+        .catch(() => {
+          // モック内容にフォールバック
+        })
+    },
+    [eventId, dayContents, calendarDays],
   )
 
   const handleTap = useCallback(() => {
     const day = focusDay
     if (coop.isChained(day)) {
-      if (coop.coopT > 0) return // 解放演出中
-      if (!coop.myWritten) coop.writeMyPart(day, advanceOpened)
+      if (coop.coopT > 0) return
+      if (!coop.myWritten) writeCoopPart(day)
       else if (!coop.allWritten) coop.openPanel()
-      return // 解放は専用ボタンから
+      return
     }
-    const state = dayStateOf(day, openedCount)
+    const state = getDayState(day)
     if (state === 'openable') openDay(day)
-    else if (state === 'opened') {
-      setCardDay(day)
-      setPhase('card')
-    }
-  }, [focusDay, coop, advanceOpened, openedCount, openDay])
+    else if (state === 'opened') openCardForDay(day)
+  }, [focusDay, coop, getDayState, openDay, writeCoopPart, openCardForDay])
 
   /*
    * ==========================================
@@ -167,11 +402,16 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
     const day = cardDay
     setPhase('daily')
     setCardDay(null)
-    // 開封後は次の星へ自前でカメラを送る
-    if (day !== null && day === openedCount && day < TOTAL_DAYS) {
+    // 開封後、次が openable ならそちらへカメラを送る
+    if (
+      day !== null &&
+      getDayState(day) === 'opened' &&
+      day < totalDays &&
+      getDayState(day + 1) === 'openable'
+    ) {
       glideCamera(GLIDE_MS)
     }
-  }, [cardDay, openedCount, glideCamera])
+  }, [cardDay, getDayState, totalDays, glideCamera])
 
   /*
    * ==========================================
@@ -187,7 +427,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
     }
     setPhase('finale')
     setCardDay(null)
-    setFocusDay(TOTAL_DAYS)
+    setFocusDay(totalDays)
     setFinaleT(0)
 
     const start = performance.now()
@@ -211,7 +451,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         setFinaleT(FINALE_T_END)
       }
     }, FINALE_T_END + 500)
-  }, [camera, later])
+  }, [camera, later, totalDays])
 
   const onExitFinale = useCallback(() => {
     if (finaleRafRef.current !== null) {
@@ -220,8 +460,8 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
     }
     setPhase('daily')
     setFinaleT(0)
-    setFocusDay(TOTAL_DAYS)
-  }, [])
+    setFocusDay(totalDays)
+  }, [totalDays])
 
   useEffect(() => {
     return () => {
@@ -265,30 +505,47 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
       setCardDay(null)
       setJustOpenedDay(null)
       setFinaleT(0)
-      setOpenedCount(count)
-      setFocusDay(Math.min(count + 1, TOTAL_DAYS))
+      const states = buildDayStatesFromOpenedCount(count, totalDays)
+      setDayStates(states)
+      setFocusDay(focusDayFromStates(states, totalDays))
 
-      const coopDay = COOP_DAYS[0]
+      const coopDay = coopDayNumbers[0] ?? COOP_DAYS[0]
       coop.resetForDebug({
         myWritten: count >= coopDay,
-        othersWritten: count >= coopDay ? MEMBER_TOTAL - 1 : 3,
+        othersWritten: count >= coopDay ? Math.max(coopMemberTotal - 1, 0) : 3,
         coopUnlocked: count > coopDay,
       })
     },
-    [camera, stopBurst, burstCanvasRef, coop, clearAllTimers]
+    [
+      camera,
+      stopBurst,
+      burstCanvasRef,
+      coop,
+      clearAllTimers,
+      coopDayNumbers,
+      coopMemberTotal,
+      totalDays,
+    ],
   )
 
-  const onDebugRange = useCallback((count: number) => applyOpened(clamp(count, 0, TOTAL_DAYS)), [applyOpened])
-  const onJumpCoop = useCallback(() => applyOpened(COOP_DAYS[0] - 1), [applyOpened])
+  const onDebugRange = useCallback(
+    (count: number) => applyOpened(clamp(count, 0, totalDays)),
+    [applyOpened, totalDays],
+  )
+  const onJumpCoop = useCallback(
+    () => applyOpened((coopDayNumbers[0] ?? COOP_DAYS[0]) - 1),
+    [applyOpened, coopDayNumbers],
+  )
   const onJumpCoopEve = useCallback(() => {
-    applyOpened(COOP_DAYS[0] - 1)
-    setFocusDay(COOP_DAYS[0] - 1)
-  }, [applyOpened])
-  const onJump29 = useCallback(() => applyOpened(TOTAL_DAYS - 1), [applyOpened])
+    const coopDay = coopDayNumbers[0] ?? COOP_DAYS[0]
+    applyOpened(coopDay - 1)
+    setFocusDay(coopDay - 1)
+  }, [applyOpened, coopDayNumbers])
+  const onJump29 = useCallback(() => applyOpened(totalDays - 1), [applyOpened, totalDays])
   const onJumpFinale = useCallback(() => {
-    applyOpened(TOTAL_DAYS)
+    applyOpened(totalDays)
     later(startFinale, 30)
-  }, [applyOpened, later, startFinale])
+  }, [applyOpened, later, startFinale, totalDays])
   const onReset = useCallback(() => applyOpened(INITIAL_OPENED_COUNT), [applyOpened])
 
   /*
@@ -313,7 +570,9 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
   const scene = useMemo(
     () =>
       buildScene({
-        opened: openedCount,
+        getDayState,
+        totalDays,
+        memberTotal: coop.memberTotal,
         maxAccessibleDay,
         focusDay,
         tp: camera.tp,
@@ -328,7 +587,8 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         writtenCount: coop.writtenCount,
       }),
     [
-      openedCount,
+      getDayState,
+      totalDays,
       maxAccessibleDay,
       focusDay,
       camera.tp,
@@ -341,15 +601,19 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
       coop.coopT,
       coop.myWritten,
       coop.writtenCount,
-    ]
+      coop.memberTotal,
+    ],
   )
 
-  const cardContent = cardDay !== null ? MOCK_CONTENTS[cardDay - 1] : null
+  const cardContent =
+    cardDay !== null
+      ? (dayContents[cardDay] ?? MOCK_CONTENTS[cardDay - 1] ?? null)
+      : null
   const chromeOpacity = phase === 'finale' && finaleT > 600 ? 0.35 : 1
   const showCoopHud = coop.isChained(focusDay) && !scene.traveling
-  const coopRemain = MEMBER_TOTAL - coop.writtenCount
+  const coopRemain = coop.memberTotal - coop.writtenCount
   const showReleaseButton = showCoopHud && coopRemain <= 0 && coop.coopT === 0
-  const progressPct = `${((openedCount / TOTAL_DAYS) * 100).toFixed(1)}%`
+  const progressPct = `${((openedCount / totalDays) * 100).toFixed(1)}%`
 
   return (
     <div className="constellation-calendar">
@@ -373,10 +637,20 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
           ========================= */}
 
       <div className="constellation-calendar__top-buttons">
-        <button type="button" className="constellation-calendar__icon-button" aria-label="設定">
+        <button
+          type="button"
+          className="constellation-calendar__icon-button"
+          aria-label="設定"
+          onClick={onOpenSettings}
+        >
           <Settings size={22} strokeWidth={2} />
         </button>
-        <button type="button" className="constellation-calendar__icon-button" aria-label="チャット">
+        <button
+          type="button"
+          className="constellation-calendar__icon-button"
+          aria-label="チャット"
+          onClick={onOpenChat}
+        >
           <MessageCircle size={22} strokeWidth={2} />
         </button>
       </div>
@@ -386,14 +660,22 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
           ========================= */}
 
       <div className="constellation-calendar__event-info" style={{ opacity: chromeOpacity }}>
-        <p className="constellation-calendar__event-date">8/30</p>
+        <p className="constellation-calendar__event-date">
+          {eventDate ? formatMonthDay(eventDate) : '8/30'}
+        </p>
         <h1 className="constellation-calendar__event-title">{title}</h1>
       </div>
+
+      {loadError ? (
+        <p className="constellation-calendar__load-error" role="alert">
+          {loadError}
+        </p>
+      ) : null}
 
       {scene.bannerVisible && (
         <div className="constellation-calendar__finale-banner">
           <span className="constellation-calendar__finale-banner-title">星座が完成</span>
-          <span className="constellation-calendar__finale-banner-sub">{TOTAL_DAYS} / {TOTAL_DAYS} opened</span>
+          <span className="constellation-calendar__finale-banner-sub">{openedCount} / {totalDays} opened</span>
         </div>
       )}
 
@@ -410,13 +692,22 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
       >
         <StarField scene={scene} camera={effectiveCamera} />
 
-        {showCoopHud && <CoopHud writtenCount={coop.writtenCount} coopT={coop.coopT} myWritten={coop.myWritten} />}
+        {showCoopHud && (
+          <CoopHud
+            writtenCount={coop.writtenCount}
+            coopT={coop.coopT}
+            myWritten={coop.myWritten}
+            memberTotal={coop.memberTotal}
+          />
+        )}
         {showReleaseButton && <CoopReleaseButton onRelease={coop.releaseCoop} />}
         {coop.coopPanel && (
           <CoopMemberPanel
             writtenCount={coop.writtenCount}
             myWritten={coop.myWritten}
             othersWritten={coop.othersWritten}
+            memberTotal={coop.memberTotal}
+            memberNames={memberNames}
             onClose={coop.closePanel}
           />
         )}
@@ -431,7 +722,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
           <div className="constellation-calendar__progress-fill" style={{ width: progressPct }} />
         </div>
         <span className="constellation-calendar__progress-label">
-          {openedCount} / {TOTAL_DAYS} opened
+          {openedCount} / {totalDays} opened
         </span>
       </div>
 
@@ -443,6 +734,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         type="button"
         className="constellation-calendar__icon-button constellation-calendar__gift-button"
         aria-label="獲得アイテム一覧"
+        onClick={onOpenStickers}
       >
         <Gift size={22} strokeWidth={2} />
       </button>
@@ -461,7 +753,7 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
         <DayContentCard
           day={cardDay}
           content={cardContent}
-          isFinaleDay={cardDay === TOTAL_DAYS}
+          isFinaleDay={cardDay === totalDays}
           onClose={closeCard}
           onReveal={startFinale}
         />
@@ -471,18 +763,20 @@ export const ConstellationCalendar = ({ title, onBack }: ConstellationCalendarPr
           DebugPanel (プロト用)
           ========================= */}
 
-      <DebugPanel
-        openedCount={openedCount}
-        totalDays={TOTAL_DAYS}
-        othersWritten={coop.othersWritten}
-        onChangeOpenedCount={onDebugRange}
-        onChangeOthersWritten={coop.setOthersWritten}
-        onJumpToCoopEve={onJumpCoopEve}
-        onJumpToCoop={onJumpCoop}
-        onJumpToFinaleReady={onJump29}
-        onPlayFinale={onJumpFinale}
-        onReset={onReset}
-      />
+      {showDebug ? (
+        <DebugPanel
+          openedCount={openedCount}
+          totalDays={totalDays}
+          othersWritten={coop.othersWritten}
+          onChangeOpenedCount={onDebugRange}
+          onChangeOthersWritten={coop.setOthersWritten}
+          onJumpToCoopEve={onJumpCoopEve}
+          onJumpToCoop={onJumpCoop}
+          onJumpToFinaleReady={onJump29}
+          onPlayFinale={onJumpFinale}
+          onReset={onReset}
+        />
+      ) : null}
     </div>
   )
 }

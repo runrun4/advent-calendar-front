@@ -33,7 +33,7 @@ type DragInfo = {
 
 type UseCameraParams = {
   focusDay: number
-  /** ナビゲート可能な最大日 (開封済み+openableのみ移動できる) */
+  /** ナビゲート可能な最大日（locked 含む。全体像は描画窓で制限） */
   maxAccessibleDay: number
   /** phase === 'daily' の間だけ操作を受け付ける */
   active: boolean

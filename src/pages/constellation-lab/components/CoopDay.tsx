@@ -16,10 +16,16 @@ type CoopHudProps = {
   writtenCount: number
   coopT: number
   myWritten: boolean
+  memberTotal?: number
 }
 
-export const CoopHud = ({ writtenCount, coopT, myWritten }: CoopHudProps) => {
-  const remain = MEMBER_TOTAL - writtenCount
+export const CoopHud = ({
+  writtenCount,
+  coopT,
+  myWritten,
+  memberTotal = MEMBER_TOTAL,
+}: CoopHudProps) => {
+  const remain = memberTotal - writtenCount
   const note =
     coopT > 0
       ? '鎖がほどけていく'
@@ -39,7 +45,7 @@ export const CoopHud = ({ writtenCount, coopT, myWritten }: CoopHudProps) => {
         </svg>
         <span className="coop-hud__label">協力デイ</span>
         <span className="coop-hud__count">
-          {writtenCount} / {MEMBER_TOTAL}
+          {writtenCount} / {memberTotal}
         </span>
       </div>
       <span className="coop-hud__note">{note}</span>
@@ -73,10 +79,19 @@ type CoopMemberPanelProps = {
   writtenCount: number
   myWritten: boolean
   othersWritten: number
+  memberTotal?: number
+  memberNames?: readonly string[]
   onClose: () => void
 }
 
-export const CoopMemberPanel = ({ writtenCount, myWritten, othersWritten, onClose }: CoopMemberPanelProps) => (
+export const CoopMemberPanel = ({
+  writtenCount,
+  myWritten,
+  othersWritten,
+  memberTotal = MEMBER_TOTAL,
+  memberNames = MEMBERS,
+  onClose,
+}: CoopMemberPanelProps) => (
   // オーバーレイ上のタップが star-field-wrap までバブリングして camera 側の handleTap と
   // 同時発火しないよう、pointerdown/pointerup 段階で止める (click の stopPropagation だけでは防げない)
   <div
@@ -88,17 +103,18 @@ export const CoopMemberPanel = ({ writtenCount, myWritten, othersWritten, onClos
     <div className="coop-panel" onClick={(e) => e.stopPropagation()}>
       <div className="coop-panel__header">
         <p className="coop-panel__head">
-          {writtenCount} / {MEMBER_TOTAL} が書きました
+          {writtenCount} / {memberTotal} が書きました
         </p>
         <button type="button" className="coop-panel__close" onClick={onClose} aria-label="とじる">
           <X size={18} strokeWidth={2} />
         </button>
       </div>
       <div className="coop-panel__rows">
-        {MEMBERS.map((name, i) => {
+        {Array.from({ length: memberTotal }, (_, i) => {
+          const name = memberNames[i] ?? `メンバー${i + 1}`
           const done = i === 0 ? myWritten : i <= othersWritten
           return (
-            <div key={name} className="coop-panel__row">
+            <div key={`${name}-${i}`} className="coop-panel__row">
               <span className="coop-panel__mark" style={{ color: done ? 'var(--star, #ffd98a)' : 'rgba(233,237,255,0.4)' }}>
                 {done ? '✓' : '—'}
               </span>

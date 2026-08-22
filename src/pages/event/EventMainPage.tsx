@@ -6,9 +6,9 @@ import {
   type EventSummary,
 } from '../../services/eventApi'
 import { DEFAULT_EVENT_ICON_ID } from './EventNameField'
-import { AdventCalendar } from './AdventCalendar'
 import { EventList, type EventListItem } from './EventList'
 import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
+import { ConstellationCalendar } from '../constellation-lab/components/ConstellationCalendar'
 import { EventSettingsModal } from './EventSettingsModal'
 import { ShareInviteModal } from './ShareInviteModal'
 import { StickerCollectionPage } from './StickerCollectionPage'
@@ -335,13 +335,15 @@ export function EventMainPage({
 
     return (
       <>
-        <AdventCalendar
+        <ConstellationCalendar
           title={adventTarget.title}
           eventDate={adventTarget.startDate}
+          eventId={adventTarget.id}
           onBack={closeAdventTarget}
           onOpenStickers={() => setAdventView('stickers')}
           onOpenSettings={openSettings}
           onOpenChat={() => openChat('calendar')}
+          showDebug={false}
         />
 
         <ShareInviteModal

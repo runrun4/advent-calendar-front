@@ -168,6 +168,22 @@ export const StarField = ({ scene, camera }: StarFieldProps) => {
               </g>
             </g>
           ))}
+
+          {scene.lockeds.map((p) => (
+            <g key={`locked-${p.day}`} transform={`translate(${p.x} ${p.y})`} opacity={p.opacity}>
+              <g transform={`scale(${p.scale})`}>
+                <circle r="72" fill="none" stroke={STAR} strokeOpacity="0.28" strokeWidth="1.2" strokeDasharray="3 7" />
+                <circle r="5.5" fill={STAR} fillOpacity="0.35" />
+                <circle r="2.2" fill="#ffffff" fillOpacity="0.45" />
+                <text y="16" textAnchor="middle" dominantBaseline="central" fontSize={36 * Math.max(0.55, p.scale)} fontWeight="600" fill="rgba(233,237,255,0.55)">
+                  {p.day}
+                </text>
+                <text y="96" textAnchor="middle" fontSize="13" fontWeight="500" fill="rgba(233,237,255,0.55)" opacity={p.hintOpacity}>
+                  まだ開けません
+                </text>
+              </g>
+            </g>
+          ))}
         </g>
 
         {scene.finaleStars.map((s) => (

@@ -1,6 +1,6 @@
 // ==========================================
-// 協力デイ (day 10) の状態管理
-// 参加者6人全員が書き込むまで星が鎖で縛られている。
+// 協力デイの状態管理
+// 参加者全員が書き込むまで星が鎖で縛られている。
 // design/ConstellationCalendar.dc.html の writeMyPart / releaseCoop が正
 // ==========================================
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -14,6 +14,10 @@ type UseCoopDayParams = {
   onIgnite: () => void
   /** 解放演出の終盤、カードを表示してよいタイミング */
   onReleaseCardReady: (day: number) => void
+  /** 協力デイの日番号。省略時はモックの COOP_DAYS */
+  coopDays?: readonly number[]
+  /** 必要人数。省略時はモックの MEMBER_TOTAL */
+  memberTotal?: number
 }
 
 export type UseCoopDayReturn = {
@@ -25,6 +29,7 @@ export type UseCoopDayReturn = {
   coopT: number
   writtenCount: number
   allWritten: boolean
+  memberTotal: number
   isChained: (day: number) => boolean
   writeMyPart: (day: number, onAdvanceOpened: (day: number) => void) => void
   releaseCoop: () => void
@@ -36,9 +41,14 @@ export type UseCoopDayReturn = {
   stopAll: () => void
 }
 
-const clampMembers = (n: number) => Math.min(Math.max(n, 0), MEMBER_TOTAL - 1)
-
-export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCoopDayParams): UseCoopDayReturn => {
+export const useCoopDay = ({
+  later,
+  burst,
+  onIgnite,
+  onReleaseCardReady,
+  coopDays = COOP_DAYS,
+  memberTotal = MEMBER_TOTAL,
+}: UseCoopDayParams): UseCoopDayReturn => {
   const [myWritten, setMyWritten] = useState(false)
   const [othersWritten, setOthersWrittenState] = useState(3)
   const [coopUnlocked, setCoopUnlocked] = useState(false)
@@ -49,6 +59,21 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
   const rafRef = useRef<number | null>(null)
   const unlockedRef = useRef(false)
   const cardTriggeredRef = useRef(false)
+  const coopDaysRef = useRef(coopDays)
+  const memberTotalRef = useRef(memberTotal)
+
+  useEffect(() => {
+    coopDaysRef.current = coopDays
+  }, [coopDays])
+
+  useEffect(() => {
+    memberTotalRef.current = memberTotal
+  }, [memberTotal])
+
+  const clampOthers = useCallback((n: number) => {
+    const maxOthers = Math.max(memberTotalRef.current - 1, 0)
+    return Math.min(Math.max(n, 0), maxOthers)
+  }, [])
 
   const stopAll = useCallback(() => {
     if (rafRef.current !== null) {
@@ -60,9 +85,12 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
   useEffect(() => stopAll, [stopAll])
 
   const writtenCount = othersWritten + (myWritten ? 1 : 0)
-  const allWritten = writtenCount >= MEMBER_TOTAL
+  const allWritten = writtenCount >= memberTotal
 
-  const isChained = useCallback((day: number) => COOP_DAYS.includes(day) && !coopUnlocked, [coopUnlocked])
+  const isChained = useCallback(
+    (day: number) => coopDaysRef.current.includes(day) && !coopUnlocked,
+    [coopUnlocked],
+  )
 
   const writeMyPart = useCallback(
     (day: number, onAdvanceOpened: (day: number) => void) => {
@@ -72,19 +100,23 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
       onAdvanceOpened(day)
       burst(0.45)
     },
-    [burst, myWritten]
+    [burst, myWritten],
   )
 
   const closeNotice = useCallback(() => setNotice(false), [])
   const openPanel = useCallback(() => setCoopPanel(true), [])
   const closePanel = useCallback(() => setCoopPanel(false), [])
-  const setOthersWritten = useCallback((count: number) => setOthersWrittenState(clampMembers(count)), [])
+  const setOthersWritten = useCallback(
+    (count: number) => setOthersWrittenState(clampOthers(count)),
+    [clampOthers],
+  )
 
   const releaseCoop = useCallback(() => {
     if (coopT > 0) return
     setCoopPanel(false)
     unlockedRef.current = false
     cardTriggeredRef.current = false
+    const releaseDay = coopDaysRef.current[0] ?? 10
 
     const start = performance.now()
     const step = (now: number) => {
@@ -98,7 +130,7 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
       }
       if (t >= REL_CARD && !cardTriggeredRef.current) {
         cardTriggeredRef.current = true
-        onReleaseCardReady(COOP_DAYS[0])
+        onReleaseCardReady(releaseDay)
       }
 
       if (t < REL_END) {
@@ -110,10 +142,6 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
     }
     rafRef.current = requestAnimationFrame(step)
 
-    // rAF が止まる環境 (タブ非表示など) でも解放演出が終端状態へ収束するようにする。
-    // ignite 済み (unlockedRef) だけを見ると、ignite 後〜カード表示の間で rAF が止まった場合に
-    // 保険が即 return してカードが二度と出ない。cardTriggeredRef 基準にして
-    // 「カード未表示ならまだ救済が必要」と判定する。
     later(() => {
       if (cardTriggeredRef.current) return
       stopAll()
@@ -123,7 +151,7 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
         setCoopUnlocked(true)
       }
       cardTriggeredRef.current = true
-      onReleaseCardReady(COOP_DAYS[0])
+      onReleaseCardReady(releaseDay)
     }, REL_END + 500)
   }, [coopT, later, onIgnite, onReleaseCardReady, stopAll])
 
@@ -133,13 +161,13 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
       unlockedRef.current = opts.coopUnlocked
       cardTriggeredRef.current = false
       setMyWritten(opts.myWritten)
-      setOthersWrittenState(clampMembers(opts.othersWritten))
+      setOthersWrittenState(clampOthers(opts.othersWritten))
       setCoopUnlocked(opts.coopUnlocked)
       setCoopPanel(false)
       setNotice(false)
       setCoopT(0)
     },
-    [stopAll]
+    [stopAll, clampOthers],
   )
 
   return {
@@ -151,6 +179,7 @@ export const useCoopDay = ({ later, burst, onIgnite, onReleaseCardReady }: UseCo
     coopT,
     writtenCount,
     allWritten,
+    memberTotal,
     isChained,
     writeMyPart,
     releaseCoop,
