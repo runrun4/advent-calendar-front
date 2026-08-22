@@ -13,9 +13,10 @@ const TABS: AppTab[] = ['private', 'event']
 type AppHomeProps = {
   user: User | null
   onLoggedOut: () => void
+  onUserUpdated?: (user: User) => void
 }
 
-export function AppHome({ user, onLoggedOut }: AppHomeProps) {
+export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isEventAddOpen, setIsEventAddOpen] = useState(false)
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
@@ -50,6 +51,7 @@ const {
           </div>
           <div className="page-slider__page">
             <EventMainPage
+              profileIconUrl={user?.iconUrl}
               onOpenProfile={() => setIsProfileOpen(true)}
               onOpenEventAdd={openEventAdd}
               onDetailOpenChange={setIsEventDetailOpen}
@@ -79,6 +81,7 @@ const {
         user={user}
         onClose={() => setIsProfileOpen(false)}
         onLoggedOut={onLoggedOut}
+        onUserUpdated={onUserUpdated}
       />
 
       <EventAddModal

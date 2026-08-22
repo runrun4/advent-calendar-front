@@ -1,8 +1,11 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import type { User } from '../../types/user'
+import { ApiError } from '../../services/apiClient'
+import { saveInitialProfile } from '../../services/userApi'
 import './InitialSetup.css'
 
 type InitialSetupProps = {
-  onComplete?: (nickname: string) => void
+  onComplete?: (user: User) => void
 }
 
 function UserIcon() {
@@ -48,7 +51,9 @@ function PlusIcon() {
 export function InitialSetup({ onComplete }: InitialSetupProps) {
   const [nickname, setNickname] = useState('')
   const [nicknameError, setNicknameError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -60,6 +65,9 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
     const file = event.target.files?.[0]
     if (!file) return
 
+    setAvatarFile(file)
+    setFormError(null)
+
     const url = URL.createObjectURL(file)
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
@@ -67,16 +75,39 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
     })
   }
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    setFormError(null)
 
-    if (!nickname.trim()) {
+    const trimmed = nickname.trim()
+    if (!trimmed) {
       setNicknameError('このフィールドに入力してください')
+      return
+    }
+    if (trimmed.length > 40) {
+      setNicknameError('ニックネームは40文字以内で入力してください')
       return
     }
 
     setIsSubmitting(true)
-    onComplete?.(nickname.trim())
+
+    try {
+      const user = await saveInitialProfile({
+        displayName: trimmed,
+        avatarFile,
+      })
+      onComplete?.(user)
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'プロフィールの保存に失敗しました'
+      setFormError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -90,7 +121,10 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
           </h1>
 
           <div className="initial-setup__avatar-wrap">
-            <div className="initial-setup__avatar" aria-hidden={previewUrl ? undefined : true}>
+            <div
+              className="initial-setup__avatar"
+              aria-hidden={previewUrl ? undefined : true}
+            >
               {previewUrl ? (
                 <img
                   className="initial-setup__avatar-image"
@@ -109,6 +143,7 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
               className="initial-setup__add-photo"
               onClick={handlePickImage}
               aria-label="プロフィール画像を追加"
+              disabled={isSubmitting}
             >
               <PlusIcon />
             </button>
@@ -136,13 +171,20 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
                 onChange={(e) => {
                   setNickname(e.target.value)
                   setNicknameError(null)
+                  setFormError(null)
                 }}
                 placeholder="ニックネーム"
                 aria-invalid={nicknameError != null}
+                disabled={isSubmitting}
               />
               {nicknameError ? (
                 <p className="initial-setup__field-error" role="alert">
                   {nicknameError}
+                </p>
+              ) : null}
+              {formError ? (
+                <p className="initial-setup__field-error" role="alert">
+                  {formError}
                 </p>
               ) : null}
             </div>

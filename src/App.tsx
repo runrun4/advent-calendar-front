@@ -27,6 +27,7 @@ function App() {
   return (
     <AppHome
       user={user}
+      onUserUpdated={setUser}
       onLoggedOut={() => {
         setUser(null)
         setAuthView('login')

@@ -6,6 +6,7 @@ import { EventList, type EventListItem } from './EventList'
 import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
 
 type EventMainPageProps = {
+  profileIconUrl?: string | null
   onOpenProfile?: () => void
   onOpenEventAdd?: () => void
   onDetailOpenChange?: (isOpen: boolean) => void
@@ -30,6 +31,7 @@ function toListItem(event: {
 }
 
 export function EventMainPage({
+  profileIconUrl = null,
   onOpenProfile,
   onOpenEventAdd,
   onDetailOpenChange,
@@ -95,7 +97,7 @@ export function EventMainPage({
 
   return (
     <div className="event-main">
-      <Header onOpenProfile={onOpenProfile} />
+      <Header iconUrl={profileIconUrl} onOpenProfile={onOpenProfile} />
 
       <main className="event-main__content">
         <div className="event-main__scroll-area">
