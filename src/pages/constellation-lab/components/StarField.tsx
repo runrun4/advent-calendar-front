@@ -179,7 +179,7 @@ export const StarField = ({ scene, camera }: StarFieldProps) => {
                   {p.day}
                 </text>
                 <text y="96" textAnchor="middle" fontSize="13" fontWeight="500" fill="rgba(233,237,255,0.55)" opacity={p.hintOpacity}>
-                  まだ開けません
+                  ひらけなかった日
                 </text>
               </g>
             </g>

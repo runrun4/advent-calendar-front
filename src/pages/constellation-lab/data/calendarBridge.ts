@@ -75,14 +75,21 @@ export function countOpened(states: Record<number, DayState>): number {
 }
 
 /**
- * スワイプで辿れる最大日。全体像は出さないが、locked（将来／未開封）も
- * 画面遷移でスタブとして見られるように全日数まで許可する。
+ * スワイプで辿れる最大日 = opened / openable の最大日。
+ * 将来日（locked）へは進めない。1日ずつ送れば星座の形を再構成できてしまい、
+ * 「期間中は全体像を見せない」「30日目のズームアウトで初めて全体が現れる」が
+ * 崩れるため（設計書 コアコンセプト #3）。
+ * この上限より手前に残る locked は EXPIRED（開封期限切れの過去日）だけ。
  */
 export function maxAccessibleDayOf(
-  _states: Record<number, DayState>,
+  states: Record<number, DayState>,
   totalDays: number,
 ): number {
-  return Math.max(1, totalDays)
+  let max = 1
+  for (let day = 1; day <= totalDays; day += 1) {
+    if (states[day] === 'opened' || states[day] === 'openable') max = day
+  }
+  return max
 }
 
 export function focusDayFromStates(

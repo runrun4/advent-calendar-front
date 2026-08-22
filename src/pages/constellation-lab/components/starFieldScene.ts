@@ -350,7 +350,7 @@ export const buildScene = (input: SceneInput): Scene => {
         ignite: justOpenedDay === d,
       })
     } else {
-      // locked: フォーカス窓内だけスタブ表示（全体像は出さない）
+      // locked: 将来日は窓に入らない (maxAccessibleDay で遮断)。ここに来るのは期限切れの過去日のみ
       const g = lerp(0.28, 0.92, bb) * m
       lockeds.push({
         day: d,
