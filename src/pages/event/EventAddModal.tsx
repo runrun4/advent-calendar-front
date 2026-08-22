@@ -4,6 +4,7 @@ import { ApiError } from '../../services/apiClient'
 import {
   createEvent,
   type EventNameCandidate,
+  type EventSummary,
   searchEventCandidates,
 } from '../../services/eventApi'
 import {
@@ -23,7 +24,7 @@ type EventAddModalProps = {
   isOpen: boolean
   onClose: () => void
   initialStartDate?: string | null
-  onCreated?: (event: { id: string; name: string }) => void
+  onCreated?: (event: EventSummary) => void
 }
 
 const MIN_COUNTDOWN_DAYS = 0

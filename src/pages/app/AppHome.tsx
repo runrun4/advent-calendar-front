@@ -3,6 +3,7 @@ import { ProfileModal } from '../../components/profile/ProfileModal'
 import { useInviteAccept } from '../../hooks/useInviteAccept'
 import { usePageSwipe } from '../../hooks/usePageSwipe'
 import type { User } from '../../types/user'
+import type { EventSummary } from '../../services/eventApi'
 import { EventAddModal } from '../event/EventAddModal'
 import { EventMainPage } from '../event/EventMainPage'
 import { InviteAcceptModal } from '../event/InviteAcceptModal'
@@ -26,10 +27,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
   const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
   const [isWaitingForEventTransition, setIsWaitingForEventTransition] =
     useState(false)
-  const [pendingEvent, setPendingEvent] = useState<{
-    id: string
-    name: string
-  } | null>(null)
+  const [pendingEvent, setPendingEvent] = useState<EventSummary | null>(null)
   const {
     activeTab,
     currentIndex,
@@ -133,7 +131,7 @@ export function AppHome({ user, onLoggedOut, onUserUpdated }: AppHomeProps) {
         onClose={closeEventAdd}
         onCreated={(event) => {
           setEventsRefreshKey((key) => key + 1)
-          setPendingEvent({ id: event.id, name: event.name })
+          setPendingEvent(event)
           setIsWaitingForEventTransition(activeTab !== 'event')
           setActiveTab('event')
         }}

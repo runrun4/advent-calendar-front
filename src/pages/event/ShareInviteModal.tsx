@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ApiError } from '../../services/apiClient'
 import { createInvitation } from '../../services/eventApi'
 import './ShareInviteModal.css'
@@ -84,7 +85,7 @@ export function ShareInviteModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="share-invite-modal__backdrop"
       role="presentation"
@@ -160,6 +161,7 @@ export function ShareInviteModal({
           </button>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

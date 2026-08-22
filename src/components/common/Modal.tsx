@@ -9,6 +9,7 @@ import {
   type ReactNode,
   type TransitionEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 
 type ModalVariant = 'dark' | 'light' | 'sheet'
 
@@ -405,7 +406,7 @@ export function Modal({
         }
       : undefined
 
-  return (
+  return createPortal(
     <div
       className={getBackdropClassName(
         variant,
@@ -473,6 +474,7 @@ export function Modal({
           children
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

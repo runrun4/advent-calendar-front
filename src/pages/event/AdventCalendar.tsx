@@ -5,16 +5,23 @@ import {
   MessageCircle,
   Gift,
 } from 'lucide-react'
+import { formatMonthDay } from '../../utils/dateUtils'
 import './AdventCalendar.css'
 
 type AdventCalendarProps = {
   title: string
+  eventDate: string
   onBack: () => void
+  onOpenStickers?: () => void
+  onOpenSettings?: () => void
 }
 
 export const AdventCalendar = ({
   title,
+  eventDate,
   onBack,
+  onOpenStickers,
+  onOpenSettings,
 }: AdventCalendarProps) => {
   // 現在解放されている日数
   const unlockedDays = 8
@@ -170,6 +177,7 @@ export const AdventCalendar = ({
           type="button"
           className="advent-calendar__icon-button"
           aria-label="設定"
+          onClick={onOpenSettings}
         >
           <Settings
             className="advent-calendar__icon icon-color"
@@ -202,7 +210,7 @@ export const AdventCalendar = ({
 
         {/* 日付 */}
         <p className="advent-calendar__event-date">
-          8/30
+          {formatMonthDay(eventDate)}
         </p>
 
         {/* 題名 */}
@@ -269,7 +277,8 @@ export const AdventCalendar = ({
           advent-calendar__icon-button
           advent-calendar__collection-button
         "
-        aria-label="獲得アイテム一覧"
+        aria-label="獲得ステッカー"
+        onClick={onOpenStickers}
       >
         <Gift
           className="advent-calendar__icon icon-color"
