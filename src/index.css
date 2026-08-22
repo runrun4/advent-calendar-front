@@ -1219,6 +1219,30 @@ input {
   text-align: left;
 }
 
+.event-list__item-icon {
+  position: relative;
+  z-index: 1;
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  margin-left: 0.35rem;
+
+  color: #1b1b1b;
+}
+
+.event-list__item--upcoming {
+  opacity: 0.42;
+}
+
+.event-list__item--upcoming .event-list__item-title,
+.event-list__item--upcoming .event-list__item-icon,
+.event-list__item--upcoming .event-list__item-arrow {
+  color: #6a6a6a;
+}
+
 .event-list__item-arrow {
   position: relative;
   z-index: 1;
@@ -1367,6 +1391,20 @@ input {
   font-weight: 600;
 
   text-align: left;
+}
+
+.memories-list__item-icon {
+  position: relative;
+  z-index: 1;
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  margin-left: 0.35rem;
+
+  color: #1b1b1b;
 }
 
 .memories-list__item-arrow {

@@ -12,6 +12,7 @@ export type EventSummary = {
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELED' | string
   role: string
   daysRemaining: number
+  phase?: 'UPCOMING' | 'ONGOING' | 'ENDED' | string
   coverImageUrl: string | null
   boardOrientation: BoardOrientation
   iconId: string
@@ -31,6 +32,7 @@ export type CreateEventInput = {
   mode: 'GROUP' | 'PERSONAL'
   category?: string | null
   description?: string | null
+  iconId?: string
 }
 
 export async function listEvents(signal?: AbortSignal): Promise<EventSummary[]> {
@@ -98,6 +100,7 @@ export async function createEvent(
       mode: input.mode,
       ...(input.category ? { category: input.category } : {}),
       ...(input.description ? { description: input.description } : {}),
+      ...(input.iconId ? { iconId: input.iconId } : {}),
     },
   })
 }

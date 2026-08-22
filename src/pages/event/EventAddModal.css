@@ -439,7 +439,7 @@
 .event-add-modal__confirm-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 100;
   display: grid;
   place-items: center;
   padding: 1.5rem;
@@ -492,6 +492,7 @@
 .event-add-modal__confirm-button--create {
   background: #36be09;
   color: #fff;
+  line-height: 1.25;
 }
 
 .event-add-modal__confirm-title {
