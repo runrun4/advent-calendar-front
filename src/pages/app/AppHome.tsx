@@ -14,30 +14,38 @@ type AppHomeProps = {
   user: User | null
   onLoggedOut: () => void
   onUserUpdated?: (user: User) => void
-  onOpenPwaGuide?: () => void
 }
 
 export function AppHome({
   user,
   onLoggedOut,
   onUserUpdated,
-  onOpenPwaGuide,
 }: AppHomeProps) {
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isEventAddOpen, setIsEventAddOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] =
+    useState(false)
+
+  const [isEventAddOpen, setIsEventAddOpen] =
+    useState(false)
+
   const [eventAddStartDate, setEventAddStartDate] =
     useState<string | null>(null)
-  const [isEventDetailOpen, setIsEventDetailOpen] = useState(false)
-  const [eventsRefreshKey, setEventsRefreshKey] = useState(0)
+
+  const [isEventDetailOpen, setIsEventDetailOpen] =
+    useState(false)
+
+  const [eventsRefreshKey, setEventsRefreshKey] =
+    useState(0)
+
   const [
     isWaitingForEventTransition,
     setIsWaitingForEventTransition,
   ] = useState(false)
 
-  const [pendingEvent, setPendingEvent] = useState<{
-    id: string
-    name: string
-  } | null>(null)
+  const [pendingEvent, setPendingEvent] =
+    useState<{
+      id: string
+      name: string
+    } | null>(null)
 
   const {
     activeTab,
@@ -52,8 +60,13 @@ export function AppHome({
     isEventDetailOpen,
   )
 
-  const openEventAdd = (startDate?: string) => {
-    setEventAddStartDate(startDate ?? null)
+  const openEventAdd = (
+    startDate?: string,
+  ) => {
+    setEventAddStartDate(
+      startDate ?? null,
+    )
+
     setIsEventAddOpen(true)
   }
 
@@ -80,7 +93,9 @@ export function AppHome({
               event.propertyName === 'transform' &&
               activeTab === 'event'
             ) {
-              setIsWaitingForEventTransition(false)
+              setIsWaitingForEventTransition(
+                false,
+              )
             }
           }}
           style={{
@@ -101,7 +116,9 @@ export function AppHome({
           <div className="page-slider__page">
             <EventMainPage
               profileIconUrl={user?.iconUrl}
-              eventsRefreshKey={eventsRefreshKey}
+              eventsRefreshKey={
+                eventsRefreshKey
+              }
               pendingEvent={
                 isWaitingForEventTransition
                   ? null
@@ -117,7 +134,6 @@ export function AppHome({
               onPendingEventConsumed={() =>
                 setPendingEvent(null)
               }
-              onOpenPwaGuide={onOpenPwaGuide}
             />
           </div>
         </div>
@@ -146,24 +162,33 @@ export function AppHome({
       <ProfileModal
         isOpen={isProfileOpen}
         user={user}
-        onClose={() => setIsProfileOpen(false)}
+        onClose={() =>
+          setIsProfileOpen(false)
+        }
         onLoggedOut={onLoggedOut}
         onUserUpdated={onUserUpdated}
       />
 
       <EventAddModal
         isOpen={isEventAddOpen}
-        initialStartDate={eventAddStartDate}
+        initialStartDate={
+          eventAddStartDate
+        }
         onClose={closeEventAdd}
         onCreated={(event) => {
-          setEventsRefreshKey((key) => key + 1)
+          setEventsRefreshKey(
+            (key) => key + 1,
+          )
+
           setPendingEvent({
             id: event.id,
             name: event.name,
           })
+
           setIsWaitingForEventTransition(
             activeTab !== 'event',
           )
+
           setActiveTab('event')
         }}
       />

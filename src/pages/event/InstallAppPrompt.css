@@ -19,10 +19,14 @@
 }
 
 .install-app-modal {
+  position: relative;
+
   width: min(100%, 360px);
+  max-height: calc(100vh - 48px);
+
   box-sizing: border-box;
 
-  padding: 28px 24px;
+  padding: 32px 24px 24px;
 
   border-radius: 20px;
 
@@ -31,10 +35,53 @@
   text-align: center;
 
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  overflow-y: auto;
 }
 
+/* ================================
+   閉じるボタン
+================================ */
+
+.install-app-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #777777;
+
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.install-app-close:active {
+  background: #f2f2f2;
+}
+
+/* ================================
+   タイトル
+================================ */
+
 .install-app-modal h2 {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 
   color: #222222;
 
@@ -43,7 +90,11 @@
   line-height: 1.5;
 }
 
-.install-app-modal p {
+/* ================================
+   説明
+================================ */
+
+.install-app-description {
   margin: 0 0 24px;
 
   color: #666666;
@@ -52,47 +103,81 @@
   line-height: 1.7;
 }
 
-.install-app-button {
-  width: 100%;
+/* ================================
+   手順
+================================ */
 
-  padding: 13px 16px;
+.install-app-steps {
+  display: flex;
+  flex-direction: column;
 
-  border: none;
-  border-radius: 12px;
+  gap: 16px;
+
+  text-align: left;
+}
+
+.install-app-step {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 12px;
+}
+
+.install-app-step-number {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  border-radius: 50%;
 
   background: #000000;
   color: #ffffff;
 
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-
-  cursor: pointer;
-
-  -webkit-tap-highlight-color: transparent;
 }
 
-.install-app-button:active {
-  opacity: 0.8;
+.install-app-step-content {
+  flex: 1;
+
+  padding-top: 2px;
 }
 
-.continue-web-button {
-  width: 100%;
+.install-app-step-content strong {
+  display: block;
 
-  margin-top: 10px;
-  padding: 12px 16px;
+  margin-bottom: 4px;
 
-  border: none;
-
-  background: transparent;
-  color: #777777;
+  color: #36BE09;
 
   font-size: 14px;
-
-  cursor: pointer;
-
-  -webkit-tap-highlight-color: transparent;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
-.continue-web-button:active {
-  opacity: 0.7;
+.install-app-step-content p {
+  margin: 0;
+
+  color: #777777;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ================================
+   注意書き
+================================ */
+
+.install-app-note {
+  margin: 20px 0 0;
+
+  color: #999999;
+
+  font-size: 11px;
+  line-height: 1.6;
 }

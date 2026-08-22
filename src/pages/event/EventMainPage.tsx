@@ -21,7 +21,6 @@ type EventMainPageProps = {
   onOpenEventAdd?: (startDate?: string) => void
   onDetailOpenChange?: (isOpen: boolean) => void
   onPendingEventConsumed?: () => void
-  onOpenPwaGuide?: () => void
 }
 
 type AdventTarget = {
@@ -50,7 +49,6 @@ export function EventMainPage({
   onOpenEventAdd,
   onDetailOpenChange,
   onPendingEventConsumed,
-  onOpenPwaGuide,
 }: EventMainPageProps) {
   const [adventTarget, setAdventTarget] =
     useState<AdventTarget | null>(null)
@@ -77,7 +75,9 @@ export function EventMainPage({
   }, [adventTarget, onDetailOpenChange])
 
   useEffect(() => {
-    if (!pendingEvent) return
+    if (!pendingEvent) {
+      return
+    }
 
     setShowShareInvite(false)
 
@@ -87,6 +87,8 @@ export function EventMainPage({
       source: 'event',
     })
 
+    // カレンダー画面の描画後、
+    // 0.3秒置いてから招待モーダルを開く。
     let openTimer: number | undefined
     const frameIds: number[] = []
 
@@ -292,9 +294,8 @@ export function EventMainPage({
         </div>
       </main>
 
-      <InstallAppPrompt
-        onOpenPwaGuide={onOpenPwaGuide}
-      />
+      {/* Webブラウザからアクセスした場合のみ表示 */}
+      <InstallAppPrompt />
     </div>
   )
 }

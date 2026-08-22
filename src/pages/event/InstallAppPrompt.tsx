@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './InstallAppPrompt.css'
 
-type InstallAppPromptProps = {
-  onOpenPwaGuide?: () => void
-}
-
 function isPWA(): boolean {
   const standalone = window.matchMedia(
     '(display-mode: standalone)',
@@ -19,11 +15,8 @@ function isPWA(): boolean {
   return standalone || iosStandalone
 }
 
-export function InstallAppPrompt({
-  onOpenPwaGuide,
-}: InstallAppPromptProps) {
-  const [isVisible, setIsVisible] =
-    useState(false)
+export function InstallAppPrompt() {
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     // PWAとして起動している場合は表示しない
@@ -31,19 +24,11 @@ export function InstallAppPrompt({
       return
     }
 
-    // Webブラウザの場合のみ表示
+    // Webブラウザからアクセスした場合のみ表示
     setIsVisible(true)
   }, [])
 
-  const handleInstall = () => {
-    setIsVisible(false)
-
-    // 既存のSplashScreenにある
-    // PWA化促進画面を開く
-    onOpenPwaGuide?.()
-  }
-
-  const handleContinueWeb = () => {
+  const handleClose = () => {
     setIsVisible(false)
   }
 
@@ -59,31 +44,80 @@ export function InstallAppPrompt({
       aria-labelledby="install-app-title"
     >
       <div className="install-app-modal">
+        <button
+          type="button"
+          className="install-app-close"
+          onClick={handleClose}
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+
         <h2 id="install-app-title">
-          アプリで利用しませんか？
+          アプリとして利用しませんか？
         </h2>
 
-        <p>
-          アプリとして追加すると、
+        <p className="install-app-description">
+          ホーム画面に追加すると、
           <br />
-          いつでも簡単にアクセスできます。
+          アプリとして簡単にアクセスできます。
         </p>
 
-        <button
-          type="button"
-          className="install-app-button"
-          onClick={handleInstall}
-        >
-          アプリ化する
-        </button>
+        <div className="install-app-steps">
+          <div className="install-app-step">
+            <span className="install-app-step-number">
+              1
+            </span>
 
-        <button
-          type="button"
-          className="continue-web-button"
-          onClick={handleContinueWeb}
-        >
-          Webのまま進める
-        </button>
+            <div className="install-app-step-content">
+              <strong>ブラウザのメニューを開く</strong>
+
+              <p>
+                画面右上またはブラウザのメニューから
+                <br />
+                メニューを開いてください。
+              </p>
+            </div>
+          </div>
+
+          <div className="install-app-step">
+            <span className="install-app-step-number">
+              2
+            </span>
+
+            <div className="install-app-step-content">
+              <strong>「ホーム画面に追加」を選択</strong>
+
+              <p>
+                「ホーム画面に追加」や
+                <br />
+                「アプリをインストール」を選択してください。
+              </p>
+            </div>
+          </div>
+
+          <div className="install-app-step">
+            <span className="install-app-step-number">
+              3
+            </span>
+
+            <div className="install-app-step-content">
+              <strong>ホーム画面から起動</strong>
+
+              <p>
+                追加されたアイコンから起動すると、
+                <br />
+                アプリとして利用できます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="install-app-note">
+          ※ ブラウザによって表示される項目名や
+          <br />
+          操作方法が異なる場合があります。
+        </p>
       </div>
     </div>,
     document.body,
