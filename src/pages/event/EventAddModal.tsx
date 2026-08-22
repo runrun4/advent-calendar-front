@@ -470,14 +470,12 @@ export function EventAddModal({
     eventType !== 'public' ||
     showPublicRequest ||
     showPrivateDetail ||
-    publicEventName !== '' ||
     publicEventIconId !== DEFAULT_EVENT_ICON_ID ||
     publicDateMode !== 'single' ||
     publicEventStartDate !== defaultStartDate ||
     publicEventEndDate !== '' ||
     publicEventLocation !== '' ||
     publicCountdownDays !== defaultCountdownDays ||
-    privateEventName !== '' ||
     privateEventIconId !== DEFAULT_EVENT_ICON_ID ||
     privateDateMode !== 'single' ||
     privateEventStartDate !== defaultStartDate ||
