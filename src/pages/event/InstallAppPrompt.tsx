@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './InstallAppPrompt.css'
 
+type InstallAppPromptProps = {
+  isActive: boolean
+}
+
 function isPWA(): boolean {
   const standalone = window.matchMedia(
     '(display-mode: standalone)',
@@ -15,19 +19,27 @@ function isPWA(): boolean {
   return standalone || iosStandalone
 }
 
-export function InstallAppPrompt() {
+export function InstallAppPrompt({
+  isActive,
+}: InstallAppPromptProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    // イベント画面ではない場合は非表示
+    if (!isActive) {
+      setIsVisible(false)
+      return
+    }
+
     // PWAとして起動している場合は表示しない
     if (isPWA()) {
       setIsVisible(false)
       return
     }
 
-    // EventMainPageが表示されたら毎回表示する
+    // イベント画面を開いたら表示
     setIsVisible(true)
-  }, [])
+  }, [isActive])
 
   const handleClose = () => {
     setIsVisible(false)
