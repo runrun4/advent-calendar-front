@@ -8,7 +8,10 @@ import { PrivateCalendarPage } from '../private-calendar/PrivateCalendarPage'
 
 type AppTab = 'private' | 'event'
 
-const TABS: AppTab[] = ['private', 'event']
+const TABS: AppTab[] = [
+  'private',
+  'event',
+]
 
 type AppHomeProps = {
   user: User | null
@@ -123,6 +126,9 @@ export function AppHome({
                 isWaitingForEventTransition
                   ? null
                   : pendingEvent
+              }
+              isEventPageActive={
+                activeTab === 'event'
               }
               onOpenProfile={() =>
                 setIsProfileOpen(true)

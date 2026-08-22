@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { Header } from '../../components/layout/Header'
 import { listEvents } from '../../services/eventApi'
 import { AdventCalendar } from './AdventCalendar'
-import { EventList, type EventListItem } from './EventList'
+import {
+  EventList,
+  type EventListItem,
+} from './EventList'
 import {
   MemoriesPage,
   type MemoryItem,
@@ -17,6 +20,7 @@ type EventMainPageProps = {
     id: string
     name: string
   } | null
+  isEventPageActive?: boolean
   onOpenProfile?: () => void
   onOpenEventAdd?: (startDate?: string) => void
   onDetailOpenChange?: (isOpen: boolean) => void
@@ -45,6 +49,7 @@ export function EventMainPage({
   profileIconUrl = null,
   eventsRefreshKey = 0,
   pendingEvent = null,
+  isEventPageActive = false,
   onOpenProfile,
   onOpenEventAdd,
   onDetailOpenChange,
@@ -87,8 +92,6 @@ export function EventMainPage({
       source: 'event',
     })
 
-    // カレンダー画面の描画後、
-    // 0.3秒置いてから招待モーダルを開く。
     let openTimer: number | undefined
     const frameIds: number[] = []
 
@@ -294,8 +297,10 @@ export function EventMainPage({
         </div>
       </main>
 
-      {/* Webブラウザからアクセスした場合のみ表示 */}
-      <InstallAppPrompt />
+      {/* イベント画面を開いているWebユーザーのみ表示 */}
+      <InstallAppPrompt
+        isActive={isEventPageActive}
+      />
     </div>
   )
 }

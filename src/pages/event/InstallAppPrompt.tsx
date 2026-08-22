@@ -21,10 +21,11 @@ export function InstallAppPrompt() {
   useEffect(() => {
     // PWAとして起動している場合は表示しない
     if (isPWA()) {
+      setIsVisible(false)
       return
     }
 
-    // Webブラウザからアクセスした場合のみ表示
+    // EventMainPageが表示されたら毎回表示する
     setIsVisible(true)
   }, [])
 
@@ -70,7 +71,9 @@ export function InstallAppPrompt() {
             </span>
 
             <div className="install-app-step-content">
-              <strong>ブラウザのメニューを開く</strong>
+              <strong>
+                ブラウザのメニューを開く
+              </strong>
 
               <p>
                 画面右上またはブラウザのメニューから
@@ -86,12 +89,15 @@ export function InstallAppPrompt() {
             </span>
 
             <div className="install-app-step-content">
-              <strong>「ホーム画面に追加」を選択</strong>
+              <strong>
+                「ホーム画面に追加」を選択
+              </strong>
 
               <p>
                 「ホーム画面に追加」や
                 <br />
-                「アプリをインストール」を選択してください。
+                「アプリをインストール」を
+                選択してください。
               </p>
             </div>
           </div>
@@ -102,7 +108,9 @@ export function InstallAppPrompt() {
             </span>
 
             <div className="install-app-step-content">
-              <strong>ホーム画面から起動</strong>
+              <strong>
+                ホーム画面から起動
+              </strong>
 
               <p>
                 追加されたアイコンから起動すると、
