@@ -11,8 +11,13 @@
 
 const STORAGE_KEY = 'runrun.pendingInviteToken'
 
-/** バックエンドの inviteTokenPattern と同じ形式(URL-safe base64)。 */
-const INVITE_PATH_PATTERN = /^\/invite\/([A-Za-z0-9_-]{16,128})\/?$/
+/**
+ * バックエンドの inviteTokenPattern と同じ形式(URL-safe base64)。
+ * パス用と単体検証用で二重管理にならないよう、字種はここだけに書く。
+ */
+const TOKEN_SOURCE = '[A-Za-z0-9_-]{16,128}'
+const INVITE_TOKEN_PATTERN = new RegExp(`^${TOKEN_SOURCE}$`)
+const INVITE_PATH_PATTERN = new RegExp(`^/invite/(${TOKEN_SOURCE})/?$`)
 
 /**
  * sessionStorage は Safari のプライベートモード等で例外を投げることがあるため、
@@ -34,7 +39,7 @@ export function getPendingInviteToken(): string | null {
     const token = storage.getItem(STORAGE_KEY)
     if (token === null) return null
     // 保存後に書き換えられた値を信用しない。
-    return /^[A-Za-z0-9_-]{16,128}$/.test(token) ? token : null
+    return INVITE_TOKEN_PATTERN.test(token) ? token : null
   } catch {
     return null
   }
@@ -52,7 +57,10 @@ export function clearPendingInviteToken(): void {
   try {
     getStorage()?.removeItem(STORAGE_KEY)
   } catch {
-    // 消せなくても再試行時に 409 で確定失敗するだけなので無視する。
+    /*
+     * 消せなくても、承認APIは冪等(既に参加済みなら200)なので
+     * 次の起動で同じトークンを送っても二重参加にはならない。
+     */
   }
 }
 
