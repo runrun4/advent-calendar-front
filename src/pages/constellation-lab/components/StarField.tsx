@@ -8,7 +8,6 @@ import {
   BG_LAYER_A,
   BG_LAYER_B,
   BG_LAYER_C,
-  CONSTELLATION_CENTROID,
   SCREEN_CX,
   SCREEN_CY,
   VIEW_H,
@@ -23,18 +22,20 @@ import './StarField.css'
 type StarFieldProps = {
   scene: Scene
   camera: CameraState
+  /** 背景パララックスの基準になる星座の重心 */
+  centroid: readonly [number, number]
 }
 
 const STAR = 'var(--star, #ffd98a)'
 
-export const StarField = ({ scene, camera }: StarFieldProps) => {
+export const StarField = ({ scene, camera, centroid }: StarFieldProps) => {
   // 背景3層のパララックスオフセット (カメラ移動量の 2% / 5% / 9% だけ逆方向へ)
   const [p1, p2, p3] = useMemo(() => {
-    const dx = camera.cx - CONSTELLATION_CENTROID[0]
-    const dy = camera.cy - CONSTELLATION_CENTROID[1]
+    const dx = camera.cx - centroid[0]
+    const dy = camera.cy - centroid[1]
     const par = (f: number): [number, number] => [-(dx * f), -(dy * f)]
     return [par(0.02), par(0.05), par(0.09)]
-  }, [camera.cx, camera.cy])
+  }, [camera.cx, camera.cy, centroid])
 
   return (
     <svg

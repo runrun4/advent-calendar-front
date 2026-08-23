@@ -2,7 +2,7 @@
 // プロト用ダミー開封データ
 // ==========================================
 import type { DayContent } from '../types/constellation'
-import { TOTAL_DAYS } from './constellationLayout'
+import { MAX_DAYS } from './constellationLayout'
 
 // 星のようす・アイテム名はメッセージのバリエーション用の材料
 const STAR_MOODS = [
@@ -19,12 +19,12 @@ const ITEM_NAMES = [
   'まつぼっくり', 'ガラス玉', 'どんぐり', 'ふうせん', 'ほしのかけら',
 ]
 
-/** 各日のダミーメッセージ・アイテム名 (day1..30) */
+/** 各日のダミーメッセージ・アイテム名 (day1..MAX_DAYS) */
 export const MOCK_CONTENTS: readonly DayContent[] = Array.from(
-  { length: TOTAL_DAYS },
+  { length: MAX_DAYS },
   (_, i) => {
     const day = i + 1
-    const remain = TOTAL_DAYS - day
+    const remain = MAX_DAYS - day
     const remainText =
       remain > 0 ? `たんじょうびまであと${remain}日。` : 'たんじょうび、おめでとう。'
 

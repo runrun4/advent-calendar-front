@@ -14,15 +14,15 @@ import {
   type CalendarDaySummary,
 } from '../../../services/eventApi'
 import {
-  CONSTELLATION_CENTROID,
-  FINALE_K,
   FINALE_T_END,
   FINALE_T_ZOOM,
   GLIDE_MS,
   K_IDLE,
-  STARS,
-  TOTAL_DAYS,
+  MAX_DAYS,
+  sliceDefaultLayout,
+  starAt,
 } from '../data/constellationLayout'
+import { createConstellationLayout } from '../data/constellationGenerator'
 import { COOP_DAYS, LONG_PRESS_MS, MEMBER_TOTAL } from '../data/coop'
 import {
   buildDayStatesFromCalendar,
@@ -80,13 +80,13 @@ export const ConstellationCalendar = ({
   showDebug = true,
 }: ConstellationCalendarProps) => {
   const [dayStates, setDayStates] = useState<Record<number, DayState>>(() =>
-    buildDayStatesFromOpenedCount(INITIAL_OPENED_COUNT, TOTAL_DAYS),
+    buildDayStatesFromOpenedCount(INITIAL_OPENED_COUNT, MAX_DAYS),
   )
-  const [totalDays, setTotalDays] = useState(TOTAL_DAYS)
+  const [totalDays, setTotalDays] = useState(MAX_DAYS)
   const [focusDay, setFocusDay] = useState(
     focusDayFromStates(
-      buildDayStatesFromOpenedCount(INITIAL_OPENED_COUNT, TOTAL_DAYS),
-      TOTAL_DAYS,
+      buildDayStatesFromOpenedCount(INITIAL_OPENED_COUNT, MAX_DAYS),
+      MAX_DAYS,
     ),
   )
   const [phase, setPhase] = useState<Phase>('daily')
@@ -100,6 +100,8 @@ export const ConstellationCalendar = ({
   const [dayContents, setDayContents] = useState<Record<number, DayContent>>({})
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isOpeningRemote, setIsOpeningRemote] = useState(false)
+  // 検証ページの Debug から任意のシードを試すための入力 (空ならデザインの正)
+  const [debugSeed, setDebugSeed] = useState('')
 
   const openedCount = useMemo(() => countOpened(dayStates), [dayStates])
   const maxAccessibleDay = useMemo(
@@ -109,6 +111,22 @@ export const ConstellationCalendar = ({
   const getDayState = useCallback(
     (day: number) => dayStates[day] ?? 'locked',
     [dayStates],
+  )
+
+  /*
+   * ==========================================
+   * 星座レイアウト
+   * イベント ID (検証ページでは Debug のシード) をシードに、日数ぶんの星を
+   * 決定的に生成する。どちらも無いときは手作り30点 = デザインの正を使う。
+   * ========================================== */
+
+  const layoutSeed = eventId ?? (debugSeed.trim() || null)
+  const layout = useMemo(
+    () =>
+      layoutSeed
+        ? createConstellationLayout({ seed: layoutSeed, dayCount: totalDays })
+        : sliceDefaultLayout(totalDays),
+    [layoutSeed, totalDays],
   )
 
   const reducedMotion = useReducedMotion()
@@ -384,6 +402,7 @@ export const ConstellationCalendar = ({
   )
 
   const camera = useCamera({
+    layout,
     focusDay,
     maxAccessibleDay,
     // 協力デイの確認カード/メンバー一覧が表示中は、そのオーバーレイの操作を
@@ -484,8 +503,8 @@ export const ConstellationCalendar = ({
    * ==========================================
    */
 
-  const applyOpened = useCallback(
-    (count: number) => {
+  const applyOpenedIn = useCallback(
+    (count: number, days: number) => {
       camera.cancelAll()
       if (finaleRafRef.current !== null) {
         cancelAnimationFrame(finaleRafRef.current)
@@ -505,9 +524,9 @@ export const ConstellationCalendar = ({
       setCardDay(null)
       setJustOpenedDay(null)
       setFinaleT(0)
-      const states = buildDayStatesFromOpenedCount(count, totalDays)
+      const states = buildDayStatesFromOpenedCount(clamp(count, 0, days), days)
       setDayStates(states)
-      setFocusDay(focusDayFromStates(states, totalDays))
+      setFocusDay(focusDayFromStates(states, days))
 
       const coopDay = coopDayNumbers[0] ?? COOP_DAYS[0]
       coop.resetForDebug({
@@ -524,8 +543,22 @@ export const ConstellationCalendar = ({
       clearAllTimers,
       coopDayNumbers,
       coopMemberTotal,
-      totalDays,
     ],
+  )
+
+  const applyOpened = useCallback(
+    (count: number) => applyOpenedIn(count, totalDays),
+    [applyOpenedIn, totalDays],
+  )
+
+  /** Debug: 日数を変えたら状態マップも作り直す (協力デイが範囲外に出ても落ちない) */
+  const onDebugDayCount = useCallback(
+    (value: number) => {
+      const next = clamp(Math.round(value), 1, MAX_DAYS)
+      setTotalDays(next)
+      applyOpenedIn(Math.min(openedCount, next), next)
+    },
+    [applyOpenedIn, openedCount],
   )
 
   const onDebugRange = useCallback(
@@ -556,20 +589,21 @@ export const ConstellationCalendar = ({
 
   const effectiveCamera: CameraState = useMemo(() => {
     if (phase === 'finale') {
-      const focusStar = STARS[focusDay - 1]
+      const focusStar = starAt(layout, focusDay)
       const ez = easeOutCubic(clamp01(finaleT / FINALE_T_ZOOM))
       return {
-        cx: lerp(focusStar[0], CONSTELLATION_CENTROID[0], ez),
-        cy: lerp(focusStar[1], CONSTELLATION_CENTROID[1], ez),
-        k: lerp(K_IDLE, FINALE_K, ez),
+        cx: lerp(focusStar[0], layout.centroid[0], ez),
+        cy: lerp(focusStar[1], layout.centroid[1], ez),
+        k: lerp(K_IDLE, layout.finaleK, ez),
       }
     }
     return camera.camera
-  }, [phase, focusDay, finaleT, camera.camera])
+  }, [phase, focusDay, finaleT, camera.camera, layout])
 
   const scene = useMemo(
     () =>
       buildScene({
+        layout,
         getDayState,
         totalDays,
         memberTotal: coop.memberTotal,
@@ -587,6 +621,7 @@ export const ConstellationCalendar = ({
         writtenCount: coop.writtenCount,
       }),
     [
+      layout,
       getDayState,
       totalDays,
       maxAccessibleDay,
@@ -690,7 +725,7 @@ export const ConstellationCalendar = ({
         onPointerUp={camera.onPointerUp}
         onPointerCancel={camera.onPointerUp}
       >
-        <StarField scene={scene} camera={effectiveCamera} />
+        <StarField scene={scene} camera={effectiveCamera} centroid={layout.centroid} />
 
         {showCoopHud && (
           <CoopHud
@@ -767,7 +802,11 @@ export const ConstellationCalendar = ({
         <DebugPanel
           openedCount={openedCount}
           totalDays={totalDays}
+          maxDays={MAX_DAYS}
+          seed={debugSeed}
           othersWritten={coop.othersWritten}
+          onChangeSeed={setDebugSeed}
+          onChangeTotalDays={onDebugDayCount}
           onChangeOpenedCount={onDebugRange}
           onChangeOthersWritten={coop.setOthersWritten}
           onJumpToCoopEve={onJumpCoopEve}

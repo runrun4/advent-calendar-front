@@ -27,6 +27,19 @@
 - 開封済みカードを `GET .../days/{id}` で再取得
 - 協力デイの鎖リング数を `memberTotal` 可変に
 
+### イベントごとに固有の星座の形（2026-08-23）
+
+- `data/constellationLayout.ts` に `ConstellationLayout` 型を導入。星の座標と派生値
+  （重心 / フィナーレのズーム係数 `finaleK` / 累積長）を1つのオブジェクトにまとめた
+- `data/constellationGenerator.ts` を追加。イベント ID をシードにした決定的 PRNG
+  （FNV-1a + mulberry32）でランダムウォークし、任意の日数 N に対して固有の形を生成する
+  - 星座座標系 390×520・余白40px、ステップ 36〜56、折れ角 ±75°（境界補正込みで最大 ±110°）、
+    最小間隔 30px。候補が尽きたら間隔22px・ステップ72pxまで緩めて採用する
+  - **星座らしさ（美的な形）の追求は今回なし**（プロダクトオーナー判断）。破綻しないことが条件
+- `eventId` があれば生成、無ければ検証ページの Debug シード、それも空なら手作り30点
+  （= デザインの正）を使う
+- 検証ページの Debug に「星座シード」入力と「日数」スライダー（1〜30）を追加
+
 ### 将来日の画面遷移（2026-08-23 に方針確定）
 
 - 一時的に全日数まで辿れるようにしたが、1日ずつ送ると星座の形を再構成できてしまい
@@ -47,6 +60,7 @@
 | HTML エントリ | `constellation-proto/index.html` |
 | 本体組み込み | `src/pages/event/EventMainPage.tsx` |
 | API 橋渡し | `src/pages/constellation-lab/data/calendarBridge.ts` + `eventApi.ts` |
+| 星座の生成器 | `src/pages/constellation-lab/data/constellationGenerator.ts` |
 | 設計書 | `docs/superpowers/specs/2026-08-22-constellation-calendar-design.md` |
 | デザイン正 | `docs/constellation-design/ConstellationCalendar.dc.html` / `gen.mjs` |
 | 実装メモ | `docs/constellation-design/IMPLEMENTATION_NOTES.md` |
@@ -68,13 +82,10 @@
 
 ## 次にやること
 
-### 候補: イベントごとに固有の星座の形（未着手・マストではない）
+### 星座の形の磨き込み（後日）
 
-現在は `data/constellationLayout.ts` の固定30点を先頭から `visibleDayCount` 個使うため、
-日数が少ないイベントは星座が途中で切れた形になる。案: イベント ID をシードにした
-生成器（ランダムウォーク + 最小間隔 + viewBox 内に収める制約）で、任意の N 日数に対して
-固有の形を作る。フィナーレの重心・ズーム係数（`CONSTELLATION_CENTROID` / `FINALE_K`）も
-生成結果から算出する。実装は Opus エージェントに委任する方針。
+生成器は「破綻しない形」までしか担保していない。線の交差や、上へ伸びていく流れの
+自然さ（手作り30点のような見え方）は今後の課題。
 
 ### EXPIRED の見た目
 

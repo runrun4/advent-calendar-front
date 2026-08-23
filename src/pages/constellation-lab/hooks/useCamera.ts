@@ -12,9 +12,10 @@ import {
   K_DOLLY,
   K_IDLE,
   SNAP_MS,
-  STARS,
   dirTo,
+  starAt,
 } from '../data/constellationLayout'
+import type { ConstellationLayout } from '../data/constellationLayout'
 import { clamp, clamp01, easeOutCubic, lerp } from '../utils/easing'
 
 export type CameraState = { cx: number; cy: number; k: number }
@@ -32,6 +33,8 @@ type DragInfo = {
 }
 
 type UseCameraParams = {
+  /** イベントごとの星座レイアウト (星の座標) */
+  layout: ConstellationLayout
   focusDay: number
   /** ナビゲート可能な最大日（locked 含む。全体像は描画窓で制限） */
   maxAccessibleDay: number
@@ -61,6 +64,7 @@ export type UseCameraReturn = {
 }
 
 export const useCamera = ({
+  layout,
   focusDay,
   maxAccessibleDay,
   active,
@@ -174,19 +178,19 @@ export const useCamera = ({
       // カメラが星へ寄る = 画面の中身は逆方向に動く → 指の向きは -dir。
       let best = 0
       if (canNext) {
-        const n = dirTo(STARS[focusDay - 1], STARS[focusDay])
+        const n = dirTo(starAt(layout, focusDay), starAt(layout, focusDay + 1))
         best = Math.max(best, (dx * -n[0] + dy * -n[1]) / DRAG_PX)
       }
       let bestPrev = 0
       if (canPrev) {
-        const p = dirTo(STARS[focusDay - 1], STARS[focusDay - 2])
+        const p = dirTo(starAt(layout, focusDay), starAt(layout, focusDay - 1))
         bestPrev = Math.max(bestPrev, (dx * -p[0] + dy * -p[1]) / DRAG_PX)
       }
 
       const signed = best >= bestPrev ? Math.max(0, best) : -Math.max(0, bestPrev)
       setTp(clamp(dragBaseRef.current + signed, -1, 1))
     },
-    [active, cancelPress, focusDay, maxAccessibleDay, releaseDrag]
+    [active, cancelPress, focusDay, layout, maxAccessibleDay, releaseDrag]
   )
 
   const onPointerUp = useCallback(
@@ -258,16 +262,16 @@ export const useCamera = ({
   }, [focusDay, maxAccessibleDay, tp])
 
   const camera = useMemo<CameraState>(() => {
-    const focusStar = STARS[focusDay - 1]
+    const focusStar = starAt(layout, focusDay)
     if (travelTargetDay === null) return { cx: focusStar[0], cy: focusStar[1], k: K_IDLE }
-    const targetStar = STARS[travelTargetDay - 1]
+    const targetStar = starAt(layout, travelTargetDay)
     const a = clamp01(Math.abs(tp))
     return {
       cx: lerp(focusStar[0], targetStar[0], a),
       cy: lerp(focusStar[1], targetStar[1], a),
       k: K_IDLE + (K_DOLLY - K_IDLE) * Math.sin(Math.PI * a),
     }
-  }, [focusDay, tp, travelTargetDay])
+  }, [focusDay, layout, tp, travelTargetDay])
 
   return { tp, travelTargetDay, camera, onPointerDown, onPointerMove, onPointerUp, glide, cancelAll }
 }

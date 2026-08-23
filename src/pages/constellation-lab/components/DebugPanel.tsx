@@ -9,7 +9,13 @@ import './DebugPanel.css'
 type DebugPanelProps = {
   openedCount: number
   totalDays: number
+  /** 星座レイアウトが扱える最大日数 */
+  maxDays: number
+  /** 星座シード。空ならデザインの正 (手作り30点) */
+  seed: string
   othersWritten: number
+  onChangeSeed: (seed: string) => void
+  onChangeTotalDays: (days: number) => void
   onChangeOpenedCount: (count: number) => void
   onChangeOthersWritten: (count: number) => void
   onJumpToCoopEve: () => void
@@ -22,7 +28,11 @@ type DebugPanelProps = {
 export const DebugPanel = ({
   openedCount,
   totalDays,
+  maxDays,
+  seed,
   othersWritten,
+  onChangeSeed,
+  onChangeTotalDays,
   onChangeOpenedCount,
   onChangeOthersWritten,
   onJumpToCoopEve,
@@ -42,6 +52,28 @@ export const DebugPanel = ({
 
       {isOpen && (
         <div className="debug-panel__body">
+          <label className="debug-panel__row">
+            <span>星座シード{seed.trim() ? '' : ' (空 = デザインの正)'}</span>
+            <input
+              type="text"
+              className="debug-panel__text"
+              value={seed}
+              placeholder="event-id など"
+              onChange={(e) => onChangeSeed(e.target.value)}
+            />
+          </label>
+
+          <label className="debug-panel__row">
+            <span>日数: {totalDays}</span>
+            <input
+              type="range"
+              min={1}
+              max={maxDays}
+              value={totalDays}
+              onChange={(e) => onChangeTotalDays(Number(e.target.value))}
+            />
+          </label>
+
           <label className="debug-panel__row">
             <span>開封日数: {openedCount}</span>
             <input
@@ -72,7 +104,7 @@ export const DebugPanel = ({
               協力デイへ
             </button>
             <button type="button" onClick={onJumpToFinaleReady}>
-              29日開封済み
+              最終日の1つ前まで
             </button>
             <button type="button" onClick={onPlayFinale}>
               フィナーレ再生

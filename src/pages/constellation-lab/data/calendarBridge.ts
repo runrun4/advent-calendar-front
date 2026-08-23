@@ -7,7 +7,7 @@ import type {
   EventDetail,
   OpenedDayContent,
 } from '../../../services/eventApi'
-import { TOTAL_DAYS, dayStateOf } from './constellationLayout'
+import { MAX_DAYS, dayStateOf } from './constellationLayout'
 import type { DayContent, DayState } from '../types/constellation'
 
 export function dayContentFromApi(content: OpenedDayContent): DayContent {
@@ -23,7 +23,7 @@ export function dayContentFromApi(content: OpenedDayContent): DayContent {
   }
 }
 
-/** イベントの表示日数（星の数）。座標は最大 TOTAL_DAYS まで */
+/** イベントの表示日数（星の数）。最大 MAX_DAYS まで */
 export function resolveTotalDays(
   days: CalendarDaySummary[],
   event?: Pick<EventDetail, 'visibleDayCount'> | null,
@@ -31,7 +31,7 @@ export function resolveTotalDays(
   const fromDays = days.length
   const fromEvent = event?.visibleDayCount ?? fromDays
   const raw = fromDays > 0 ? fromDays : fromEvent
-  return Math.min(TOTAL_DAYS, Math.max(1, raw))
+  return Math.min(MAX_DAYS, Math.max(1, raw))
 }
 
 /**
@@ -61,7 +61,7 @@ export function buildDayStatesFromCalendar(
 /** プロト／Debug 用: 連続開封モデルから状態マップを作る */
 export function buildDayStatesFromOpenedCount(
   openedCount: number,
-  totalDays: number = TOTAL_DAYS,
+  totalDays: number = MAX_DAYS,
 ): Record<number, DayState> {
   const states: Record<number, DayState> = {}
   for (let day = 1; day <= totalDays; day += 1) {

@@ -8,19 +8,17 @@
 // ========================================== */
 import { CHAIN_R, MEMBER_TOTAL, REL_SHARD_IN, REL_SHATTER, arcPath } from '../data/coop'
 import {
-  CHAIN_CUMULATIVE_LENGTH,
-  CHAIN_TOTAL_LENGTH,
   FINALE_T_BLOOM,
   FINALE_T_CHAIN,
   FINALE_T_ZOOM,
   K_IDLE,
   SCREEN_CX,
   SCREEN_CY,
-  STARS,
-  TOTAL_DAYS,
   dayStateOf as stateOfDay,
   dirTo,
+  starAt,
 } from '../data/constellationLayout'
+import type { ConstellationLayout } from '../data/constellationLayout'
 import type { Phase } from '../types/constellation'
 import type { CameraState } from '../hooks/useCamera'
 import { clamp01, easeInOutCubic, easeOutCubic, lerp } from '../utils/easing'
@@ -97,6 +95,8 @@ export type Scene = {
 }
 
 export type SceneInput = {
+  /** イベントごとの星座レイアウト (星の座標・累積長) */
+  layout: ConstellationLayout
   /** @deprecated opened 連続モデル。getDayState があればそちら優先 */
   opened?: number
   getDayState?: (day: number) => import('../types/constellation').DayState
@@ -123,9 +123,10 @@ const project = (camera: CameraState, p: readonly [number, number]): [number, nu
 
 export const buildScene = (input: SceneInput): Scene => {
   const {
+    layout,
     opened = 0,
     getDayState,
-    totalDays = TOTAL_DAYS,
+    totalDays = layout.dayCount,
     memberTotal = MEMBER_TOTAL,
     maxAccessibleDay,
     focusDay,
@@ -142,8 +143,9 @@ export const buildScene = (input: SceneInput): Scene => {
   } = input
 
   const stateOf = (day: number) => getDayState?.(day) ?? stateOfDay(day, opened)
-  const dayCount = Math.min(TOTAL_DAYS, Math.max(1, totalDays))
-  const chainTotalLength = CHAIN_CUMULATIVE_LENGTH[dayCount - 1] ?? CHAIN_TOTAL_LENGTH
+  const { stars: layoutStars, chainCumulativeLength } = layout
+  const dayCount = Math.min(layout.dayCount, Math.max(1, totalDays))
+  const chainTotalLength = chainCumulativeLength[dayCount - 1] ?? layout.chainTotalLength
   const memberSlots = Math.max(1, memberTotal)
   const arcStep = 360 / memberSlots
 
@@ -154,19 +156,19 @@ export const buildScene = (input: SceneInput): Scene => {
     const pts: string[] = []
     let lastIdx = 0
     for (let i = 0; i < dayCount; i++) {
-      if (CHAIN_CUMULATIVE_LENGTH[i] <= chain) {
-        const q = project(camera, STARS[i])
+      if (chainCumulativeLength[i] <= chain) {
+        const q = project(camera, layoutStars[i])
         pts.push(`${q[0].toFixed(1)},${q[1].toFixed(1)}`)
         lastIdx = i
       }
     }
     let chainHead: { x: number; y: number } | null = null
     if (lastIdx < dayCount - 1 && chain > 0) {
-      const segLen = CHAIN_CUMULATIVE_LENGTH[lastIdx + 1] - CHAIN_CUMULATIVE_LENGTH[lastIdx]
-      const f = clamp01((chain - CHAIN_CUMULATIVE_LENGTH[lastIdx]) / (segLen || 1))
+      const segLen = chainCumulativeLength[lastIdx + 1] - chainCumulativeLength[lastIdx]
+      const f = clamp01((chain - chainCumulativeLength[lastIdx]) / (segLen || 1))
       const hp: [number, number] = [
-        lerp(STARS[lastIdx][0], STARS[lastIdx + 1][0], f),
-        lerp(STARS[lastIdx][1], STARS[lastIdx + 1][1], f),
+        lerp(layoutStars[lastIdx][0], layoutStars[lastIdx + 1][0], f),
+        lerp(layoutStars[lastIdx][1], layoutStars[lastIdx + 1][1], f),
       ]
       const q = project(camera, hp)
       pts.push(`${q[0].toFixed(1)},${q[1].toFixed(1)}`)
@@ -176,7 +178,7 @@ export const buildScene = (input: SceneInput): Scene => {
 
     const ghostPathPoints =
       chainRaw > 0
-        ? STARS.slice(0, dayCount)
+        ? layoutStars.slice(0, dayCount)
             .map((p) => {
               const q = project(camera, p)
               return `${q[0].toFixed(1)},${q[1].toFixed(1)}`
@@ -188,10 +190,10 @@ export const buildScene = (input: SceneInput): Scene => {
     const finaleStars: FinaleStar[] = []
     for (let i = 0; i < dayCount; i++) {
       // 最終星 (累積長 = 全長) が点灯しない取りこぼしを防ぐ (IMPLEMENTATION_NOTES §1-3)
-      const ov = chainDone ? 1 : clamp01((chain - CHAIN_CUMULATIVE_LENGTH[i]) / 30)
+      const ov = chainDone ? 1 : clamp01((chain - chainCumulativeLength[i]) / 30)
       if (ov <= 0 && !(i === 0 && chainRaw > 0)) continue
       const scv = ov < 0.5 ? 0.2 + (ov / 0.5) * 1.15 : 1.35 - ((ov - 0.5) / 0.5) * 0.35
-      const q = project(camera, STARS[i])
+      const q = project(camera, layoutStars[i])
       finaleStars.push({ day: i + 1, x: q[0], y: q[1], scale: scv, opacity: clamp01(ov * 4) })
     }
 
@@ -244,8 +246,8 @@ export const buildScene = (input: SceneInput): Scene => {
   const solidLines: SolidLine[] = []
   const dashLines: DashLine[] = []
   for (let d = winFrom; d < winTo; d++) {
-    const p = project(camera, STARS[d - 1])
-    const q = project(camera, STARS[d])
+    const p = project(camera, starAt(layout, d))
+    const q = project(camera, starAt(layout, d + 1))
     const isOpenedLink =
       stateOf(d) === 'opened' &&
       stateOf(d + 1) === 'opened' &&
@@ -267,7 +269,7 @@ export const buildScene = (input: SceneInput): Scene => {
   const shards: Shard[] = []
 
   for (let d = winFrom; d <= winTo; d++) {
-    const q = project(camera, STARS[d - 1])
+    const q = project(camera, starAt(layout, d))
     const bb = bigness(d)
 
     if (isChained(d)) {
@@ -369,12 +371,12 @@ export const buildScene = (input: SceneInput): Scene => {
 
   if (!traveling) {
     if (focusDay > 1) {
-      const bd = dirTo(STARS[focusDay - 1], STARS[focusDay - 2])
+      const bd = dirTo(starAt(layout, focusDay), starAt(layout, focusDay - 1))
       backHint = { x: SCREEN_CX + bd[0] * 128, y: SCREEN_CY + bd[1] * 128, deg: (Math.atan2(bd[1], bd[0]) * 180) / Math.PI }
     }
     // opened / openable / locked いずれも、次の日へスワイプ可能ならヒントを出す
     if (focusDay < Math.min(maxAccessibleDay, dayCount)) {
-      const nd = dirTo(STARS[focusDay - 1], STARS[focusDay])
+      const nd = dirTo(starAt(layout, focusDay), starAt(layout, focusDay + 1))
       nextHint = { x: SCREEN_CX + nd[0] * 118, y: SCREEN_CY + nd[1] * 118, deg: (Math.atan2(nd[1], nd[0]) * 180) / Math.PI }
     }
   } else {

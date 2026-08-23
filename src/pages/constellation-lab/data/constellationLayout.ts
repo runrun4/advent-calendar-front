@@ -24,8 +24,11 @@ export const STARS: readonly (readonly [number, number])[] = [
   [300, 40], [256, 32], [216, 44], [170, 32], [120, 40],
 ]
 
-/** 全体の日数 (=星の数) */
-export const TOTAL_DAYS = STARS.length
+/** 扱える最大日数 (=手作り星座の点数)。イベントの日数はこれを上限にクランプする */
+export const MAX_DAYS = STARS.length
+
+/** @deprecated MAX_DAYS の別名 (意味は「最大日数」)。実際の日数は ConstellationLayout.dayCount */
+export const TOTAL_DAYS = MAX_DAYS
 
 /** 開封済み日数から、指定日の開閉状態を求める */
 export const dayStateOf = (day: number, opened: number): DayState =>
@@ -75,12 +78,6 @@ export const sparklePath = (s: number): string => {
   return `M 0 ${-s} C ${c} ${-c} ${c} ${-c} ${s} 0 C ${c} ${c} ${c} ${c} 0 ${s} C ${-c} ${c} ${-c} ${c} ${-s} 0 C ${-c} ${-c} ${-c} ${-c} 0 ${-s} Z`
 }
 
-/** 星座の重心。フィナーレでズームアウトする際のカメラ中心 */
-export const CONSTELLATION_CENTROID: readonly [number, number] = [
-  STARS.reduce((sum, [x]) => sum + x, 0) / STARS.length,
-  STARS.reduce((sum, [, y]) => sum + y, 0) / STARS.length,
-]
-
 /*
  * ==========================================
  * カメラ・スワイプ関連の定数
@@ -90,7 +87,7 @@ export const CONSTELLATION_CENTROID: readonly [number, number] = [
 export const K_IDLE = 3.8
 /** スワイプ移動中にドリーインするズーム係数 (旧 7.5 は寄りすぎたため緩めた) */
 export const K_DOLLY = 6.4
-/** フィナーレで全体が画面に収まるズーム係数 */
+/** フィナーレで全体が画面に収まるズーム係数 (手作り30点の正。DEFAULT_LAYOUT.finaleK と同値) */
 export const FINALE_K = 1.15
 /** この距離ドラッグすると隣の星まで進行度100% */
 export const DRAG_PX = 130
@@ -116,20 +113,104 @@ export const dirTo = (
 
 /*
  * ==========================================
- * フィナーレ関連の定数
+ * 星座レイアウト
+ * 星の座標と、そこから決まる派生値 (重心・フィナーレのズーム係数・累積長) を
+ * 1つのオブジェクトにまとめる。手作りの30点と、イベントごとの生成結果
+ * (constellationGenerator) を同じ型で扱えるようにするため。
  * ========================================== */
 
-/** 各星までの累積距離 (連鎖描画の速度を一定に見せるため距離ベースで進める) */
-export const CHAIN_CUMULATIVE_LENGTH: readonly number[] = (() => {
-  const cum = [0]
-  for (let i = 1; i < TOTAL_DAYS; i++) {
-    cum.push(cum[i - 1] + Math.hypot(STARS[i][0] - STARS[i - 1][0], STARS[i][1] - STARS[i - 1][1]))
-  }
-  return cum
-})()
+export type ConstellationLayout = {
+  /** 星の数 = イベントの日数 */
+  dayCount: number
+  /** 星座座標系での星の位置 (day1 が index 0) */
+  stars: readonly (readonly [number, number])[]
+  /** 星座の重心。フィナーレでズームアウトする際のカメラ中心 */
+  centroid: readonly [number, number]
+  /** フィナーレで全体が画面に収まるズーム係数 */
+  finaleK: number
+  /** 1日目からの累積距離 (連鎖描画の速度を一定に見せるため距離ベースで進める) */
+  chainCumulativeLength: readonly number[]
+  /** 星座の全長 */
+  chainTotalLength: number
+}
 
-/** 星座の全長 */
-export const CHAIN_TOTAL_LENGTH = CHAIN_CUMULATIVE_LENGTH[TOTAL_DAYS - 1]
+/** フィナーレで星座全体を収める領域 (ヘッダーとバナーの余白を除いた分) */
+const FINALE_FIT_W = VIEW_W - 60
+const FINALE_FIT_H = VIEW_H - 220
+const FINALE_K_MIN = 0.5
+const FINALE_K_MAX = 1.6
+
+/**
+ * 重心を画面中心に置いたとき、全ての星が FINALE_FIT_W × FINALE_FIT_H に
+ * 収まる最大のズーム係数。星が1点だけ (広がり0) のときは上限を返す。
+ */
+const finaleKForStars = (
+  stars: readonly (readonly [number, number])[],
+  centroid: readonly [number, number]
+): number => {
+  let halfW = 0
+  let halfH = 0
+  for (const [x, y] of stars) {
+    halfW = Math.max(halfW, Math.abs(x - centroid[0]))
+    halfH = Math.max(halfH, Math.abs(y - centroid[1]))
+  }
+  const kw = halfW > 0 ? FINALE_FIT_W / 2 / halfW : FINALE_K_MAX
+  const kh = halfH > 0 ? FINALE_FIT_H / 2 / halfH : FINALE_K_MAX
+  return Math.min(FINALE_K_MAX, Math.max(FINALE_K_MIN, Math.min(kw, kh)))
+}
+
+/** 星の並びから ConstellationLayout を組み立てる (finaleK は明示指定で上書きできる) */
+export const layoutFromStars = (
+  stars: readonly (readonly [number, number])[],
+  options?: { finaleK?: number }
+): ConstellationLayout => {
+  const safeStars = stars.length > 0 ? stars : STARS.slice(0, 1)
+  const centroid: readonly [number, number] = [
+    safeStars.reduce((sum, [x]) => sum + x, 0) / safeStars.length,
+    safeStars.reduce((sum, [, y]) => sum + y, 0) / safeStars.length,
+  ]
+
+  const chainCumulativeLength = [0]
+  for (let i = 1; i < safeStars.length; i++) {
+    chainCumulativeLength.push(
+      chainCumulativeLength[i - 1] +
+        Math.hypot(safeStars[i][0] - safeStars[i - 1][0], safeStars[i][1] - safeStars[i - 1][1])
+    )
+  }
+
+  return {
+    dayCount: safeStars.length,
+    stars: safeStars,
+    centroid,
+    finaleK: options?.finaleK ?? finaleKForStars(safeStars, centroid),
+    chainCumulativeLength,
+    chainTotalLength: chainCumulativeLength[chainCumulativeLength.length - 1],
+  }
+}
+
+/** 手作り30点のレイアウト (デザインの正)。finaleK は既存の 1.15 を維持する */
+export const DEFAULT_LAYOUT: ConstellationLayout = layoutFromStars(STARS, { finaleK: FINALE_K })
+
+/** 手作り30点を先頭から dayCount 個だけ使うレイアウト (シードなしの検証ページ用) */
+export const sliceDefaultLayout = (dayCount: number): ConstellationLayout => {
+  const n = Math.min(MAX_DAYS, Math.max(1, Math.round(dayCount)))
+  return n === MAX_DAYS ? DEFAULT_LAYOUT : layoutFromStars(STARS.slice(0, n))
+}
+
+/** 星座の重心 (手作り30点)。DEFAULT_LAYOUT.centroid と同値 */
+export const CONSTELLATION_CENTROID: readonly [number, number] = DEFAULT_LAYOUT.centroid
+
+/** day (1始まり) に対応する星。日数が変わる瞬間の範囲外参照を防ぐためクランプする */
+export const starAt = (
+  layout: ConstellationLayout,
+  day: number
+): readonly [number, number] =>
+  layout.stars[Math.min(layout.stars.length, Math.max(1, day)) - 1]
+
+/*
+ * ==========================================
+ * フィナーレ関連の定数
+ * ========================================== */
 
 /** フィナーレ4段構成の時間割 (ms) */
 export const FINALE_T_ZOOM = 1900
