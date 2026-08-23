@@ -40,6 +40,14 @@
   （= デザインの正）を使う
 - 検証ページの Debug に「星座シード」入力と「日数」スライダー（1〜30）を追加
 
+### 殻 (app-shell) を夜空と地続きに（2026-08-23）
+
+- 星座画面は `app-shell__main` の中に描かれるため、上部バー `app-shell__top`（緑 + safe-area）と
+  theme-color（白）が夜空の外側に見えていた。`ConstellationCalendar` のマウント中だけ `<html>` に
+  `is-night-sky` を付け、`src/index.css` で殻の背景を `--night-top`（#070b1e）にし、
+  `<meta name="theme-color">` も同色へ切替（unmount で復元）。`useLayoutEffect` でペイント前に切替
+- `isEventDetailOpen` は使わない（ステッカーボード等の白画面でも true になるため）
+
 ### 将来日の画面遷移（2026-08-23 に方針確定）
 
 - 一時的に全日数まで辿れるようにしたが、1日ずつ送ると星座の形を再構成できてしまい

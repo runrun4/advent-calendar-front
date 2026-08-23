@@ -174,6 +174,25 @@ input {
   background: #b7e8a7;
 }
 
+/*
+ * 星座カレンダー表示中: 殻 (上部バー・ステータスバー領域・オーバースクロール) を
+ * 夜空と地続きにする。印は ConstellationCalendar の mount/unmount で付け外しする。
+ * --night-top は ConstellationCalendar.css が定義する夜空の最上部色。
+ * app-shell__top は safe-area の吸収役なので、高さは変えずに色だけ差し替える。
+ */
+html.is-night-sky .app-shell__top {
+  background: var(--night-top, #070b1e);
+}
+
+/* 白背景の html:has(.app-shell) 系より詳細度を上げるため :has() を重ねる */
+html.is-night-sky:has(.app-shell),
+html.is-night-sky:has(.app-shell) body,
+html.is-night-sky:has(.app-shell) #root,
+html.is-night-sky .app-shell,
+html.is-night-sky .app-shell__main {
+  background: var(--night-top, #070b1e);
+}
+
 .app-shell__main {
   position: relative;
 
