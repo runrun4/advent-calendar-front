@@ -3,7 +3,7 @@
 // ヘッダー・星座ズームビュー・進捗・開封フロー・協力デイ・フィナーレを統括する
 // design/ConstellationCalendar.dc.html の Component クラスが正
 // ==========================================
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Gift, MessageCircle, Settings } from 'lucide-react'
 import { formatMonthDay } from '../../../utils/dateUtils'
 import {
@@ -69,6 +69,16 @@ type ConstellationCalendarProps = {
 
 const FALLBACK_STAR_COLOR = '#ffd98a'
 
+/**
+ * 夜空グラデーションの最上部の色。
+ * ConstellationCalendar.css の `--night-top` と同じ値。
+ * meta[name="theme-color"] は CSS 変数を解決できないため、ここだけ定数で持つ。
+ */
+const NIGHT_SKY_TOP_COLOR = '#070b1e'
+
+/** 星座画面の表示中だけ <html> に付ける印。殻の背景は index.css 側で夜空に揃える */
+const NIGHT_SKY_CLASS = 'is-night-sky'
+
 export const ConstellationCalendar = ({
   title,
   eventDate,
@@ -128,6 +138,33 @@ export const ConstellationCalendar = ({
         : sliceDefaultLayout(totalDays),
     [layoutSeed, totalDays],
   )
+
+  /*
+   * ==========================================
+   * 殻を夜空と地続きにする
+   * 星座画面 (フルブリード) は app-shell の中に描かれるため、上部バーや
+   * ステータスバー領域・オーバースクロール部分に殻の背景が覗いてしまう。
+   * マウントされている間だけ <html> に印を付け、ブラウザ UI の色も揃える。
+   * ペイント前に切り替えないと開閉の瞬間に旧色 (緑/白) が一瞬見えるため useLayoutEffect。
+   * ========================================== */
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.classList.add(NIGHT_SKY_CLASS)
+
+    const themeColorMeta = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"]',
+    )
+    // 検証ページは独自のテーマカラーを持つので、退避した元の値に必ず戻す
+    const previousThemeColor = themeColorMeta?.getAttribute('content') ?? null
+    themeColorMeta?.setAttribute('content', NIGHT_SKY_TOP_COLOR)
+
+    return () => {
+      root.classList.remove(NIGHT_SKY_CLASS)
+      if (!themeColorMeta) return
+      if (previousThemeColor === null) themeColorMeta.removeAttribute('content')
+      else themeColorMeta.setAttribute('content', previousThemeColor)
+    }
+  }, [])
 
   const reducedMotion = useReducedMotion()
   const { later, clearAll: clearAllTimers } = useTimers()
