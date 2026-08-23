@@ -18,7 +18,10 @@ type ChatViewProps = {
 
 function formatMessageTime(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
+
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
 
   return date.toLocaleTimeString('ja-JP', {
     hour: '2-digit',
@@ -26,12 +29,16 @@ function formatMessageTime(value: string): string {
   })
 }
 
-function connectionStatusLabel(status: ChatConnectionStatus): string {
+function connectionStatusLabel(
+  status: ChatConnectionStatus,
+): string {
   switch (status) {
     case 'connected':
       return 'WS 接続'
+
     case 'error':
       return 'WS 未接続'
+
     default:
       return 'WS 接続中…'
   }
@@ -55,83 +62,183 @@ export function ChatView({
 
   const [draft, setDraft] = useState('')
 
-  const listEndRef = useRef<HTMLLIElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const listEndRef = useRef<HTMLLIElement>(null)
 
   /*
-   * スマホのキーボード表示時に visualViewport の高さを取得して、
-   * チャット画面を実際に見えている領域へ合わせる。
+   * ============================================================
+   * visualViewport 対応
+   * ============================================================
+   *
+   * スマートフォンでキーボードが表示されると、
+   * visualViewport の高さがキーボード分だけ小さくなる。
+   *
+   * その高さを CSS 変数として ChatView に渡す。
+   *
+   * offsetTop も取得しておくことで、
+   * iOS Safari などで visualViewport が移動した場合にも対応する。
    */
   useEffect(() => {
-    const viewport = window.visualViewport
+    const updateViewport = () => {
+      const viewport = window.visualViewport
 
-    if (!viewport) return
+      if (!viewport) {
+        document.documentElement.style.setProperty(
+          '--chat-viewport-height',
+          `${window.innerHeight}px`,
+        )
 
-    const updateViewportHeight = () => {
-      const height = viewport.height
+        document.documentElement.style.setProperty(
+          '--chat-viewport-top',
+          '0px',
+        )
+
+        return
+      }
 
       document.documentElement.style.setProperty(
         '--chat-viewport-height',
-        `${height}px`,
+        `${viewport.height}px`,
+      )
+
+      document.documentElement.style.setProperty(
+        '--chat-viewport-top',
+        `${viewport.offsetTop}px`,
       )
     }
 
-    updateViewportHeight()
+    updateViewport()
 
-    viewport.addEventListener('resize', updateViewportHeight)
-    viewport.addEventListener('scroll', updateViewportHeight)
+    const viewport = window.visualViewport
+
+    viewport?.addEventListener('resize', updateViewport)
+    viewport?.addEventListener('scroll', updateViewport)
+
+    window.addEventListener('resize', updateViewport)
 
     return () => {
-      viewport.removeEventListener('resize', updateViewportHeight)
-      viewport.removeEventListener('scroll', updateViewportHeight)
+      viewport?.removeEventListener(
+        'resize',
+        updateViewport,
+      )
+
+      viewport?.removeEventListener(
+        'scroll',
+        updateViewport,
+      )
+
+      window.removeEventListener(
+        'resize',
+        updateViewport,
+      )
 
       document.documentElement.style.removeProperty(
         '--chat-viewport-height',
+      )
+
+      document.documentElement.style.removeProperty(
+        '--chat-viewport-top',
       )
     }
   }, [])
 
   /*
-   * メッセージが追加されたら一番下までスクロールする。
+   * ============================================================
+   * 新しいメッセージが追加されたら一番下へ
+   * ============================================================
    */
   useEffect(() => {
-    listEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    })
-  }, [messages.length])
-
-  /*
-   * 入力欄にフォーカスした際、キーボードによって入力欄が
-   * 隠れないようにする。
-   */
-  const handleInputFocus = () => {
-    window.setTimeout(() => {
-      inputRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-      })
-
+    requestAnimationFrame(() => {
       listEndRef.current?.scrollIntoView({
         behavior: 'smooth',
         block: 'end',
       })
-    }, 150)
-  }
+    })
+  }, [messages.length])
 
+  /*
+   * ============================================================
+   * キーボード表示・非表示時
+   * ============================================================
+   *
+   * visualViewport の高さが変化した直後は、
+   * レイアウトが更新される前の場合がある。
+   *
+   * requestAnimationFrame を使って、
+   * レイアウト更新後に最新メッセージを表示する。
+   */
+  useEffect(() => {
+    const viewport = window.visualViewport
+
+    if (!viewport) {
+      return
+    }
+
+    const handleViewportResize = () => {
+      requestAnimationFrame(() => {
+        listEndRef.current?.scrollIntoView({
+          behavior: 'auto',
+          block: 'end',
+        })
+      })
+    }
+
+    viewport.addEventListener(
+      'resize',
+      handleViewportResize,
+    )
+
+    return () => {
+      viewport.removeEventListener(
+        'resize',
+        handleViewportResize,
+      )
+    }
+  }, [])
+
+  /*
+   * ============================================================
+   * メッセージ送信
+   * ============================================================
+   */
   const handleSubmit = async () => {
     const text = draft.trim()
 
-    if (!text || isSending) return
+    if (!text || isSending) {
+      return
+    }
 
     try {
       await sendMessage(text)
+
       setDraft('')
+
+      /*
+       * 送信後も入力欄を維持する。
+       * スマホではキーボードを閉じない。
+       */
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+
+        requestAnimationFrame(() => {
+          listEndRef.current?.scrollIntoView({
+            behavior: 'auto',
+            block: 'end',
+          })
+        })
+      })
     } catch {
-      // error state is handled in useChat
+      /*
+       * エラー表示は useChat 側で処理。
+       */
     }
   }
 
+  /*
+   * ============================================================
+   * Enter 送信
+   * ============================================================
+   */
   const handleKeyDown = (
     event: KeyboardEvent<HTMLInputElement>,
   ) => {
@@ -140,12 +247,16 @@ export function ChatView({
       !event.nativeEvent.isComposing
     ) {
       event.preventDefault()
+
       void handleSubmit()
     }
   }
 
   return (
     <div className="chat-view">
+      {/* ======================================================
+          Header
+      ====================================================== */}
       <header className="chat-view__header">
         <button
           type="button"
@@ -185,6 +296,9 @@ export function ChatView({
         </div>
       </header>
 
+      {/* ======================================================
+          Main
+      ====================================================== */}
       <main className="chat-view__main">
         {isLoading ? (
           <p className="chat-view__empty">
@@ -200,6 +314,9 @@ export function ChatView({
               const isOwn =
                 message.sender.id === user?.id
 
+              /*
+               * 自分のメッセージ
+               */
               if (isOwn) {
                 return (
                   <li
@@ -224,6 +341,9 @@ export function ChatView({
                 )
               }
 
+              /*
+               * 他ユーザーのメッセージ
+               */
               return (
                 <li
                   key={message.id}
@@ -236,7 +356,9 @@ export function ChatView({
                     >
                       {message.sender.avatarUrl ? (
                         <img
-                          src={message.sender.avatarUrl}
+                          src={
+                            message.sender.avatarUrl
+                          }
                           alt=""
                           className="chat-view__avatar-image"
                         />
@@ -289,6 +411,9 @@ export function ChatView({
         ) : null}
       </main>
 
+      {/* ======================================================
+          Composer
+      ====================================================== */}
       <footer className="chat-view__composer">
         <div className="chat-view__composer-inner">
           <input
@@ -301,20 +426,19 @@ export function ChatView({
               setDraft(event.target.value)
             }
             onKeyDown={handleKeyDown}
-            onFocus={handleInputFocus}
             aria-label="メッセージを入力"
             disabled={isSending}
-            enterKeyHint="send"
             autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
+            enterKeyHint="send"
           />
 
           <button
             type="button"
             className="chat-view__send-button"
             aria-label="送信"
-            disabled={!draft.trim() || isSending}
+            disabled={
+              !draft.trim() || isSending
+            }
             onClick={() => void handleSubmit()}
           >
             <ArrowUp
