@@ -1,0 +1,88 @@
+/* ==========================================
+ * StarField
+ * keyframes (cc-tw / cc-spin / cc-breathe / cc-ring 等) は themes.css で定義
+ * ========================================== */
+
+.star-field {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.star-field__drift {
+  animation: cc-drift 11s ease-in-out infinite;
+}
+
+.star-field__ignite {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-ignite 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.star-field__cross-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-spin 90s linear infinite;
+}
+
+.star-field__breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-breathe 4.4s ease-in-out infinite;
+}
+
+.star-field__chain-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-breathe 5.2s ease-in-out infinite;
+}
+
+.star-field__chain-spin {
+  transform-origin: 0 0;
+  animation: cc-spin 44s linear infinite;
+}
+
+.star-field__openable-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-breathe 3.6s ease-in-out infinite;
+}
+
+.star-field__ring1 {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-ring 3.2s ease-out infinite;
+}
+
+.star-field__ring2 {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-ring 3.2s ease-out infinite 1.6s;
+}
+
+.star-field__orbit-cw {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-spin 18s linear infinite;
+}
+
+.star-field__orbit-ccw {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-spin-r 30s linear infinite;
+}
+
+.star-field__hint-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cc-breathe 2.8s ease-in-out infinite;
+}
+
+.star-field__hint-tw {
+  animation: cc-tw 2.6s ease-in-out infinite;
+}
+
+.star-field__chevron-tw {
+  animation: cc-tw 2.2s ease-in-out infinite;
+}

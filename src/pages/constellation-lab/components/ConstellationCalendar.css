@@ -1,0 +1,224 @@
+.constellation-calendar {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+
+  overflow: hidden;
+  background: linear-gradient(180deg, #070b1e 0%, #0f1633 42%, #1a2349 78%, #202a55 100%);
+  color: #e9edff;
+  /* 本体アプリでは Mamelon を継承。検証ページは themes.css で Zen Maru を指定 */
+  font-family: inherit;
+}
+
+.constellation-calendar__load-error {
+  position: absolute;
+  top: 92px;
+  left: 16px;
+  right: 16px;
+  z-index: 5;
+
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+
+  background: rgba(180, 40, 40, 0.85);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.constellation-calendar__icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 44px;
+  height: 44px;
+
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: #e9edff;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.constellation-calendar__icon-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.constellation-calendar__back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 3;
+}
+
+.constellation-calendar__top-buttons {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 3;
+
+  display: flex;
+  gap: 12px;
+}
+
+.constellation-calendar__event-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+
+  padding-top: 80px;
+  transition: opacity 0.6s ease;
+}
+
+.constellation-calendar__event-date {
+  margin: 0;
+
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  line-height: 1;
+
+  color: rgba(233, 237, 255, 0.7);
+}
+
+.constellation-calendar__event-title {
+  margin: 0;
+
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: center;
+
+  color: #f2ecdb;
+  text-shadow: 0 0 18px rgba(255, 217, 138, 0.35), 0 0 46px rgba(255, 217, 138, 0.14);
+}
+
+.constellation-calendar__finale-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+
+  padding-top: 10px;
+
+  animation: cc-banner 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.constellation-calendar__finale-banner-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--star, #ffd98a);
+  text-shadow: 0 0 22px rgba(255, 217, 138, 0.5);
+}
+
+.constellation-calendar__finale-banner-sub {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: rgba(233, 237, 255, 0.55);
+}
+
+.constellation-calendar__star-field-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.constellation-calendar__burst-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.constellation-calendar__progress {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 14px;
+
+  /* 下端の折りたたみDebugPanelと重ならないよう余白を確保 */
+  padding: 4px 26px 44px;
+
+  transition: opacity 0.6s ease;
+}
+
+.constellation-calendar__progress-track {
+  flex: 1 1 auto;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.constellation-calendar__progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 217, 138, 0.4), var(--star, #ffd98a));
+  box-shadow: 0 0 10px rgba(255, 217, 138, 0.6);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.constellation-calendar__progress-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(233, 237, 255, 0.6);
+  white-space: nowrap;
+}
+
+.constellation-calendar__gift-button {
+  position: fixed;
+  right: 24px;
+  bottom: 56px;
+  z-index: 2;
+}
+
+.constellation-calendar__finale-exit {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  z-index: 6;
+  transform: translateX(-50%);
+
+  padding: 11px 34px;
+  border: 1px solid rgba(255, 217, 138, 0.45);
+  border-radius: 999px;
+  background: rgba(10, 16, 40, 0.6);
+
+  color: var(--star, #ffd98a);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+
+  backdrop-filter: blur(8px);
+  animation: cc-fade 0.8s ease both;
+}
+
+.constellation-calendar__finale-exit:hover {
+  background: rgba(255, 217, 138, 0.14);
+}

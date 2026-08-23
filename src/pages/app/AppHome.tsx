@@ -64,6 +64,8 @@ export function AppHome({
   } = usePageSwipe(
     TABS,
     'event',
+    // イベント詳細（星座カレンダー含む）表示中は横スワイプを止める
+    // （星座側が touch-action: none でドラッグを掴むため）
     isEventDetailOpen,
   )
 

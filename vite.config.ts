@@ -53,6 +53,12 @@ export default defineConfig({
         navigateFallback: 'index.html',
       },
       includeAssets: ['favicon.svg', pwaIcon192, pwaIcon512],
+      workbox: {
+        // /constellation-proto/ (検証用プロトタイプ) は本体とは別アプリなので、
+        // SPA の navigateFallback で本体の index.html を返さない・precache もしない
+        navigateFallbackDenylist: [/^\/constellation-proto\//],
+        globIgnores: ['constellation-proto/**'],
+      },
       manifest: {
         name: 'mekulunlun',
         short_name: 'めくるん',
@@ -80,6 +86,16 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      // 星座カレンダー検証ページを別 HTML エントリとして同梱する
+      // (dist/constellation-proto/index.html → /constellation-proto/ で配信)
+      input: {
+        main: 'index.html',
+        constellationLab: 'constellation-proto/index.html',
+      },
+    },
+  },
   server: {
     host: true,
     watch: {

@@ -1,0 +1,25 @@
+{
+  "pages": [
+    { "id": "page-zoom", "name": "一星ずつ案" },
+    { "id": "page-map", "name": "旧案: 全体マップ" }
+  ],
+  "artboards": [
+    { "file": "Today.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "今日の星（開封前）", "page": "page-zoom" },
+    { "file": "TodayOpen.dc.html", "x": 470, "y": 0, "w": 390, "h": 844, "title": "開封後", "page": "page-zoom" },
+    { "file": "Travel.dc.html", "x": 940, "y": 0, "w": 390, "h": 844, "title": "スワイプ移動中", "page": "page-zoom" },
+    { "file": "Finale.dc.html", "x": 1410, "y": 0, "w": 390, "h": 844, "title": "最終日の全体公開", "page": "page-zoom" },
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "夜空テーマ", "page": "page-map" },
+    { "file": "Reveal.dc.html", "x": 470, "y": 0, "w": 390, "h": 844, "title": "開封の瞬間", "page": "page-map" },
+    { "file": "Popup.dc.html", "x": 940, "y": 0, "w": 390, "h": 844, "title": "内容表示", "page": "page-map" },
+    { "file": "Light.dc.html", "x": 1410, "y": 0, "w": 390, "h": 844, "title": "ライトテーマ", "page": "page-map" }
+  ],
+  "annotations": [
+    { "id": "concept-zoom", "x": 0, "y": -190, "w": 440, "text": "一星ずつ案\nその日の星だけを画面いっぱいに表示。横スワイプで開封済みの星を線に沿って行き来できるが、全体像は最終日まで見せない。未来側はフォグで隠す。\n30日目を開けるとズームアウトのアニメーションで、初めて星座の全体が現れる。", "page": "page-zoom" },
+    { "id": "note-travel", "x": 940, "y": -130, "w": 340, "text": "スワイプ中は日常ビューよりさらにズームインしたままカメラが線に沿って移動。前後の星は画面端で切れて、全体の形は読み取れない。\n開封の光の弾けだけ WebGL、それ以外は SVG+CSS。", "page": "page-zoom" },
+    { "id": "note-finale", "x": 1410, "y": -110, "w": 340, "text": "30日目開封後のズームアウト演出の着地画面。ここで初めてネタバレ解禁。", "page": "page-zoom" },
+    { "id": "concept", "x": 0, "y": -170, "w": 430, "text": "旧案: 全体マップ\n30個の星を常に一覧表示して、開けるたびに線が伸びる案。点線は完成形のシルエット。\n「星の色」チップで着せ替えの当たりを確認できます。", "page": "page-map" },
+    { "id": "note-reveal", "x": 470, "y": -110, "w": 340, "text": "開封タップの瞬間。実装ではこの光の弾けだけを WebGL パーティクルで再生し、それ以外は SVG+CSS で動かす。", "page": "page-map" },
+    { "id": "note-light", "x": 1410, "y": -110, "w": 340, "text": "現行アプリの白×緑 (#9ef581 / #b7e8a7 / #d9d9d9) に合わせた着せ替え例。", "page": "page-map" }
+  ],
+  "launch": { "view": "canvas", "page": "page-zoom" }
+}
