@@ -6,6 +6,7 @@ import type {
   StickerPayload,
   StrokePayload,
 } from '../../services/boardApi'
+import { isBoardFillStrokePayload } from '../../services/boardApi'
 import {
   boardAspectClass,
   boardViewBox,
@@ -67,6 +68,34 @@ function strokeElements(
   pickable: boolean,
   onPick: (() => void) | undefined,
 ) {
+  if (isBoardFillStrokePayload(item.payload)) {
+    return (
+      <>
+        <rect
+          x={0}
+          y={0}
+          width={viewBox.width}
+          height={viewBox.height}
+          fill={item.payload.color}
+        />
+        {pickable && onPick ? (
+          <rect
+            className="board-canvas__hit"
+            x={0}
+            y={0}
+            width={viewBox.width}
+            height={viewBox.height}
+            fill="transparent"
+            onPointerDown={(event) => {
+              event.stopPropagation()
+              onPick()
+            }}
+          />
+        ) : null}
+      </>
+    )
+  }
+
   const points = toPolylinePoints(item.payload.points, viewBox)
   const width = item.payload.width * viewBox.width
 
@@ -210,6 +239,7 @@ export function BoardCanvas({
       <svg
         className={`board-canvas__svg${
           interactive ? ' board-canvas__svg--interactive' : ''
+        }${dimUnpickableItems ? ' board-canvas__svg--pick-mode' : ''
         }`}
         viewBox={`0 0 ${viewBox.width} ${viewBox.height}`}
         preserveAspectRatio="xMidYMid meet"
@@ -219,18 +249,29 @@ export function BoardCanvas({
         onPointerMove={interactive ? handlePointer(onBoardPointerMove) : undefined}
         onPointerUp={interactive ? handlePointer(onBoardPointerUp) : undefined}
         onPointerCancel={interactive ? handlePointer(onBoardPointerUp) : undefined}
+        onContextMenu={
+          interactive
+            ? (event) => {
+                event.preventDefault()
+              }
+            : undefined
+        }
       >
         {items.map((item) => {
           const pickable = isItemPickable ? isItemPickable(item) : false
           const onPick = onPickItem ? () => onPickItem(item) : undefined
           const dimmed = dimUnpickableItems && !pickable
+          const isFill =
+            item.kind === 'STROKE' && isBoardFillStrokePayload(item.payload)
 
           return (
             <g
               key={item.id}
               className={`board-canvas__item${
                 item.pending ? ' board-canvas__item--pending' : ''
-              }${dimmed ? ' board-canvas__item--dimmed' : ''}`}
+              }${dimmed ? ' board-canvas__item--dimmed' : ''}${
+                isFill ? ' board-canvas__item--fill' : ''
+              }`}
             >
               {item.kind === 'STROKE'
                 ? strokeElements(item, viewBox, pickable, onPick)
@@ -240,14 +281,24 @@ export function BoardCanvas({
         })}
 
         {draftStroke && draftStroke.points.length > 0 ? (
-          <polyline
-            points={toPolylinePoints(draftStroke.points, viewBox)}
-            fill="none"
-            stroke={draftStroke.color}
-            strokeWidth={draftStroke.width * viewBox.width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          isBoardFillStrokePayload(draftStroke) ? (
+            <rect
+              x={0}
+              y={0}
+              width={viewBox.width}
+              height={viewBox.height}
+              fill={draftStroke.color}
+            />
+          ) : (
+            <polyline
+              points={toPolylinePoints(draftStroke.points, viewBox)}
+              fill="none"
+              stroke={draftStroke.color}
+              strokeWidth={draftStroke.width * viewBox.width}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )
         ) : null}
 
         {draftSticker ? (

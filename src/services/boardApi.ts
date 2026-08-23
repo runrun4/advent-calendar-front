@@ -89,6 +89,52 @@ export const BOARD_LIMITS = {
   stickerMaxScale: 1,
 } as const
 
+/** 古い閲覧クライアントでも全面が埋まるよう、線幅の半分以下で往復する。 */
+const BOARD_FILL_POINT_STEP = BOARD_LIMITS.strokeMaxWidth * 0.5
+
+function createBoardFillPoints(): BoardPoint[] {
+  const points: BoardPoint[] = []
+  let leftToRight = true
+
+  for (let y = 0; y <= 1 + BOARD_FILL_POINT_STEP / 2; y += BOARD_FILL_POINT_STEP) {
+    const clampedY = Math.min(1, y)
+    if (leftToRight) {
+      points.push({ x: 0, y: clampedY }, { x: 1, y: clampedY })
+    } else {
+      points.push({ x: 1, y: clampedY }, { x: 0, y: clampedY })
+    }
+    leftToRight = !leftToRight
+  }
+
+  return points
+}
+
+/** 判定時に毎回再生成しない、長押し全面塗りの基準点列。 */
+const BOARD_FILL_POINTS = createBoardFillPoints()
+
+/** 長押し全面塗りを既存の STROKE 契約で表す点列。呼び出し側用に複製を返す。 */
+export function buildBoardFillPoints(): BoardPoint[] {
+  return BOARD_FILL_POINTS.map((point) => ({ ...point }))
+}
+
+/** 通常の縁なぞりを誤判定しないよう、幅・点数・左右交互の形まで検証する。 */
+export function isBoardFillStrokePayload(payload: StrokePayload): boolean {
+  if (
+    payload.width !== BOARD_LIMITS.strokeMaxWidth ||
+    payload.points.length !== BOARD_FILL_POINTS.length
+  ) {
+    return false
+  }
+
+  return payload.points.every((point, index) => {
+    const expectedPoint = BOARD_FILL_POINTS[index]
+    return (
+      Math.abs(point.x - expectedPoint.x) <= 0.001 &&
+      Math.abs(point.y - expectedPoint.y) <= 0.001
+    )
+  })
+}
+
 export function clampUnit(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.min(1, Math.max(0, value))

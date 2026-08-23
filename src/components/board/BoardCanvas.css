@@ -31,6 +31,9 @@
 
   /* スクロールやピンチに取られず、ポインタイベントを最後まで受け取るため。 */
   touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .board-canvas__item image,
@@ -53,6 +56,18 @@ rect.board-canvas__hit {
 
 .board-canvas__item--dimmed {
   opacity: 0.35;
+}
+
+/*
+ * 全面塗りは消しゴム時に少し透かし、ボード全体のタップでこの塗りを
+ * 取り除く操作だと分かるようにする。
+ */
+.board-canvas__svg--pick-mode .board-canvas__item--fill {
+  opacity: 0.72;
+}
+
+.board-canvas__svg--pick-mode .board-canvas__item--fill rect.board-canvas__hit {
+  cursor: pointer;
 }
 
 .board-canvas__draft-sticker {
