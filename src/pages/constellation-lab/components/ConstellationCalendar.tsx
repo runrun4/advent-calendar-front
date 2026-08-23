@@ -261,9 +261,12 @@ export const ConstellationCalendar = ({
         if (members?.members?.length) {
           const names = members.members.map((member) => member.user.displayName)
           setMemberNames(names)
-          setCoopMemberTotal((current) =>
-            Math.max(current, members.members.length),
-          )
+          // 鎖の本数 = 必要人数。当日は todayCooperation.requiredCount
+          // (協力条件確定時のメンバー数) が正。当日以外はそれが返らないので
+          // 現在の参加人数で代用する (モックの MEMBER_TOTAL とは max しない)
+          if (!hydrated) {
+            setCoopMemberTotal(members.members.length)
+          }
         }
       } catch (error) {
         if (controller.signal.aborted) return
