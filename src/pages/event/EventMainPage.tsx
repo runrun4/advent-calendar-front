@@ -7,7 +7,10 @@ import {
 } from '../../services/eventApi'
 import { DEFAULT_EVENT_ICON_ID } from './EventNameField'
 import { EventList, type EventListItem } from './EventList'
-import { MemoriesPage, type MemoryItem } from '../memories/MemoriesPage'
+import {
+  MemoriesPage,
+  type MemoryItem,
+} from '../memories/MemoriesPage'
 import { ConstellationCalendar } from '../constellation-lab/components/ConstellationCalendar'
 import { EventSettingsModal } from './EventSettingsModal'
 import { ShareInviteModal } from './ShareInviteModal'
@@ -18,6 +21,7 @@ import { InstallAppPrompt } from './InstallAppPrompt'
 
 type EventMainPageProps = {
   profileIconUrl?: string | null
+  currentUserId: string | null
   eventsRefreshKey?: number
   pendingEvent?: EventSummary | null
   isEventPageActive?: boolean
@@ -49,15 +53,20 @@ function toMemoryItem(event: EventSummary): MemoryItem {
     id: event.id,
     title: event.name,
     startDate: event.startDate,
-    boardOrientation: event.boardOrientation ?? 'PORTRAIT',
-    iconId: event.iconId || DEFAULT_EVENT_ICON_ID,
-    boardEdited: event.boardEdited ?? false,
+    boardOrientation:
+      event.boardOrientation ?? 'PORTRAIT',
+    iconId:
+      event.iconId || DEFAULT_EVENT_ICON_ID,
+    boardEdited:
+      event.boardEdited ?? false,
     mode: event.mode,
     role: event.role,
   }
 }
 
-function toListItem(event: EventSummary): EventListItem {
+function toListItem(
+  event: EventSummary,
+): EventListItem {
   return {
     ...toMemoryItem(event),
     status: event.status,
@@ -66,12 +75,19 @@ function toListItem(event: EventSummary): EventListItem {
 }
 
 /** イベント日時が若い順（同じ日なら id で安定化） */
-function byStartDateAsc<T extends { startDate: string; id: string }>(
+function byStartDateAsc<
+  T extends { startDate: string; id: string },
+>(
   a: T,
   b: T,
 ): number {
-  const byDate = a.startDate.localeCompare(b.startDate)
-  if (byDate !== 0) return byDate
+  const byDate =
+    a.startDate.localeCompare(b.startDate)
+
+  if (byDate !== 0) {
+    return byDate
+  }
+
   return a.id.localeCompare(b.id)
 }
 
@@ -94,6 +110,7 @@ function toAdventTarget(
 
 export function EventMainPage({
   profileIconUrl = null,
+  currentUserId,
   eventsRefreshKey = 0,
   pendingEvent = null,
   isEventPageActive = false,
@@ -102,29 +119,55 @@ export function EventMainPage({
   onDetailOpenChange,
   onPendingEventConsumed,
 }: EventMainPageProps) {
-  const [adventTarget, setAdventTarget] = useState<AdventTarget | null>(null)
+  const [adventTarget, setAdventTarget] =
+    useState<AdventTarget | null>(null)
+
   const [adventView, setAdventView] = useState<
     'calendar' | 'stickers' | 'board-edit' | 'chat'
   >('calendar')
-  const [chatReturnView, setChatReturnView] = useState<
-    'calendar' | 'stickers'
-  >('calendar')
-  const [showShareInvite, setShowShareInvite] = useState(false)
-  /* ルーム設定の保存(向き変更・ボード全消し)後にボードを取り直させるためのキー。 */
-  const [boardRefreshKey, setBoardRefreshKey] = useState(0)
-  const [showEventSettings, setShowEventSettings] = useState(false)
-  const [isReflectionOpen, setIsReflectionOpen] = useState(true)
-  const [activeEvents, setActiveEvents] = useState<EventListItem[]>([])
-  const [completedEvents, setCompletedEvents] = useState<MemoryItem[]>([])
-  const [isLoadingEvents, setIsLoadingEvents] = useState(true)
+
+  const [chatReturnView, setChatReturnView] =
+    useState<'calendar' | 'stickers'>(
+      'calendar',
+    )
+
+  const [showShareInvite, setShowShareInvite] =
+    useState(false)
+
+  /*
+   * ルーム設定の保存(向き変更・ボード全消し)後に
+   * ボードを取り直させるためのキー。
+   */
+  const [boardRefreshKey, setBoardRefreshKey] =
+    useState(0)
+
+  const [showEventSettings, setShowEventSettings] =
+    useState(false)
+
+  const [isReflectionOpen, setIsReflectionOpen] =
+    useState(true)
+
+  const [activeEvents, setActiveEvents] =
+    useState<EventListItem[]>([])
+
+  const [completedEvents, setCompletedEvents] =
+    useState<MemoryItem[]>([])
+
+  const [isLoadingEvents, setIsLoadingEvents] =
+    useState(true)
 
   /*
    * ボード系の画面はイベントを開いている間だけの状態なので、
    * 対象を開き直す・閉じるタイミングで必ずカレンダーに戻す。
    */
-  const openAdventTarget = (item: MemoryItem, source: 'event' | 'memory') => {
+  const openAdventTarget = (
+    item: MemoryItem,
+    source: 'event' | 'memory',
+  ) => {
     setAdventView('calendar')
-    setAdventTarget(toAdventTarget(item, source))
+    setAdventTarget(
+      toAdventTarget(item, source),
+    )
   }
 
   const closeAdventTarget = () => {
@@ -138,7 +181,10 @@ export function EventMainPage({
     onDetailOpenChange?.(
       adventTarget !== null,
     )
-  }, [adventTarget, onDetailOpenChange])
+  }, [
+    adventTarget,
+    onDetailOpenChange,
+  ])
 
   useEffect(() => {
     if (!pendingEvent) {
@@ -147,7 +193,12 @@ export function EventMainPage({
 
     setShowShareInvite(false)
     setAdventView('calendar')
-    setAdventTarget(toAdventTarget(toMemoryItem(pendingEvent), 'event'))
+    setAdventTarget(
+      toAdventTarget(
+        toMemoryItem(pendingEvent),
+        'event',
+      ),
+    )
 
     let openTimer: number | undefined
     const frameIds: number[] = []
@@ -196,14 +247,20 @@ export function EventMainPage({
 
         setActiveEvents(
           summaries
-            .filter((event) => event.status === 'ACTIVE')
+            .filter(
+              (event) =>
+                event.status === 'ACTIVE',
+            )
             .map(toListItem)
             .sort(byStartDateAsc),
         )
 
         setCompletedEvents(
           summaries
-            .filter((event) => event.status === 'COMPLETED')
+            .filter(
+              (event) =>
+                event.status === 'COMPLETED',
+            )
             .map(toMemoryItem)
             .sort(byStartDateAsc),
         )
@@ -246,22 +303,34 @@ export function EventMainPage({
     const patch = {
       title: updated.name,
       iconId: updated.iconId,
-      boardOrientation: updated.boardOrientation,
+      boardOrientation:
+        updated.boardOrientation,
       boardEdited: updated.boardEdited,
     }
 
-    setBoardRefreshKey((key) => key + 1)
-    setAdventTarget((current) => (current ? { ...current, ...patch } : null))
+    setBoardRefreshKey(
+      (key) => key + 1,
+    )
+
+    setAdventTarget((current) =>
+      current
+        ? { ...current, ...patch }
+        : null,
+    )
+
     setActiveEvents((events) =>
       events.map((event) =>
-        adventTarget && event.id === adventTarget.id
+        adventTarget &&
+        event.id === adventTarget.id
           ? { ...event, ...patch }
           : event,
       ),
     )
+
     setCompletedEvents((memories) =>
       memories.map((memory) =>
-        adventTarget && memory.id === adventTarget.id
+        adventTarget &&
+        memory.id === adventTarget.id
           ? { ...memory, ...patch }
           : memory,
       ),
@@ -270,29 +339,49 @@ export function EventMainPage({
 
   /*
    * ボードに1つでも描かれるとサーバー側で events.board_edited が立つ。
-   * 向き変更時の「ボードを消す?」確認がこのフラグを見るので、開いている行にも反映する。
+   * 向き変更時の「ボードを消す?」確認がこのフラグを見るので、
+   * 開いている行にも反映する。
    */
-  const handleBoardEditedChange = (boardEdited: boolean) => {
+  const handleBoardEditedChange = (
+    boardEdited: boolean,
+  ) => {
     /*
-     * 呼び出し元は effect からこれを呼ぶ。ここで毎回 setState すると
-     * 再レンダー → コールバックの同一性が変わる → effect 再実行、と回り続けるので、
+     * 呼び出し元は effect からこれを呼ぶ。
+     * ここで毎回 setState すると
+     * 再レンダー → コールバックの同一性が変わる →
+     * effect 再実行、と回り続けるので、
      * 変化が無いときは何もしないで抜ける。
      */
-    if (!adventTarget || adventTarget.boardEdited === boardEdited) return
+    if (
+      !adventTarget ||
+      adventTarget.boardEdited === boardEdited
+    ) {
+      return
+    }
 
-    const targetId = adventTarget.id
+    const targetId =
+      adventTarget.id
 
     setAdventTarget((current) =>
-      current && current.id === targetId ? { ...current, boardEdited } : current,
+      current &&
+      current.id === targetId
+        ? { ...current, boardEdited }
+        : current,
     )
+
     setActiveEvents((events) =>
       events.map((event) =>
-        event.id === targetId ? { ...event, boardEdited } : event,
+        event.id === targetId
+          ? { ...event, boardEdited }
+          : event,
       ),
     )
+
     setCompletedEvents((memories) =>
       memories.map((memory) =>
-        memory.id === targetId ? { ...memory, boardEdited } : memory,
+        memory.id === targetId
+          ? { ...memory, boardEdited }
+          : memory,
       ),
     )
   }
@@ -300,24 +389,36 @@ export function EventMainPage({
   const handleLeftRoom = () => {
     closeAdventTarget()
 
-    const controller = new AbortController()
+    const controller =
+      new AbortController()
+
     void listEvents(controller.signal)
       .then((summaries) => {
         setActiveEvents(
           summaries
-            .filter((event) => event.status === 'ACTIVE')
+            .filter(
+              (event) =>
+                event.status === 'ACTIVE',
+            )
             .map(toListItem)
             .sort(byStartDateAsc),
         )
+
         setCompletedEvents(
           summaries
-            .filter((event) => event.status === 'COMPLETED')
+            .filter(
+              (event) =>
+                event.status === 'COMPLETED',
+            )
             .map(toMemoryItem)
             .sort(byStartDateAsc),
         )
       })
       .catch((error) => {
-        console.error('GET /v1/events failed after leave', error)
+        console.error(
+          'GET /v1/events failed after leave',
+          error,
+        )
       })
   }
 
@@ -330,15 +431,26 @@ export function EventMainPage({
         eventMode={adventTarget.mode}
         eventRole={adventTarget.role}
         eventIconId={adventTarget.iconId}
-        boardOrientation={adventTarget.boardOrientation}
-        boardEdited={adventTarget.boardEdited}
-        onClose={() => setShowEventSettings(false)}
+        boardOrientation={
+          adventTarget.boardOrientation
+        }
+        boardEdited={
+          adventTarget.boardEdited
+        }
+        onClose={() =>
+          setShowEventSettings(false)
+        }
         onSaved={handleEventSettingsSaved}
         onLeftRoom={handleLeftRoom}
       />
     )
-    const openSettings = () => setShowEventSettings(true)
-    const openChat = (from: 'calendar' | 'stickers') => {
+
+    const openSettings = () =>
+      setShowEventSettings(true)
+
+    const openChat = (
+      from: 'calendar' | 'stickers',
+    ) => {
       setChatReturnView(from)
       setAdventView('chat')
     }
@@ -348,7 +460,10 @@ export function EventMainPage({
         <ChatView
           eventId={adventTarget.id}
           eventTitle={adventTarget.title}
-          onBack={() => setAdventView(chatReturnView)}
+          currentUserId={currentUserId}
+          onBack={() =>
+            setAdventView(chatReturnView)
+          }
         />
       )
     }
@@ -357,11 +472,17 @@ export function EventMainPage({
       return (
         <BoardEditPage
           eventId={adventTarget.id}
-          boardOrientation={adventTarget.boardOrientation}
+          boardOrientation={
+            adventTarget.boardOrientation
+          }
           eventRole={adventTarget.role}
           refreshKey={boardRefreshKey}
-          onBack={() => setAdventView('stickers')}
-          onBoardEditedChange={handleBoardEditedChange}
+          onBack={() =>
+            setAdventView('stickers')
+          }
+          onBoardEditedChange={
+            handleBoardEditedChange
+          }
         />
       )
     }
@@ -373,14 +494,25 @@ export function EventMainPage({
             eventId={adventTarget.id}
             eventTitle={adventTarget.title}
             eventDate={adventTarget.startDate}
-            boardOrientation={adventTarget.boardOrientation}
+            boardOrientation={
+              adventTarget.boardOrientation
+            }
             refreshKey={boardRefreshKey}
-            onBack={() => setAdventView('calendar')}
+            onBack={() =>
+              setAdventView('calendar')
+            }
             onOpenSettings={openSettings}
-            onOpenBoardEdit={() => setAdventView('board-edit')}
-            onOpenChat={() => openChat('stickers')}
-            onBoardEditedChange={handleBoardEditedChange}
+            onOpenBoardEdit={() =>
+              setAdventView('board-edit')
+            }
+            onOpenChat={() =>
+              openChat('stickers')
+            }
+            onBoardEditedChange={
+              handleBoardEditedChange
+            }
           />
+
           {settingsModal}
         </>
       )
@@ -393,9 +525,13 @@ export function EventMainPage({
           eventDate={adventTarget.startDate}
           eventId={adventTarget.id}
           onBack={closeAdventTarget}
-          onOpenStickers={() => setAdventView('stickers')}
+          onOpenStickers={() =>
+            setAdventView('stickers')
+          }
           onOpenSettings={openSettings}
-          onOpenChat={() => openChat('calendar')}
+          onOpenChat={() =>
+            openChat('calendar')
+          }
           showDebug={false}
         />
 
@@ -407,6 +543,7 @@ export function EventMainPage({
             setShowShareInvite(false)
           }
         />
+
         {settingsModal}
       </>
     )
@@ -430,7 +567,12 @@ export function EventMainPage({
               events={activeEvents}
               isLoading={isLoadingEvents}
               onOpenEventAdd={onOpenEventAdd}
-              onSelectEvent={(event) => openAdventTarget(event, 'event')}
+              onSelectEvent={(event) =>
+                openAdventTarget(
+                  event,
+                  'event',
+                )
+              }
             />
           </section>
 
@@ -443,7 +585,9 @@ export function EventMainPage({
                   (open) => !open,
                 )
               }
-              aria-expanded={isReflectionOpen}
+              aria-expanded={
+                isReflectionOpen
+              }
               aria-controls="reflection-list"
             >
               <span
@@ -482,9 +626,16 @@ export function EventMainPage({
               <div id="reflection-list">
                 <MemoriesPage
                   memories={completedEvents}
-                  isLoading={isLoadingEvents}
-                  onSelectMemory={(memory) =>
-                    openAdventTarget(memory, 'memory')
+                  isLoading={
+                    isLoadingEvents
+                  }
+                  onSelectMemory={(
+                    memory,
+                  ) =>
+                    openAdventTarget(
+                      memory,
+                      'memory',
+                    )
                   }
                 />
               </div>
@@ -495,7 +646,9 @@ export function EventMainPage({
 
       {/* イベント画面を開いているWebユーザーのみ表示 */}
       <InstallAppPrompt
-        isActive={isEventPageActive}
+        isActive={
+          isEventPageActive
+        }
       />
     </div>
   )

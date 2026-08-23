@@ -5,10 +5,6 @@
 .chat-view {
   position: fixed;
 
-  /*
-   * visualViewport の位置に合わせる。
-   */
-  top: var(--chat-viewport-top, 0px);
   left: 0;
 
   z-index: 100;
@@ -26,14 +22,6 @@
 
   background: #fff;
   color: #000;
-
-  /*
-   * iPhone のセーフエリア。
-   */
-  padding-bottom: env(
-    safe-area-inset-bottom,
-    0px
-  );
 }
 
 
@@ -52,7 +40,18 @@
 
   min-height: 76px;
 
-  padding: 20px 16px 12px;
+  /*
+   * iPhone のノッチ / Dynamic Island などの
+   * 上側 safe-area を考慮。
+   */
+  padding-top: max(
+    20px,
+    env(safe-area-inset-top, 0px)
+  );
+
+  padding-right: 16px;
+  padding-bottom: 12px;
+  padding-left: 16px;
 
   border-bottom: 1px solid #ececec;
 
@@ -454,6 +453,9 @@
 
   /*
    * ホームバーの領域を考慮。
+   *
+   * safe-area は composer 側だけで処理する。
+   * .chat-view 側では追加しない。
    */
   padding-bottom: max(
     10px,
@@ -612,11 +614,6 @@
       100dvh
     );
 
-    top: var(
-      --chat-viewport-top,
-      0px
-    );
-
     min-height: 0;
 
     overscroll-behavior: none;
@@ -629,7 +626,14 @@
   .chat-view__header {
     min-height: 64px;
 
-    padding: 10px 12px 8px;
+    padding-top: max(
+      10px,
+      env(safe-area-inset-top, 0px)
+    );
+
+    padding-right: 12px;
+    padding-bottom: 8px;
+    padding-left: 12px;
   }
 
   .chat-view__back-button {
