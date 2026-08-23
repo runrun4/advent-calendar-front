@@ -235,6 +235,117 @@ input {
   margin: 0;
 }
 
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.app-header__notification-wrap {
+  position: relative;
+}
+
+.app-header__notification {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+}
+
+.app-header__notification:focus-visible,
+.app-header__profile:focus-visible {
+  outline: 3px solid rgba(75, 120, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.app-header__notification-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.app-header__notification-dot {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.15rem;
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #4bc67b;
+}
+
+.app-header__notification-panel {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  width: min(18rem, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16);
+  color: #222;
+}
+
+.app-header__notification-panel::before {
+  position: absolute;
+  top: -0.4rem;
+  right: 0.9rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-top: 1px solid #e2e2e2;
+  border-left: 1px solid #e2e2e2;
+  background: #fff;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.app-header__notification-title {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 1rem;
+}
+
+.app-header__notification-panel p {
+  margin: 0;
+  color: #666;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.app-header__notification-toggle {
+  width: 100%;
+  margin-top: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: #222;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-header__notification-toggle:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.app-header__notification-message {
+  margin-top: 0.65rem !important;
+  color: #2f7b4c !important;
+}
+
 .app-header__profile {
   display: flex;
 
