@@ -81,4 +81,7 @@ rect.board-canvas__hit {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* 案内の文字上からでも背面の SVG へ描画・配置操作を通す。 */
+  pointer-events: none;
 }

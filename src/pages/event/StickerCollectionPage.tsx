@@ -2,18 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Camera,
   ChevronLeft,
-  Lightbulb,
   MessageCircle,
   Pencil,
   Settings,
 } from 'lucide-react'
 import { BoardCanvas } from '../../components/board/BoardCanvas'
 import { useBoard } from '../../hooks/useBoard'
-import {
-  getEventCollections,
-  type BoardOrientation,
-  type CollectedSticker,
-} from '../../services/eventApi'
+import type { BoardOrientation } from '../../services/eventApi'
 import { formatMonthDay } from '../../utils/dateUtils'
 import './StickerCollectionPage.css'
 
@@ -52,16 +47,13 @@ export function StickerCollectionPage({
   onOpenChat,
   onBoardEditedChange,
 }: StickerCollectionPageProps) {
-  const [stickers, setStickers] = useState<CollectedSticker[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [titleFontSize, setTitleFontSize] = useState(DEFAULT_TITLE_FONT_SIZE)
 
   const titleRef = useRef<HTMLHeadingElement>(null)
   const boardRef = useRef<HTMLElement>(null)
 
   /*
-   * ボードの実体(線・ステッカー)はここでは読み取り専用。
+   * ボードの実体(線・貼ったステッカー)はここでは読み取り専用。
    * 編集画面と同じ useBoard を使うので、他メンバーの追加/削除もそのまま反映される。
    */
   const {
@@ -77,38 +69,6 @@ export function StickerCollectionPage({
       onBoardEditedChange?.(true)
     }
   }, [boardEdited, onBoardEditedChange])
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const load = async () => {
-      setIsLoading(true)
-      setErrorMessage(null)
-
-      try {
-        const collections = await getEventCollections(
-          eventId,
-          controller.signal,
-        )
-        setStickers(collections.stickers ?? [])
-      } catch (error) {
-        if (controller.signal.aborted) return
-        console.error('GET /v1/events/collections failed', error)
-        setStickers([])
-        setErrorMessage('ステッカーの取得に失敗しました')
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      controller.abort()
-    }
-  }, [eventId])
 
   useEffect(() => {
     const titleElement = titleRef.current
@@ -155,12 +115,8 @@ export function StickerCollectionPage({
     }
   }, [eventTitle])
 
-  const isBusy = isLoading || isBoardLoading
-  const statusMessage = boardError ?? errorMessage
   const hasBoardItems = boardItems.length > 0
-  /* ボードに何も無く、獲得ステッカーも無い状態だけ「編集しよう」の案内を出す。 */
-  const isBoardEmpty =
-    !isBusy && !statusMessage && !hasBoardItems && stickers.length === 0
+  const isBoardEmpty = !isBoardLoading && !boardError && !hasBoardItems
 
   const openBoardEdit = () => {
     onOpenBoardEdit?.()
@@ -218,11 +174,11 @@ export function StickerCollectionPage({
             serverOrientation ?? boardOrientation,
           )}`}
         >
-          {isBusy ? (
+          {isBoardLoading ? (
             <p className="event-board__card-status">読み込み中…</p>
-          ) : statusMessage ? (
+          ) : boardError ? (
             <p className="event-board__card-status event-board__card-status--error">
-              {statusMessage}
+              {boardError}
             </p>
           ) : hasBoardItems ? (
             <BoardCanvas
@@ -241,27 +197,7 @@ export function StickerCollectionPage({
               <br />
               ここを押して編集しよう
             </button>
-          ) : (
-            /* ボードはまだ空なので、獲得済みステッカーの一覧を出しておく。 */
-            <ul className="event-board__sticker-grid">
-              {stickers.map((item) => (
-                <li key={item.grantId} className="event-board__sticker-item">
-                  {item.sticker.imageUrl ? (
-                    <img
-                      src={item.sticker.imageUrl}
-                      alt={item.sticker.name}
-                      className="event-board__sticker-image"
-                    />
-                  ) : (
-                    <div
-                      className="event-board__sticker-placeholder"
-                      aria-hidden="true"
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          ) : null}
 
           <button
             type="button"
@@ -275,11 +211,6 @@ export function StickerCollectionPage({
       </section>
 
       <div className="event-board__actions">
-        <button type="button" className="event-board__action-button">
-          <Lightbulb className="event-board__action-icon" size={22} strokeWidth={2} />
-          <span>豆知識を振り返る</span>
-        </button>
-
         <button type="button" className="event-board__action-button">
           <Camera className="event-board__action-icon" size={22} strokeWidth={2} />
           <span>ベストショットを追加</span>

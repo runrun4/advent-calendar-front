@@ -7,6 +7,7 @@ import {
   addBoardItem,
   deleteBoardItem,
   getBoard,
+  normalizeBoardItemImages,
   normalizeStickerPayload,
   normalizeStrokePayload,
   type BoardItem,
@@ -85,7 +86,11 @@ function itemFromRealtimeRow(
 
   return row.kind === 'STROKE'
     ? { ...base, kind: 'STROKE', payload: row.payload as StrokePayload }
-    : { ...base, kind: 'STICKER', payload: row.payload as StickerPayload }
+    : normalizeBoardItemImages({
+        ...base,
+        kind: 'STICKER',
+        payload: row.payload as StickerPayload,
+      })
 }
 
 function sortItems(items: BoardItem[]): BoardItem[] {
@@ -377,7 +382,11 @@ export function useBoard(eventId: string, refreshKey = 0) {
         console.error('POST /v1/events/board/items failed', addError)
         ownClientItemIdsRef.current.delete(clientItemId)
         setItems((current) => current.filter((item) => item.id !== localId))
-        setError('保存に失敗しました')
+        const detail =
+          addError instanceof Error && addError.message
+            ? ` (${addError.message})`
+            : ''
+        setError(`保存に失敗しました${detail}`)
         throw addError
       } finally {
         pendingCountRef.current -= 1

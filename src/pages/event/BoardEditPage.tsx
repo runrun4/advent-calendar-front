@@ -20,6 +20,7 @@ import {
   type BoardOrientation,
   type CollectedSticker,
 } from '../../services/eventApi'
+import { ApiError } from '../../services/apiClient'
 import './BoardEditPage.css'
 
 type BoardEditPageProps = {
@@ -210,7 +211,11 @@ export function BoardEditPage({
         if (controller.signal.aborted) return
         console.error('GET /v1/events/collections failed', loadError)
         setStickers([])
-        setStickersError('ステッカーの取得に失敗しました')
+        setStickersError(
+          loadError instanceof ApiError
+            ? `ステッカーの取得に失敗しました (${loadError.message})`
+            : 'ステッカーの取得に失敗しました',
+        )
       } finally {
         if (!controller.signal.aborted) {
           setIsLoadingStickers(false)

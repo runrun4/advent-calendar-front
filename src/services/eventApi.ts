@@ -1,4 +1,5 @@
 import { apiRequest, apiRequestWithStatus } from './apiClient'
+import { resolveStickerImageUrl } from './stickerUrl'
 
 export type BoardOrientation = 'PORTRAIT' | 'LANDSCAPE'
 
@@ -198,9 +199,21 @@ export async function getEventCollections(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<EventCollections> {
-  return apiRequest<EventCollections>(`/v1/events/${eventId}/collections`, {
-    signal,
-  })
+  const collections = await apiRequest<EventCollections>(
+    `/v1/events/${eventId}/collections`,
+    { signal },
+  )
+
+  return {
+    ...collections,
+    stickers: (collections.stickers ?? []).map((item) => ({
+      ...item,
+      sticker: {
+        ...item.sticker,
+        imageUrl: resolveStickerImageUrl(item.sticker.imageUrl ?? ''),
+      },
+    })),
+  }
 }
 
 /** GET /v1/events の要素に詳細フィールドを足したもの(openapi.yaml の EventDetail)。 */
