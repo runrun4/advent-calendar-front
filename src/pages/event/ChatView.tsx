@@ -6,7 +6,6 @@ import {
 } from 'react'
 import { ArrowUp, ChevronLeft } from 'lucide-react'
 import { useChat } from '../../hooks/useChat'
-import { useAuth } from '../../hooks/useAuth'
 import type { ChatConnectionStatus } from '../../types/chat'
 import './ChatView.css'
 
@@ -14,6 +13,7 @@ type ChatViewProps = {
   eventId: string
   eventTitle: string
   onBack: () => void
+  currentUserId: string | null
 }
 
 function formatMessageTime(value: string): string {
@@ -35,10 +35,8 @@ function connectionStatusLabel(
   switch (status) {
     case 'connected':
       return 'WS 接続'
-
     case 'error':
       return 'WS 未接続'
-
     default:
       return 'WS 接続中…'
   }
@@ -48,9 +46,8 @@ export function ChatView({
   eventId,
   eventTitle,
   onBack,
+  currentUserId,
 }: ChatViewProps) {
-  const { user } = useAuth()
-
   const {
     messages,
     isLoading,
@@ -63,23 +60,37 @@ export function ChatView({
   const [draft, setDraft] = useState('')
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const listEndRef = useRef<HTMLLIElement>(null)
+  const mainRef = useRef<HTMLElement>(null)
 
   /*
-   * ============================================================
-   * visualViewport 対応
-   * ============================================================
+   * ChatView 内のスクロール領域だけを
+   * 一番下までスクロールする。
    *
-   * スマートフォンでキーボードが表示されると、
-   * visualViewport の高さがキーボード分だけ小さくなる。
-   *
-   * その高さを CSS 変数として ChatView に渡す。
-   *
-   * offsetTop も取得しておくことで、
-   * iOS Safari などで visualViewport が移動した場合にも対応する。
+   * scrollIntoView() は document / body まで
+   * スクロールする可能性があるため使用しない。
+   */
+  const scrollToBottom = (
+    behavior: ScrollBehavior = 'auto',
+  ) => {
+    const el = mainRef.current
+
+    if (!el) {
+      return
+    }
+
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior,
+    })
+  }
+
+  /*
+   * スマホのソフトキーボード表示時に
+   * visualViewport の高さが変化するため、
+   * CSS変数 --chat-viewport-height に反映する。
    */
   useEffect(() => {
-    const updateViewport = () => {
+    const updateViewportHeight = () => {
       const viewport = window.visualViewport
 
       if (!viewport) {
@@ -87,12 +98,6 @@ export function ChatView({
           '--chat-viewport-height',
           `${window.innerHeight}px`,
         )
-
-        document.documentElement.style.setProperty(
-          '--chat-viewport-top',
-          '0px',
-        )
-
         return
       }
 
@@ -100,72 +105,60 @@ export function ChatView({
         '--chat-viewport-height',
         `${viewport.height}px`,
       )
-
-      document.documentElement.style.setProperty(
-        '--chat-viewport-top',
-        `${viewport.offsetTop}px`,
-      )
     }
 
-    updateViewport()
+    updateViewportHeight()
 
     const viewport = window.visualViewport
 
-    viewport?.addEventListener('resize', updateViewport)
-    viewport?.addEventListener('scroll', updateViewport)
+    viewport?.addEventListener(
+      'resize',
+      updateViewportHeight,
+    )
 
-    window.addEventListener('resize', updateViewport)
+    viewport?.addEventListener(
+      'scroll',
+      updateViewportHeight,
+    )
+
+    window.addEventListener(
+      'resize',
+      updateViewportHeight,
+    )
 
     return () => {
       viewport?.removeEventListener(
         'resize',
-        updateViewport,
+        updateViewportHeight,
       )
 
       viewport?.removeEventListener(
         'scroll',
-        updateViewport,
+        updateViewportHeight,
       )
 
       window.removeEventListener(
         'resize',
-        updateViewport,
-      )
-
-      document.documentElement.style.removeProperty(
-        '--chat-viewport-height',
-      )
-
-      document.documentElement.style.removeProperty(
-        '--chat-viewport-top',
+        updateViewportHeight,
       )
     }
   }, [])
 
   /*
-   * ============================================================
-   * 新しいメッセージが追加されたら一番下へ
-   * ============================================================
+   * メッセージが増えたら、
+   * ChatView 内のスクロール領域だけを
+   * 一番下までスクロールする。
    */
   useEffect(() => {
     requestAnimationFrame(() => {
-      listEndRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'end',
-      })
+      scrollToBottom('smooth')
     })
   }, [messages.length])
 
   /*
-   * ============================================================
-   * キーボード表示・非表示時
-   * ============================================================
-   *
-   * visualViewport の高さが変化した直後は、
-   * レイアウトが更新される前の場合がある。
-   *
-   * requestAnimationFrame を使って、
-   * レイアウト更新後に最新メッセージを表示する。
+   * キーボードが開いた直後にも、
+   * document 全体ではなく ChatView の
+   * スクロール領域だけを一番下へ移動する。
    */
   useEffect(() => {
     const viewport = window.visualViewport
@@ -176,10 +169,7 @@ export function ChatView({
 
     const handleViewportResize = () => {
       requestAnimationFrame(() => {
-        listEndRef.current?.scrollIntoView({
-          behavior: 'auto',
-          block: 'end',
-        })
+        scrollToBottom('auto')
       })
     }
 
@@ -196,11 +186,6 @@ export function ChatView({
     }
   }, [])
 
-  /*
-   * ============================================================
-   * メッセージ送信
-   * ============================================================
-   */
   const handleSubmit = async () => {
     const text = draft.trim()
 
@@ -208,37 +193,34 @@ export function ChatView({
       return
     }
 
+    /*
+     * ここは await の前に実行する。
+     *
+     * iOS Safari では await 後の focus() は
+     * ユーザー操作のコンテキストから外れるため、
+     * キーボードを再表示できない場合がある。
+     *
+     * 先に入力内容をクリアし、
+     * 同期的に input へフォーカスを戻すことで
+     * キーボードを開いたまま送信する。
+     */
+    setDraft('')
+    inputRef.current?.focus()
+
     try {
       await sendMessage(text)
-
-      setDraft('')
-
-      /*
-       * 送信後も入力欄を維持する。
-       * スマホではキーボードを閉じない。
-       */
-      requestAnimationFrame(() => {
-        inputRef.current?.focus()
-
-        requestAnimationFrame(() => {
-          listEndRef.current?.scrollIntoView({
-            behavior: 'auto',
-            block: 'end',
-          })
-        })
-      })
     } catch {
       /*
-       * エラー表示は useChat 側で処理。
+       * 送信に失敗した場合は入力内容を戻す。
        */
+      setDraft(text)
+
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+      })
     }
   }
 
-  /*
-   * ============================================================
-   * Enter 送信
-   * ============================================================
-   */
   const handleKeyDown = (
     event: KeyboardEvent<HTMLInputElement>,
   ) => {
@@ -247,16 +229,12 @@ export function ChatView({
       !event.nativeEvent.isComposing
     ) {
       event.preventDefault()
-
       void handleSubmit()
     }
   }
 
   return (
     <div className="chat-view">
-      {/* ======================================================
-          Header
-      ====================================================== */}
       <header className="chat-view__header">
         <button
           type="button"
@@ -296,10 +274,10 @@ export function ChatView({
         </div>
       </header>
 
-      {/* ======================================================
-          Main
-      ====================================================== */}
-      <main className="chat-view__main">
+      <main
+        ref={mainRef}
+        className="chat-view__main"
+      >
         {isLoading ? (
           <p className="chat-view__empty">
             読み込み中…
@@ -312,11 +290,8 @@ export function ChatView({
           <ul className="chat-view__messages">
             {messages.map((message) => {
               const isOwn =
-                message.sender.id === user?.id
+                message.sender.id === currentUserId
 
-              /*
-               * 自分のメッセージ
-               */
               if (isOwn) {
                 return (
                   <li
@@ -341,9 +316,6 @@ export function ChatView({
                 )
               }
 
-              /*
-               * 他ユーザーのメッセージ
-               */
               return (
                 <li
                   key={message.id}
@@ -396,11 +368,6 @@ export function ChatView({
                 </li>
               )
             })}
-
-            <li
-              ref={listEndRef}
-              aria-hidden="true"
-            />
           </ul>
         )}
 
@@ -411,9 +378,6 @@ export function ChatView({
         ) : null}
       </main>
 
-      {/* ======================================================
-          Composer
-      ====================================================== */}
       <footer className="chat-view__composer">
         <div className="chat-view__composer-inner">
           <input
@@ -427,7 +391,6 @@ export function ChatView({
             }
             onKeyDown={handleKeyDown}
             aria-label="メッセージを入力"
-            disabled={isSending}
             autoComplete="off"
             enterKeyHint="send"
           />
@@ -438,6 +401,9 @@ export function ChatView({
             aria-label="送信"
             disabled={
               !draft.trim() || isSending
+            }
+            onPointerDown={(event) =>
+              event.preventDefault()
             }
             onClick={() => void handleSubmit()}
           >
