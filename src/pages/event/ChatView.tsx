@@ -89,28 +89,47 @@ export function ChatView({
   }
 
   /*
-   * スマホのソフトキーボード表示時に
-   * visualViewport の高さが変化するため、
-   * CSS変数 --chat-viewport-height に反映する。
+   * スマホのソフトキーボード表示時の追従。
+   *
+   * iOS Safari はキーボードが出ても layout viewport の大きさを変えず、
+   * visual viewport だけを縮めて、入力欄が見える位置まで内側でスクロールする。
+   * position: fixed は layout viewport 基準なので、何もしないと
+   * ChatView 全体が visualViewport.offsetTop の分だけ上にズレて見える。
+   *
+   * そのため高さ (--chat-viewport-height) だけでなく、
+   * ズレ量 (--chat-viewport-top = offsetTop) も CSS 変数に反映し、
+   * .chat-view の top に使って打ち消す。
    */
   useEffect(() => {
-    const updateViewportHeight = () => {
+    const root = document.documentElement
+
+    const updateViewport = () => {
       const viewport =
         window.visualViewport
 
       if (!viewport) {
-        document.documentElement.style.setProperty(
+        root.style.setProperty(
           '--chat-viewport-height',
           `${window.innerHeight}px`,
+        )
+        root.style.setProperty(
+          '--chat-viewport-top',
+          '0px',
         )
         return
       }
 
-      document.documentElement.style.setProperty(
+      root.style.setProperty(
         '--chat-viewport-height',
         `${viewport.height}px`,
       )
+      root.style.setProperty(
+        '--chat-viewport-top',
+        `${viewport.offsetTop}px`,
+      )
     }
+
+    const updateViewportHeight = updateViewport
 
     updateViewportHeight()
 
@@ -146,6 +165,13 @@ export function ChatView({
       window.removeEventListener(
         'resize',
         updateViewportHeight,
+      )
+
+      root.style.removeProperty(
+        '--chat-viewport-height',
+      )
+      root.style.removeProperty(
+        '--chat-viewport-top',
       )
     }
   }, [])

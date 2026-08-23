@@ -10,7 +10,11 @@
    */
   position: fixed;
 
-  top: 0;
+  /*
+   * キーボード表示時に iOS が visual viewport を内側でスクロールした分
+   * (visualViewport.offsetTop) を top で打ち消す。ChatView.tsx が設定する。
+   */
+  top: var(--chat-viewport-top, 0px);
   left: 0;
 
   z-index: 100;
