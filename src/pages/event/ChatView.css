@@ -1,80 +1,170 @@
+/* =========================================================
+   Chat View
+========================================================= */
+
 .chat-view {
-  --chat-viewport-height: 100dvh;
+  position: fixed;
+
+  /*
+   * visualViewport の位置に合わせる。
+   */
+  top: var(--chat-viewport-top, 0px);
+  left: 0;
+
+  z-index: 100;
 
   display: flex;
   flex-direction: column;
+
   width: 100%;
-  height: var(--chat-viewport-height);
+  height: var(--chat-viewport-height, 100dvh);
+
+  min-width: 0;
   min-height: 0;
-  background: #fff;
+
   overflow: hidden;
+
+  background: #fff;
+  color: #000;
+
+  /*
+   * iPhone のセーフエリア。
+   */
+  padding-bottom: env(
+    safe-area-inset-bottom,
+    0px
+  );
 }
+
+
+/* =========================================================
+   Header
+========================================================= */
 
 .chat-view__header {
   position: relative;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   flex-shrink: 0;
+
   min-height: 76px;
+
   padding: 20px 16px 12px;
-  padding-top: calc(20px + env(safe-area-inset-top));
+
   border-bottom: 1px solid #ececec;
+
   background: #fff;
-  z-index: 2;
 }
 
 .chat-view__back-button {
   position: relative;
+
   z-index: 1;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-shrink: 0;
+
   width: 44px;
   height: 44px;
+
   padding: 0;
+
   border: none;
   border-radius: 50%;
+
   background: #d9d9d9;
   color: #000;
+
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .chat-view__header-text {
   position: absolute;
+
+  top: 50%;
   left: 56px;
   right: 56px;
-  top: 50%;
+
   transform: translateY(-50%);
+
   min-width: 0;
+
   margin: 0;
   padding: 0;
+
   text-align: center;
+
   pointer-events: none;
 }
 
+.chat-view__title {
+  margin: 0;
+
+  color: #000;
+
+  font-size: 1.15rem;
+  font-weight: 700;
+
+  line-height: 1.2;
+}
+
+.chat-view__subtitle {
+  margin: 4px 0 0;
+
+  color: #666;
+
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   WebSocket Status
+========================================================= */
+
 .chat-view__ws-status {
   position: relative;
+
   z-index: 1;
+
   display: flex;
   align-items: center;
+
   gap: 6px;
+
   margin-left: auto;
+
   padding: 4px 8px;
+
   border-radius: 999px;
+
   background: #f5f5f5;
   color: #666;
+
   font-size: 0.7rem;
   font-weight: 600;
+
   line-height: 1;
 }
 
 .chat-view__ws-dot {
   width: 8px;
   height: 8px;
+
+  flex-shrink: 0;
+
   border-radius: 50%;
+
   background: #aaa;
 }
 
@@ -82,7 +172,8 @@
   color: #2d7a2d;
 }
 
-.chat-view__ws-status--connected .chat-view__ws-dot {
+.chat-view__ws-status--connected
+  .chat-view__ws-dot {
   background: #3d9b3d;
 }
 
@@ -90,7 +181,8 @@
   color: #888;
 }
 
-.chat-view__ws-status--connecting .chat-view__ws-dot {
+.chat-view__ws-status--connecting
+  .chat-view__ws-dot {
   background: #f5a623;
 }
 
@@ -98,7 +190,8 @@
   color: #b00020;
 }
 
-.chat-view__ws-status--error .chat-view__ws-dot {
+.chat-view__ws-status--error
+  .chat-view__ws-dot {
   background: #d32f2f;
 }
 
@@ -106,51 +199,69 @@
   white-space: nowrap;
 }
 
-.chat-view__title {
-  margin: 0;
-  color: #000;
-  font-size: 1.15rem;
-  font-weight: 700;
-}
 
-.chat-view__subtitle {
-  margin: 4px 0 0;
-  color: #666;
-  font-size: 0.85rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* =========================================================
+   Chat Main
+========================================================= */
 
 .chat-view__main {
   display: flex;
-  flex: 1 1 auto;
+
+  flex: 1 1 0;
+
   flex-direction: column;
+
+  width: 100%;
+
+  min-width: 0;
   min-height: 0;
+
   padding: 16px 16px 12px;
+
   overflow-x: hidden;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+
   overscroll-behavior: contain;
+
+  /*
+   * メッセージ部分だけをスクロールさせる。
+   */
+  touch-action: pan-y;
+
+  background: #fff;
+
+  -webkit-overflow-scrolling: touch;
 }
+
+
+/* =========================================================
+   Messages
+========================================================= */
 
 .chat-view__messages {
   display: flex;
+
   flex-direction: column;
+
   gap: 16px;
+
   width: 100%;
+
   margin: 0;
   padding: 0;
-  padding-bottom: 4px;
+
   list-style: none;
 }
 
 .chat-view__message {
   display: flex;
   align-items: flex-end;
+
   gap: 8px;
+
   width: 100%;
+
+  min-width: 0;
 }
 
 .chat-view__message--own {
@@ -161,24 +272,39 @@
   justify-content: flex-start;
 }
 
+
+/* =========================================================
+   Other User
+========================================================= */
+
 .chat-view__sender-block {
   display: flex;
   align-items: flex-start;
+
   gap: 8px;
+
   max-width: calc(100% - 52px);
+
+  min-width: 0;
 }
 
 .chat-view__avatar {
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-shrink: 0;
+
   width: 36px;
   height: 36px;
+
   overflow: hidden;
+
   border-radius: 50%;
+
   background: #d9d9d9;
   color: #000;
+
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -186,6 +312,7 @@
 .chat-view__avatar-image {
   width: 100%;
   height: 100%;
+
   object-fit: cover;
 }
 
@@ -195,116 +322,221 @@
 
 .chat-view__content {
   display: flex;
+
   flex-direction: column;
   align-items: center;
+
   gap: 4px;
+
   min-width: 0;
 }
 
 .chat-view__sender-name {
   padding: 0 4px;
+
   color: #666;
+
   font-size: 0.75rem;
   font-weight: 600;
+
   text-align: center;
 }
 
+
+/* =========================================================
+   Message Bubble
+========================================================= */
+
 .chat-view__bubble {
   padding: 10px 14px;
+
   border-radius: 16px;
+
   text-align: center;
+
+  overflow-wrap: anywhere;
 }
 
 .chat-view__bubble--own {
   max-width: min(72vw, 280px);
+
   background: #c2e9b0;
 }
 
 .chat-view__bubble--other {
   max-width: min(68vw, 260px);
-  background: #fff;
-  border: 1px solid #e8e8e8;
-}
 
-.chat-view__time {
-  flex-shrink: 0;
-  padding-bottom: 4px;
-  color: #888;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1;
+  background: #fff;
+
+  border: 1px solid #e8e8e8;
 }
 
 .chat-view__text {
   margin: 0;
+
   color: #000;
+
   font-size: 0.95rem;
+
   line-height: 1.5;
+
   text-align: center;
+
   white-space: pre-wrap;
+
   word-break: break-word;
+}
+
+
+/* =========================================================
+   Message Time
+========================================================= */
+
+.chat-view__time {
+  flex-shrink: 0;
+
+  padding-bottom: 4px;
+
+  color: #888;
+
+  font-size: 0.75rem;
+  font-weight: 500;
+
+  line-height: 1;
+}
+
+
+/* =========================================================
+   Empty / Error
+========================================================= */
+
+.chat-view__empty {
+  margin: auto 0;
+
+  color: #888;
+
+  font-size: 0.95rem;
+  font-weight: 500;
+
+  text-align: center;
 }
 
 .chat-view__error {
   flex-shrink: 0;
+
   margin: 12px 0 0;
+
   color: #b00020;
+
   font-size: 0.85rem;
   font-weight: 500;
+
   text-align: center;
 }
 
-.chat-view__empty {
-  margin: auto 0;
-  color: #888;
-  font-size: 0.95rem;
-  font-weight: 500;
-  text-align: center;
-}
+
+/* =========================================================
+   Composer
+========================================================= */
 
 .chat-view__composer {
+  position: relative;
+
+  z-index: 10;
+
+  display: block;
+
   flex-shrink: 0;
+
+  width: 100%;
+
   padding: 10px 16px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+
+  /*
+   * ホームバーの領域を考慮。
+   */
+  padding-bottom: max(
+    10px,
+    env(safe-area-inset-bottom, 0px)
+  );
+
   background: #fff;
-  z-index: 2;
+
+  isolation: isolate;
 }
 
 .chat-view__composer-inner {
   display: flex;
   align-items: center;
+
   gap: 10px;
+
   width: 100%;
-  box-sizing: border-box;
+
+  min-width: 0;
+
   padding: 6px 8px 6px 18px;
+
   border: none;
+
   border-radius: 999px;
+
   background: #d9d9d9;
+
   box-shadow: none;
 }
 
+
+/* =========================================================
+   Input
+========================================================= */
+
 .chat-view__input {
   flex: 1;
+
   min-width: 0;
-  width: 0;
+
+  width: 100%;
+
   height: 40px;
+
   padding: 0;
+
   border: none;
   border-radius: 0;
+
   outline: none;
+
   box-shadow: none;
+
   -webkit-appearance: none;
   appearance: none;
+
   background: transparent;
   color: #000;
+
+  /*
+   * iPhone Safari の自動ズーム対策。
+   *
+   * 16px未満にしない。
+   */
   font-size: 16px;
+
   font-family: inherit;
+
   line-height: 40px;
+
+  /*
+   * 入力操作を許可。
+   */
+  touch-action: manipulation;
 }
 
 .chat-view__input:focus {
   outline: none;
+
   box-shadow: none;
+
   background: transparent;
 }
 
@@ -312,27 +544,44 @@
   color: #aaa;
 }
 
+.chat-view__input:disabled {
+  opacity: 0.6;
+}
+
+
+/* =========================================================
+   Send Button
+========================================================= */
+
 .chat-view__send-button {
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-shrink: 0;
+
   width: 44px;
   height: 44px;
+
   padding: 0;
+
   border: none;
+
   border-radius: 50%;
+
   background: #b8e6a0;
   color: #000;
+
   cursor: pointer;
+
   transition:
     opacity 0.15s ease,
     transform 0.1s ease;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .chat-view__send-button:disabled {
   opacity: 0.45;
+
   cursor: default;
 }
 
@@ -340,24 +589,47 @@
   transform: scale(0.94);
 }
 
-/*
- * iPhone / iPad のキーボード表示時に、
- * 入力欄がキーボードに隠れないようにする。
- */
-@supports (height: 100dvh) {
-  .chat-view {
-    min-height: 100dvh;
-  }
-}
 
-/*
- * 小さいスマートフォンでヘッダーを少し圧縮する。
- */
-@media (max-height: 600px) {
+/* =========================================================
+   Mobile
+========================================================= */
+
+@media (max-width: 600px) {
+  .chat-view {
+    /*
+     * visualViewport の高さを使う。
+     *
+     * キーボードが出る
+     * ↓
+     * visualViewport.height が小さくなる
+     * ↓
+     * ChatView 自体も小さくなる
+     * ↓
+     * composer がキーボードの直上に来る
+     */
+    height: var(
+      --chat-viewport-height,
+      100dvh
+    );
+
+    top: var(
+      --chat-viewport-top,
+      0px
+    );
+
+    min-height: 0;
+
+    overscroll-behavior: none;
+  }
+
+  /* =========================
+     Header
+  ========================= */
+
   .chat-view__header {
     min-height: 64px;
-    padding-top: calc(12px + env(safe-area-inset-top));
-    padding-bottom: 8px;
+
+    padding: 10px 12px 8px;
   }
 
   .chat-view__back-button {
@@ -365,12 +637,82 @@
     height: 40px;
   }
 
-  .chat-view__main {
-    padding-top: 10px;
-    padding-bottom: 8px;
+  .chat-view__header-text {
+    left: 50px;
+    right: 50px;
   }
 
+  .chat-view__title {
+    font-size: 1.05rem;
+  }
+
+  .chat-view__subtitle {
+    font-size: 0.75rem;
+  }
+
+  .chat-view__ws-status {
+    padding: 3px 6px;
+
+    font-size: 0.6rem;
+  }
+
+  .chat-view__ws-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+
+  /* =========================
+     Main
+  ========================= */
+
+  .chat-view__main {
+    padding: 12px 12px 8px;
+  }
+
+
+  /* =========================
+     Composer
+  ========================= */
+
   .chat-view__composer {
-    padding-top: 6px;
+    padding: 8px 12px;
+
+    padding-bottom: max(
+      8px,
+      env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .chat-view__composer-inner {
+    padding: 5px 6px 5px 14px;
+  }
+
+
+  /* =========================
+     Input
+  ========================= */
+
+  .chat-view__input {
+    /*
+     * 必ず16px。
+     *
+     * iOS Safari の入力時ズーム防止。
+     */
+    font-size: 16px;
+
+    height: 40px;
+
+    line-height: 40px;
+  }
+
+
+  /* =========================
+     Send Button
+  ========================= */
+
+  .chat-view__send-button {
+    width: 42px;
+    height: 42px;
   }
 }
