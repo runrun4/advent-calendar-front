@@ -71,6 +71,7 @@ function toListItem(
     ...toMemoryItem(event),
     status: event.status,
     phase: event.phase,
+    daysRemaining: event.daysRemaining ?? 0,
   }
 }
 

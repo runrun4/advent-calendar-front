@@ -6,6 +6,7 @@ export type EventListItem = {
   title: string
   status: string
   startDate: string
+  daysRemaining: number
   boardOrientation: BoardOrientation
   iconId: string
   boardEdited: boolean
@@ -64,7 +65,12 @@ export function EventList({
               <Icon size={22} strokeWidth={2} />
             </span>
 
-            <span className="event-list__item-title">{event.title}</span>
+            <span className="event-list__item-body">
+              <span className="event-list__item-title">{event.title}</span>
+              <span className="event-list__item-days">
+                あと{Math.max(0, event.daysRemaining)}日
+              </span>
+            </span>
 
             <span className="event-list__item-arrow" aria-hidden="true">
               »

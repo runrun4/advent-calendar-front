@@ -63,7 +63,6 @@ export function CalendarDayCell({
       onClick={onSelect}
     >
       <div className="private-calendar-day-number">{calendarDay.day}</div>
-      <div className="private-calendar-events" />
     </button>
   )
 }

@@ -1043,13 +1043,8 @@ html.is-night-sky .app-shell__main {
 ========================= */
 
 .private-calendar-days {
-  display: grid;
-
-  grid-template-columns:
-    repeat(7, minmax(0, 1fr));
-
-  grid-template-rows:
-    repeat(6, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
 
   flex: 1;
 
@@ -1064,6 +1059,17 @@ html.is-night-sky .app-shell__main {
   border-left: 1px solid #ccc;
 
   background: #fff;
+}
+
+.private-calendar-week {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* =========================
@@ -1170,19 +1176,43 @@ html.is-night-sky .app-shell__main {
 }
 
 /* =========================
-   Event Area
+   Event Bars
 ========================= */
 
-.private-calendar-events {
+.private-calendar-week-events {
+  position: absolute;
+  inset: 1.35rem 0 0.15rem;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.private-calendar-event-bar {
+  position: absolute;
+  box-sizing: border-box;
+
   display: flex;
+  align-items: center;
 
-  flex-direction: column;
+  padding: 0 0.35rem;
 
-  gap: 0.2rem;
+  border-radius: 4px;
+  background: #43a047;
 
-  width: 100%;
+  color: #fff;
+  overflow: hidden;
+}
 
-  margin-top: 0.4rem;
+.private-calendar-event-bar__label {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.1;
 }
 
 /* =========================
@@ -1334,20 +1364,44 @@ html.is-night-sky .app-shell__main {
   pointer-events: none;
 }
 
-.event-list__item-title {
+.event-list__item-body {
   position: relative;
   z-index: 1;
 
-  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
 
+  flex: 1;
   min-width: 0;
 
   padding: 0 0.5rem;
+}
+
+.event-list__item-title {
+  min-width: 0;
+  flex: 1 1 auto;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   font-size: 0.95rem;
   font-weight: 600;
 
   text-align: left;
+}
+
+.event-list__item-days {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-left: 0.5rem;
+
+  color: #555;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .event-list__item-icon {
@@ -1369,6 +1423,7 @@ html.is-night-sky .app-shell__main {
 }
 
 .event-list__item--upcoming .event-list__item-title,
+.event-list__item--upcoming .event-list__item-days,
 .event-list__item--upcoming .event-list__item-icon,
 .event-list__item--upcoming .event-list__item-arrow {
   color: #6a6a6a;
