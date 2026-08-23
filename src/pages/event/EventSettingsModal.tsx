@@ -447,7 +447,7 @@ export function EventSettingsModal({
                 className="room-settings__label"
                 htmlFor="room-settings-name"
               >
-                ルーム名変更 (最大10文字まで)
+                ルーム名変更 
               </label>
               <div className="room-settings__name-input-wrap">
                 <input

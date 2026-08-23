@@ -274,8 +274,9 @@ html.is-night-sky .app-shell__main {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #222;
-  color: #fff;
+  background: #fff;
+  color: #222;
+  border: 1.5px solid #222;
   cursor: pointer;
 }
 
