@@ -3,8 +3,14 @@
 ========================================================= */
 
 .chat-view {
+  /*
+   * document.body 直下に portal で描画される (ChatView.tsx 参照)。
+   * top/left を明示しないと static position (通常フローの位置) に置かれ、
+   * 画面下にはみ出す。
+   */
   position: fixed;
 
+  top: 0;
   left: 0;
 
   z-index: 100;

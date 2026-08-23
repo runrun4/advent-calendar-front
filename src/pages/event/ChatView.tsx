@@ -4,6 +4,7 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { ArrowUp, ChevronLeft } from 'lucide-react'
 import { useChat } from '../../hooks/useChat'
 import type { ChatConnectionStatus } from '../../types/chat'
@@ -239,7 +240,14 @@ export function ChatView({
     }
   }
 
-  return (
+  /*
+   * ChatView は position: fixed で全画面表示するが、
+   * 祖先の .page-slider が transform を持つため、そのまま描画すると
+   * fixed の基準がビューポートではなく .page-slider (幅 200%、左に 50% 移動)
+   * になってしまい、画面が左にズレて下端もはみ出す。
+   * createPortal で document.body 直下に描画して、基準をビューポートに戻す。
+   */
+  return createPortal(
     <div className="chat-view">
       <header className="chat-view__header">
         <button
@@ -437,6 +445,7 @@ export function ChatView({
           </button>
         </div>
       </footer>
-    </div>
+    </div>,
+    document.body,
   )
 }
