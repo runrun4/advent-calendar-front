@@ -159,6 +159,7 @@ export function AppHome({
         >
           <div className="page-slider__page">
             <PrivateCalendarPage
+              eventsRefreshKey={eventsRefreshKey}
               onOpenEventAdd={openEventAdd}
             />
           </div>

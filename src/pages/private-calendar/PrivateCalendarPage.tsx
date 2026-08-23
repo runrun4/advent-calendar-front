@@ -1,4 +1,8 @@
-import { useMemo, useRef, useState, type TouchEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
+import {
+  listEvents,
+  type EventSummary,
+} from '../../services/eventApi'
 import { CalendarAddButton } from './CalendarAddButton'
 import { CalendarDays } from './CalendarDays'
 import { CalendarHeader } from './CalendarHeader'
@@ -9,10 +13,12 @@ import { createMonthList, getDays } from './calendarUtils'
 const SWIPE_THRESHOLD = 50
 
 type PrivateCalendarPageProps = {
+  eventsRefreshKey?: number
   onOpenEventAdd?: (startDate?: string) => void
 }
 
 export function PrivateCalendarPage({
+  eventsRefreshKey = 0,
   onOpenEventAdd,
 }: PrivateCalendarPageProps) {
   const months = useMemo(() => createMonthList(), [])
@@ -26,6 +32,7 @@ export function PrivateCalendarPage({
   }, [])
 
   const [monthIndex, setMonthIndex] = useState(MONTH_RANGE)
+  const [events, setEvents] = useState<EventSummary[]>([])
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const didSwipe = useRef(false)
 
@@ -34,6 +41,28 @@ export function PrivateCalendarPage({
   const nextMonth =
     monthIndex < months.length - 1 ? months[monthIndex + 1] : null
   const days = getDays(currentMonth.year, currentMonth.month)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const load = async () => {
+      try {
+        const listed = await listEvents(controller.signal)
+        if (controller.signal.aborted) return
+        setEvents(listed)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.error('GET /v1/events failed (private calendar)', error)
+        setEvents([])
+      }
+    }
+
+    void load()
+
+    return () => {
+      controller.abort()
+    }
+  }, [eventsRefreshKey])
 
   const goToPreviousMonth = () => {
     if (monthIndex <= 0) return
@@ -89,6 +118,7 @@ export function PrivateCalendarPage({
             days={days}
             currentMonth={currentMonth}
             today={today}
+            events={events}
             onSelectDate={(date) => {
               if (!didSwipe.current) onOpenEventAdd?.(date)
               didSwipe.current = false
