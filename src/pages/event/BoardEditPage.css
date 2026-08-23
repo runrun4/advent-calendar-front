@@ -3,11 +3,11 @@
   --board-edit-canvas-bg: #fff;
   --board-edit-tool-bg: #d9d9d9;
   --board-edit-tool-active: #b8b8b8;
-  /* 下のツール4つ + gap と同じ幅に、カラー／太さを揃える */
+  /* 下のツール3つ + gap と同じ幅に、カラー／太さを揃える */
   --board-edit-tool-size: 52px;
   --board-edit-tool-gap: 20px;
   --board-edit-rail-width: calc(
-    4 * var(--board-edit-tool-size) + 3 * var(--board-edit-tool-gap)
+    3 * var(--board-edit-tool-size) + 2 * var(--board-edit-tool-gap)
   );
 
   display: flex;
@@ -173,34 +173,31 @@
   gap: 6px;
 }
 
-.board-edit__color-swatch-wrap {
+.board-edit__color-swatch-slot {
   position: relative;
   display: block;
   width: 100%;
   aspect-ratio: 1;
   min-width: 0;
+}
+
+.board-edit__color-swatch-button {
+  display: block;
+  width: 100%;
+  height: 100%;
   padding: 0;
-  border: none;
+  border: 2px solid rgb(255 255 255 / 80%);
   border-radius: 50%;
-  background: transparent;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
   cursor: pointer;
 }
 
-.board-edit__color-swatch-wrap:disabled {
+.board-edit__color-swatch-button:disabled {
   cursor: wait;
   opacity: 0.55;
 }
 
-.board-edit__color-swatch-face {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 2px solid rgb(255 255 255 / 80%);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
-}
-
-.board-edit__color-swatch-wrap--active .board-edit__color-swatch-face {
+.board-edit__color-swatch-button--active {
   border-color: #fff;
   outline: 3px solid #2f9e55;
   outline-offset: 2px;

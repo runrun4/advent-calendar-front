@@ -276,3 +276,71 @@
 .event-board__action-button:active {
   transform: scale(0.98);
 }
+
+.event-board__action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.event-board__best-shot-input {
+  display: none;
+}
+
+.event-board__best-shots {
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+.event-board__best-shots-label {
+  margin: 0 0 8px;
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.event-board__best-shots-error,
+.event-board__best-shots-status {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+}
+
+.event-board__best-shots-error {
+  color: #c0392b;
+}
+
+.event-board__best-shots-status {
+  color: #666;
+}
+
+.event-board__best-shot-grid {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.event-board__best-shot-item {
+  flex: 0 0 auto;
+  width: 76px;
+}
+
+.event-board__best-shot-image {
+  display: block;
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.event-board__best-shot-name {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #444;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

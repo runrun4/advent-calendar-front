@@ -42,9 +42,6 @@ function ensureDevDistRegisterSW(): Plugin {
     configResolved(config) {
       writeStub(config.root)
     },
-    configureServer() {
-      writeStub(process.cwd())
-    },
   }
 }
 

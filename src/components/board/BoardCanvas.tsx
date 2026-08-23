@@ -6,6 +6,7 @@ import type {
   StickerPayload,
   StrokePayload,
 } from '../../services/boardApi'
+import { isBoardFillStrokePayload } from '../../services/boardApi'
 import {
   boardAspectClass,
   boardViewBox,
@@ -61,28 +62,13 @@ type BoardCanvasProps = {
   ariaLabel?: string
 }
 
-/** ペン長押し全面塗り用のストロークか。左右端を往復して y をほぼ全面カバーしている。 */
-export function isBoardFillStroke(payload: StrokePayload): boolean {
-  if (payload.points.length < 4) return false
-
-  let minY = 1
-  let maxY = 0
-  for (const point of payload.points) {
-    if (point.x > 0.02 && point.x < 0.98) return false
-    minY = Math.min(minY, point.y)
-    maxY = Math.max(maxY, point.y)
-  }
-
-  return minY <= 0.05 && maxY >= 0.95
-}
-
 function strokeElements(
   item: Extract<BoardItem, { kind: 'STROKE' }>,
   viewBox: BoardViewBox,
   pickable: boolean,
   onPick: (() => void) | undefined,
 ) {
-  if (isBoardFillStroke(item.payload)) {
+  if (isBoardFillStrokePayload(item.payload)) {
     return (
       <>
         <rect
@@ -253,6 +239,7 @@ export function BoardCanvas({
       <svg
         className={`board-canvas__svg${
           interactive ? ' board-canvas__svg--interactive' : ''
+        }${dimUnpickableItems ? ' board-canvas__svg--pick-mode' : ''
         }`}
         viewBox={`0 0 ${viewBox.width} ${viewBox.height}`}
         preserveAspectRatio="xMidYMid meet"
@@ -262,18 +249,29 @@ export function BoardCanvas({
         onPointerMove={interactive ? handlePointer(onBoardPointerMove) : undefined}
         onPointerUp={interactive ? handlePointer(onBoardPointerUp) : undefined}
         onPointerCancel={interactive ? handlePointer(onBoardPointerUp) : undefined}
+        onContextMenu={
+          interactive
+            ? (event) => {
+                event.preventDefault()
+              }
+            : undefined
+        }
       >
         {items.map((item) => {
           const pickable = isItemPickable ? isItemPickable(item) : false
           const onPick = onPickItem ? () => onPickItem(item) : undefined
           const dimmed = dimUnpickableItems && !pickable
+          const isFill =
+            item.kind === 'STROKE' && isBoardFillStrokePayload(item.payload)
 
           return (
             <g
               key={item.id}
               className={`board-canvas__item${
                 item.pending ? ' board-canvas__item--pending' : ''
-              }${dimmed ? ' board-canvas__item--dimmed' : ''}`}
+              }${dimmed ? ' board-canvas__item--dimmed' : ''}${
+                isFill ? ' board-canvas__item--fill' : ''
+              }`}
             >
               {item.kind === 'STROKE'
                 ? strokeElements(item, viewBox, pickable, onPick)
@@ -283,7 +281,7 @@ export function BoardCanvas({
         })}
 
         {draftStroke && draftStroke.points.length > 0 ? (
-          isBoardFillStroke(draftStroke) ? (
+          isBoardFillStrokePayload(draftStroke) ? (
             <rect
               x={0}
               y={0}

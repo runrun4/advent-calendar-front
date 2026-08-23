@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, PointerEvent as ReactPointerEvent } from 'react'
 import {
-  Camera,
   ChevronLeft,
   Eraser,
   Pencil,
@@ -12,6 +11,7 @@ import { BoardCanvas } from '../../components/board/BoardCanvas'
 import { useBoard } from '../../hooks/useBoard'
 import {
   BOARD_LIMITS,
+  buildBoardFillPoints,
   type BoardItem,
   type BoardPoint,
 } from '../../services/boardApi'
@@ -34,7 +34,7 @@ type BoardEditPageProps = {
   onBoardEditedChange?: (boardEdited: boolean) => void
 }
 
-type Tool = 'pen' | 'eraser' | 'sticker' | 'camera'
+type Tool = 'pen' | 'eraser' | 'sticker'
 
 /** ペンパレットの初期7色（各スロットは再タップで上書き保存できる） */
 const DEFAULT_PEN_PALETTE = [
@@ -48,6 +48,7 @@ const DEFAULT_PEN_PALETTE = [
 ] as const
 
 const PALETTE_SLOT_COUNT = DEFAULT_PEN_PALETTE.length
+const PALETTE_STORAGE_KEY = 'board-edit:pen-palette'
 
 const PEN_SLIDER_MIN = 2
 const PEN_SLIDER_MAX = 24
@@ -92,39 +93,30 @@ function strokeWidthToSlider(width: number): number {
   )
 }
 
-/** 全面塗り用。左右端を往復してボードを覆う点列。BoardCanvas が rect として描画する。 */
-function buildBoardFillPoints(): BoardPoint[] {
-  const step = Math.max(0.02, BOARD_LIMITS.strokeMaxWidth * 0.7)
-  const points: BoardPoint[] = []
-  let leftToRight = true
-
-  for (let y = 0; y <= 1 + step / 2; y += step) {
-    const clampedY = Math.min(1, y)
-    if (leftToRight) {
-      points.push({ x: 0, y: clampedY }, { x: 1, y: clampedY })
-    } else {
-      points.push({ x: 1, y: clampedY }, { x: 0, y: clampedY })
+function loadPalette(): string[] {
+  try {
+    const stored = localStorage.getItem(PALETTE_STORAGE_KEY)
+    if (!stored) return [...DEFAULT_PEN_PALETTE]
+    const colors = JSON.parse(stored)
+    if (
+      !Array.isArray(colors) ||
+      colors.length !== PALETTE_SLOT_COUNT ||
+      !colors.every(
+        (color) => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color),
+      )
+    ) {
+      return [...DEFAULT_PEN_PALETTE]
     }
-    leftToRight = !leftToRight
+    return colors
+  } catch {
+    return [...DEFAULT_PEN_PALETTE]
   }
-
-  if (points.length < 2) {
-    return [
-      { x: 0, y: 0 },
-      { x: 1, y: 0 },
-      { x: 1, y: 1 },
-      { x: 0, y: 1 },
-    ]
-  }
-
-  return points
 }
 
 const TOOLS: { id: Tool; label: string; icon: typeof Pencil }[] = [
   { id: 'pen', label: 'ペン', icon: Pencil },
   { id: 'eraser', label: '消しゴム', icon: Eraser },
   { id: 'sticker', label: 'ステッカー', icon: Sticker },
-  { id: 'camera', label: 'カメラ', icon: Camera },
 ]
 
 export function BoardEditPage({
@@ -136,9 +128,7 @@ export function BoardEditPage({
   onBoardEditedChange,
 }: BoardEditPageProps) {
   const [activeTool, setActiveTool] = useState<Tool>('pen')
-  const [paletteColors, setPaletteColors] = useState<string[]>(() => [
-    ...DEFAULT_PEN_PALETTE,
-  ])
+  const [paletteColors, setPaletteColors] = useState<string[]>(loadPalette)
   const [selectedPaletteIndex, setSelectedPaletteIndex] = useState(0)
   const penColor =
     paletteColors[selectedPaletteIndex] ?? DEFAULT_PEN_PALETTE[0]
@@ -169,11 +159,10 @@ export function BoardEditPage({
     null,
   )
   const placingRef = useRef<{ pointerId: number; rotation: number } | null>(null)
-  const undoStackRef = useRef<string[]>([])
+  const undoStackRef = useRef<BoardItem[]>([])
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longPressFilledRef = useRef(false)
   const pointerDownPointRef = useRef<BoardPoint | null>(null)
-  const itemsRef = useRef<BoardItem[]>([])
 
   const {
     items,
@@ -188,8 +177,6 @@ export function BoardEditPage({
     removeItem,
   } = useBoard(eventId, refreshKey)
 
-  itemsRef.current = items
-
   const effectiveOrientation = orientation ?? boardOrientation
   const isOwner = eventRole === 'OWNER'
   const showStickerPanel =
@@ -200,6 +187,14 @@ export function BoardEditPage({
       onBoardEditedChange?.(true)
     }
   }, [boardEdited, onBoardEditedChange])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(paletteColors))
+    } catch {
+      // プライベートモード等で保存できなくても描画操作は継続する。
+    }
+  }, [paletteColors])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -241,8 +236,8 @@ export function BoardEditPage({
     return () => clearLongPressTimer()
   }, [clearLongPressTimer])
 
-  const pushUndoItem = useCallback((itemId: string) => {
-    undoStackRef.current.push(itemId)
+  const pushUndoItem = useCallback((item: BoardItem) => {
+    undoStackRef.current.push(item)
     if (undoStackRef.current.length > MAX_UNDO_STEPS) {
       undoStackRef.current.shift()
     }
@@ -251,17 +246,14 @@ export function BoardEditPage({
 
   const handleUndo = useCallback(() => {
     while (undoStackRef.current.length > 0) {
-      const itemId = undoStackRef.current.pop()
-      if (!itemId) break
-
-      const target = itemsRef.current.find((item) => item.id === itemId)
+      const target = undoStackRef.current.pop()
       if (!target || target.pending) {
         continue
       }
 
       setCanUndo(undoStackRef.current.length > 0)
       void removeItem(target).catch(() => {
-        undoStackRef.current.push(itemId)
+        undoStackRef.current.push(target)
         setCanUndo(true)
       })
       return
@@ -301,7 +293,7 @@ export function BoardEditPage({
       width: BOARD_LIMITS.strokeMaxWidth,
     })
       .then((saved) => {
-        pushUndoItem(saved.id)
+        pushUndoItem(saved)
         setDraftFillColor(null)
       })
       .catch(() => {
@@ -438,7 +430,7 @@ export function BoardEditPage({
 
         void addStroke({ points, color: penColor, width: penWidth })
           .then((saved) => {
-            pushUndoItem(saved.id)
+            pushUndoItem(saved)
           })
           .catch(() => {
             // エラー表示は useBoard の error 側で行う。
@@ -460,7 +452,7 @@ export function BoardEditPage({
           width: penWidth,
         })
           .then((saved) => {
-            pushUndoItem(saved.id)
+            pushUndoItem(saved)
           })
           .catch(() => {
             // エラー表示は useBoard の error 側で行う。
@@ -487,7 +479,7 @@ export function BoardEditPage({
           rotation: placing.rotation,
         })
           .then((saved) => {
-            pushUndoItem(saved.id)
+            pushUndoItem(saved)
           })
           .catch(() => {
             // エラー表示は useBoard の error 側で行う。
@@ -568,8 +560,7 @@ export function BoardEditPage({
     setSelectedPaletteIndex(index)
   }
 
-  const isCanvasInteractive =
-    activeTool !== 'camera' && !isLoading && !showStickerPanel
+  const isCanvasInteractive = !isLoading && !showStickerPanel
 
   const statusMessage = error
     ? error
@@ -721,27 +712,26 @@ export function BoardEditPage({
               <span className="board-edit__color-label">カラー</span>
               <div className="board-edit__color-palette">
                 {paletteColors.slice(0, PALETTE_SLOT_COUNT).map((color, index) => (
-                  <button
+                  <div
                     key={`palette-${index}`}
-                    type="button"
-                    className={`board-edit__color-swatch-wrap${
-                      selectedPaletteIndex === index
-                        ? ' board-edit__color-swatch-wrap--active'
-                        : ''
-                    }`}
-                    aria-label={
-                      selectedPaletteIndex === index
-                        ? `ペンの色 ${index + 1}（もう一度押すと変更）`
-                        : `ペンの色 ${index + 1} を選択`
-                    }
-                    aria-pressed={selectedPaletteIndex === index}
-                    disabled={isLoading}
-                    onClick={() => handlePaletteSwatchClick(index)}
+                    className="board-edit__color-swatch-slot"
                   >
-                    <span
-                      className="board-edit__color-swatch-face"
+                    <button
+                      type="button"
+                      className={`board-edit__color-swatch-button${
+                        selectedPaletteIndex === index
+                          ? ' board-edit__color-swatch-button--active'
+                          : ''
+                      }`}
                       style={{ backgroundColor: color }}
-                      aria-hidden="true"
+                      aria-label={
+                        selectedPaletteIndex === index
+                          ? `ペンの色 ${index + 1}（もう一度押すと変更）`
+                          : `ペンの色 ${index + 1} を選択`
+                      }
+                      aria-pressed={selectedPaletteIndex === index}
+                      disabled={isLoading}
+                      onClick={() => handlePaletteSwatchClick(index)}
                     />
                     <input
                       ref={(element) => {
@@ -756,7 +746,7 @@ export function BoardEditPage({
                       }
                       aria-hidden="true"
                     />
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -771,9 +761,6 @@ export function BoardEditPage({
           </p>
         ) : null}
 
-        {activeTool === 'camera' ? (
-          <p className="board-edit__note">写真の追加は近日対応</p>
-        ) : null}
       </section>
 
       <footer className="board-edit__toolbar">
