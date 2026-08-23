@@ -103,11 +103,13 @@ export function AppHome({
    * AppHome は認証が済んだ後にしか描画されないので、
    * ここに来た時点で承認APIを叩いてよい。
    */
-  const { result: inviteResult, dismissResult: dismissInviteResult } =
-    useInviteAccept({
-      enabled: user !== null,
-      onJoined: refreshEvents,
-    })
+  const {
+    result: inviteResult,
+    dismissResult: dismissInviteResult,
+  } = useInviteAccept({
+    enabled: user !== null,
+    onJoined: refreshEvents,
+  })
 
   const openEventAdd = (
     startDate?: string,
@@ -164,6 +166,7 @@ export function AppHome({
           <div className="page-slider__page">
             <EventMainPage
               profileIconUrl={user?.iconUrl}
+              currentUserId={user?.id ?? null}
               eventsRefreshKey={
                 eventsRefreshKey
               }
@@ -229,7 +232,9 @@ export function AppHome({
         onCreated={(event) => {
           setEventsRefreshKey((key) => key + 1)
           setPendingEvent(event)
-          setIsWaitingForEventTransition(activeTab !== 'event')
+          setIsWaitingForEventTransition(
+            activeTab !== 'event',
+          )
           setActiveTab('event')
         }}
       />
@@ -241,6 +246,7 @@ export function AppHome({
           if (inviteResult?.kind !== 'failed') {
             setActiveTab('event')
           }
+
           dismissInviteResult()
         }}
       />

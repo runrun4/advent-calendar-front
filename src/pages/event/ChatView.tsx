@@ -59,8 +59,11 @@ export function ChatView({
 
   const [draft, setDraft] = useState('')
 
-  const inputRef = useRef<HTMLInputElement>(null)
-  const mainRef = useRef<HTMLElement>(null)
+  const inputRef =
+    useRef<HTMLInputElement>(null)
+
+  const mainRef =
+    useRef<HTMLElement>(null)
 
   /*
    * ChatView 内のスクロール領域だけを
@@ -91,7 +94,8 @@ export function ChatView({
    */
   useEffect(() => {
     const updateViewportHeight = () => {
-      const viewport = window.visualViewport
+      const viewport =
+        window.visualViewport
 
       if (!viewport) {
         document.documentElement.style.setProperty(
@@ -109,7 +113,8 @@ export function ChatView({
 
     updateViewportHeight()
 
-    const viewport = window.visualViewport
+    const viewport =
+      window.visualViewport
 
     viewport?.addEventListener(
       'resize',
@@ -161,7 +166,8 @@ export function ChatView({
    * スクロール領域だけを一番下へ移動する。
    */
   useEffect(() => {
-    const viewport = window.visualViewport
+    const viewport =
+      window.visualViewport
 
     if (!viewport) {
       return
@@ -194,7 +200,7 @@ export function ChatView({
     }
 
     /*
-     * ここは await の前に実行する。
+     * await の前に実行する。
      *
      * iOS Safari では await 後の focus() は
      * ユーザー操作のコンテキストから外れるため、
@@ -269,7 +275,9 @@ export function ChatView({
           />
 
           <span className="chat-view__ws-label">
-            {connectionStatusLabel(connectionStatus)}
+            {connectionStatusLabel(
+              connectionStatus,
+            )}
           </span>
         </div>
       </header>
@@ -290,7 +298,8 @@ export function ChatView({
           <ul className="chat-view__messages">
             {messages.map((message) => {
               const isOwn =
-                message.sender.id === currentUserId
+                message.sender.id ===
+                currentUserId
 
               if (isOwn) {
                 return (
@@ -300,7 +309,9 @@ export function ChatView({
                   >
                     <time
                       className="chat-view__time"
-                      dateTime={message.sentAt}
+                      dateTime={
+                        message.sentAt
+                      }
                     >
                       {formatMessageTime(
                         message.sentAt,
@@ -326,10 +337,12 @@ export function ChatView({
                       className="chat-view__avatar"
                       aria-hidden="true"
                     >
-                      {message.sender.avatarUrl ? (
+                      {message.sender
+                        .avatarUrl ? (
                         <img
                           src={
-                            message.sender.avatarUrl
+                            message.sender
+                              .avatarUrl
                           }
                           alt=""
                           className="chat-view__avatar-image"
@@ -346,7 +359,10 @@ export function ChatView({
 
                     <div className="chat-view__content">
                       <span className="chat-view__sender-name">
-                        {message.sender.displayName}
+                        {
+                          message.sender
+                            .displayName
+                        }
                       </span>
 
                       <div className="chat-view__bubble chat-view__bubble--other">
@@ -359,7 +375,9 @@ export function ChatView({
 
                   <time
                     className="chat-view__time"
-                    dateTime={message.sentAt}
+                    dateTime={
+                      message.sentAt
+                    }
                   >
                     {formatMessageTime(
                       message.sentAt,
@@ -387,7 +405,9 @@ export function ChatView({
             placeholder=""
             value={draft}
             onChange={(event) =>
-              setDraft(event.target.value)
+              setDraft(
+                event.target.value,
+              )
             }
             onKeyDown={handleKeyDown}
             aria-label="メッセージを入力"
@@ -400,12 +420,15 @@ export function ChatView({
             className="chat-view__send-button"
             aria-label="送信"
             disabled={
-              !draft.trim() || isSending
+              !draft.trim() ||
+              isSending
             }
             onPointerDown={(event) =>
               event.preventDefault()
             }
-            onClick={() => void handleSubmit()}
+            onClick={() =>
+              void handleSubmit()
+            }
           >
             <ArrowUp
               size={22}
