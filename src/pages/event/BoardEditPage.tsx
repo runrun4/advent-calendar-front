@@ -1,10 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PointerEvent as ReactPointerEvent } from 'react'
-import { Camera, ChevronLeft, Eraser, Pencil, Sticker } from 'lucide-react'
+import type { ChangeEvent, PointerEvent as ReactPointerEvent } from 'react'
+import {
+  Camera,
+  ChevronLeft,
+  Eraser,
+  Pencil,
+  Sticker,
+  Undo2,
+} from 'lucide-react'
 import { BoardCanvas } from '../../components/board/BoardCanvas'
-import { BoardStickerPicker } from '../../components/board/BoardStickerPicker'
 import { useBoard } from '../../hooks/useBoard'
-import type { BoardItem, BoardPoint } from '../../services/boardApi'
+import {
+  BOARD_LIMITS,
+  type BoardItem,
+  type BoardPoint,
+} from '../../services/boardApi'
 import {
   getEventCollections,
   type BoardOrientation,
@@ -26,12 +36,21 @@ type BoardEditPageProps = {
 
 type Tool = 'pen' | 'eraser' | 'sticker' | 'camera'
 
-const PEN_COLORS = ['#111111', '#e2483d', '#f0a92f', '#2f9e5a', '#2f6fe4']
+/** ペンパレットの初期7色（各スロットは再タップで上書き保存できる） */
+const DEFAULT_PEN_PALETTE = [
+  '#1f1f1f',
+  '#e53935',
+  '#fb8c00',
+  '#fdd835',
+  '#43a047',
+  '#1e88e5',
+  '#8e24aa',
+] as const
 
-const PEN_WIDTHS: { id: string; label: string; value: number }[] = [
-  { id: 'thin', label: '細', value: 0.008 },
-  { id: 'bold', label: '太', value: 0.02 },
-]
+const PALETTE_SLOT_COUNT = DEFAULT_PEN_PALETTE.length
+
+const PEN_SLIDER_MIN = 2
+const PEN_SLIDER_MAX = 24
 
 /** ステッカーの既定サイズ(ボード幅に対する比率)。 */
 const STICKER_SCALE = 0.18
@@ -42,12 +61,63 @@ const STICKER_MAX_TILT = 8
 /** これ未満しか動いていない移動は点として捨てる(点数を抑えるため)。 */
 const MIN_POINT_DISTANCE = 0.004
 
+/** ペン選択時、ボード長押しで全面塗り */
+const BOARD_FILL_LONG_PRESS_MS = 500
+
+/** 長押し判定をキャンセルする移動量（正規化座標） */
+const LONG_PRESS_MOVE_THRESHOLD = 0.012
+
+const MAX_UNDO_STEPS = 40
+
 function randomTilt(): number {
   return (Math.random() * 2 - 1) * STICKER_MAX_TILT
 }
 
 function distance(a: BoardPoint, b: BoardPoint): number {
   return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+function sliderToStrokeWidth(sliderValue: number): number {
+  const { strokeMinWidth, strokeMaxWidth } = BOARD_LIMITS
+  const t =
+    (sliderValue - PEN_SLIDER_MIN) / (PEN_SLIDER_MAX - PEN_SLIDER_MIN)
+  return strokeMinWidth + t * (strokeMaxWidth - strokeMinWidth)
+}
+
+function strokeWidthToSlider(width: number): number {
+  const { strokeMinWidth, strokeMaxWidth } = BOARD_LIMITS
+  const t = (width - strokeMinWidth) / (strokeMaxWidth - strokeMinWidth)
+  return Math.round(
+    PEN_SLIDER_MIN + t * (PEN_SLIDER_MAX - PEN_SLIDER_MIN),
+  )
+}
+
+/** 全面塗り用。左右端を往復してボードを覆う点列。BoardCanvas が rect として描画する。 */
+function buildBoardFillPoints(): BoardPoint[] {
+  const step = Math.max(0.02, BOARD_LIMITS.strokeMaxWidth * 0.7)
+  const points: BoardPoint[] = []
+  let leftToRight = true
+
+  for (let y = 0; y <= 1 + step / 2; y += step) {
+    const clampedY = Math.min(1, y)
+    if (leftToRight) {
+      points.push({ x: 0, y: clampedY }, { x: 1, y: clampedY })
+    } else {
+      points.push({ x: 1, y: clampedY }, { x: 0, y: clampedY })
+    }
+    leftToRight = !leftToRight
+  }
+
+  if (points.length < 2) {
+    return [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 0, y: 1 },
+    ]
+  }
+
+  return points
 }
 
 const TOOLS: { id: Tool; label: string; icon: typeof Pencil }[] = [
@@ -66,14 +136,23 @@ export function BoardEditPage({
   onBoardEditedChange,
 }: BoardEditPageProps) {
   const [activeTool, setActiveTool] = useState<Tool>('pen')
-  const [penColor, setPenColor] = useState(PEN_COLORS[0])
-  const [penWidth, setPenWidth] = useState(PEN_WIDTHS[0].value)
+  const [paletteColors, setPaletteColors] = useState<string[]>(() => [
+    ...DEFAULT_PEN_PALETTE,
+  ])
+  const [selectedPaletteIndex, setSelectedPaletteIndex] = useState(0)
+  const penColor =
+    paletteColors[selectedPaletteIndex] ?? DEFAULT_PEN_PALETTE[0]
+  const [penSizeSlider, setPenSizeSlider] = useState(
+    strokeWidthToSlider(0.008),
+  )
+  const penWidth = sliderToStrokeWidth(penSizeSlider)
   const [selectedSticker, setSelectedSticker] =
     useState<CollectedSticker | null>(null)
   const [stickers, setStickers] = useState<CollectedSticker[]>([])
   const [isLoadingStickers, setIsLoadingStickers] = useState(true)
   const [stickersError, setStickersError] = useState<string | null>(null)
   const [hint, setHint] = useState<string | null>(null)
+  const [canUndo, setCanUndo] = useState(false)
 
   const [draftPoints, setDraftPoints] = useState<BoardPoint[]>([])
   const [draftSticker, setDraftSticker] = useState<{
@@ -83,12 +162,18 @@ export function BoardEditPage({
     scale: number
     rotation: number
   } | null>(null)
+  const [draftFillColor, setDraftFillColor] = useState<string | null>(null)
 
   /** 描画中のポインタ。点の蓄積は再描画を挟まずに ref で持つ。 */
   const strokeRef = useRef<{ pointerId: number; points: BoardPoint[] } | null>(
     null,
   )
   const placingRef = useRef<{ pointerId: number; rotation: number } | null>(null)
+  const undoStackRef = useRef<string[]>([])
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressFilledRef = useRef(false)
+  const pointerDownPointRef = useRef<BoardPoint | null>(null)
+  const itemsRef = useRef<BoardItem[]>([])
 
   const {
     items,
@@ -103,8 +188,12 @@ export function BoardEditPage({
     removeItem,
   } = useBoard(eventId, refreshKey)
 
+  itemsRef.current = items
+
   const effectiveOrientation = orientation ?? boardOrientation
   const isOwner = eventRole === 'OWNER'
+  const showStickerPanel =
+    activeTool === 'sticker' && selectedSticker === null
 
   useEffect(() => {
     if (boardEdited) {
@@ -141,6 +230,46 @@ export function BoardEditPage({
     }
   }, [eventId])
 
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current !== null) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => clearLongPressTimer()
+  }, [clearLongPressTimer])
+
+  const pushUndoItem = useCallback((itemId: string) => {
+    undoStackRef.current.push(itemId)
+    if (undoStackRef.current.length > MAX_UNDO_STEPS) {
+      undoStackRef.current.shift()
+    }
+    setCanUndo(true)
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    while (undoStackRef.current.length > 0) {
+      const itemId = undoStackRef.current.pop()
+      if (!itemId) break
+
+      const target = itemsRef.current.find((item) => item.id === itemId)
+      if (!target || target.pending) {
+        continue
+      }
+
+      setCanUndo(undoStackRef.current.length > 0)
+      void removeItem(target).catch(() => {
+        undoStackRef.current.push(itemId)
+        setCanUndo(true)
+      })
+      return
+    }
+
+    setCanUndo(false)
+  }, [removeItem])
+
   const canDeleteItem = useCallback(
     (item: BoardItem) =>
       !item.pending &&
@@ -159,18 +288,52 @@ export function BoardEditPage({
     [canDeleteItem, removeItem],
   )
 
+  const fillBoardWithPenColor = useCallback(() => {
+    longPressFilledRef.current = true
+    strokeRef.current = null
+    setDraftPoints([])
+    setDraftFillColor(penColor)
+    setHint(null)
+
+    void addStroke({
+      points: buildBoardFillPoints(),
+      color: penColor,
+      width: BOARD_LIMITS.strokeMaxWidth,
+    })
+      .then((saved) => {
+        pushUndoItem(saved.id)
+        setDraftFillColor(null)
+      })
+      .catch(() => {
+        setDraftFillColor(null)
+      })
+  }, [addStroke, penColor, pushUndoItem])
+
+  const startStrokeFromPoint = useCallback((point: BoardPoint, pointerId: number) => {
+    strokeRef.current = { pointerId, points: [point] }
+    setDraftPoints([point])
+  }, [])
+
   const handlePointerDown = useCallback(
     (point: BoardPoint, event: ReactPointerEvent<SVGSVGElement>) => {
       if (activeTool === 'pen') {
         event.currentTarget.setPointerCapture(event.pointerId)
-        strokeRef.current = { pointerId: event.pointerId, points: [point] }
-        setDraftPoints([point])
+        clearLongPressTimer()
+        longPressFilledRef.current = false
+        pointerDownPointRef.current = point
+        strokeRef.current = null
+        setDraftPoints([])
+
+        longPressTimerRef.current = setTimeout(() => {
+          longPressTimerRef.current = null
+          fillBoardWithPenColor()
+        }, BOARD_FILL_LONG_PRESS_MS)
         return
       }
 
       if (activeTool === 'sticker') {
         if (!selectedSticker) {
-          setHint('下のリストから貼りたいステッカーを選んでね')
+          setHint('ステッカーを選んでからボードに貼ろう')
           return
         }
 
@@ -187,11 +350,39 @@ export function BoardEditPage({
         })
       }
     },
-    [activeTool, selectedSticker],
+    [
+      activeTool,
+      clearLongPressTimer,
+      fillBoardWithPenColor,
+      selectedSticker,
+    ],
   )
 
   const handlePointerMove = useCallback(
     (point: BoardPoint, event: ReactPointerEvent<SVGSVGElement>) => {
+      if (
+        longPressTimerRef.current !== null &&
+        pointerDownPointRef.current &&
+        activeTool === 'pen'
+      ) {
+        const moved =
+          distance(pointerDownPointRef.current, point) >
+          LONG_PRESS_MOVE_THRESHOLD
+
+        if (moved) {
+          clearLongPressTimer()
+          if (!longPressFilledRef.current) {
+            startStrokeFromPoint(pointerDownPointRef.current, event.pointerId)
+            const stroke = strokeRef.current
+            if (stroke) {
+              stroke.points.push(point)
+              setDraftPoints([...stroke.points])
+            }
+          }
+        }
+        return
+      }
+
       const stroke = strokeRef.current
       if (stroke && stroke.pointerId === event.pointerId) {
         const last = stroke.points[stroke.points.length - 1]
@@ -209,7 +400,7 @@ export function BoardEditPage({
         )
       }
     },
-    [],
+    [activeTool, clearLongPressTimer, startStrokeFromPoint],
   )
 
   const handlePointerUp = useCallback(
@@ -218,10 +409,22 @@ export function BoardEditPage({
         event.currentTarget.releasePointerCapture(event.pointerId)
       }
 
+      const wasLongPressPending = longPressTimerRef.current !== null
+      clearLongPressTimer()
+
+      if (longPressFilledRef.current) {
+        longPressFilledRef.current = false
+        pointerDownPointRef.current = null
+        strokeRef.current = null
+        setDraftPoints([])
+        return
+      }
+
       const stroke = strokeRef.current
       if (stroke && stroke.pointerId === event.pointerId) {
         strokeRef.current = null
         setDraftPoints([])
+        pointerDownPointRef.current = null
 
         const points = [...stroke.points]
         const last = points[points.length - 1]
@@ -233,11 +436,39 @@ export function BoardEditPage({
           points.push(points[0])
         }
 
-        void addStroke({ points, color: penColor, width: penWidth }).catch(() => {
-          // エラー表示は useBoard の error 側で行う。
-        })
+        void addStroke({ points, color: penColor, width: penWidth })
+          .then((saved) => {
+            pushUndoItem(saved.id)
+          })
+          .catch(() => {
+            // エラー表示は useBoard の error 側で行う。
+          })
         return
       }
+
+      // 長押し待ちのまま離した＝短いタップ。点を打つ。
+      if (
+        wasLongPressPending &&
+        activeTool === 'pen' &&
+        pointerDownPointRef.current
+      ) {
+        const tapPoint = pointerDownPointRef.current
+        pointerDownPointRef.current = null
+        void addStroke({
+          points: [tapPoint, tapPoint],
+          color: penColor,
+          width: penWidth,
+        })
+          .then((saved) => {
+            pushUndoItem(saved.id)
+          })
+          .catch(() => {
+            // エラー表示は useBoard の error 側で行う。
+          })
+        return
+      }
+
+      pointerDownPointRef.current = null
 
       const placing = placingRef.current
       if (placing && placing.pointerId === event.pointerId) {
@@ -254,24 +485,91 @@ export function BoardEditPage({
           y: point.y,
           scale: STICKER_SCALE,
           rotation: placing.rotation,
-        }).catch(() => {
-          // エラー表示は useBoard の error 側で行う。
         })
+          .then((saved) => {
+            pushUndoItem(saved.id)
+          })
+          .catch(() => {
+            // エラー表示は useBoard の error 側で行う。
+          })
       }
     },
-    [addSticker, addStroke, penColor, penWidth, selectedSticker],
+    [
+      activeTool,
+      addSticker,
+      addStroke,
+      clearLongPressTimer,
+      penColor,
+      penWidth,
+      pushUndoItem,
+      selectedSticker,
+    ],
   )
 
   const selectTool = (tool: Tool) => {
+    clearLongPressTimer()
     setActiveTool(tool)
     setHint(null)
     strokeRef.current = null
     placingRef.current = null
+    pointerDownPointRef.current = null
     setDraftPoints([])
     setDraftSticker(null)
+    setDraftFillColor(null)
+    if (tool !== 'sticker') {
+      setSelectedSticker(null)
+    }
   }
 
-  const isCanvasInteractive = activeTool !== 'camera' && !isLoading
+  const handleStickerSelect = (collected: CollectedSticker) => {
+    setSelectedSticker(collected)
+    setHint('ボードをタップして貼ろう')
+  }
+
+  const handlePenSizeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setPenSizeSlider(Number(event.target.value))
+  }
+
+  const paletteInputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  /** 1回目は選択のみ。選択済みスロットの2回目でカラーピッカーを開く。 */
+  const handlePaletteSwatchClick = (index: number) => {
+    if (isLoading) return
+
+    if (selectedPaletteIndex !== index) {
+      setSelectedPaletteIndex(index)
+      return
+    }
+
+    const input = paletteInputRefs.current[index]
+    if (!input) return
+
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker()
+        return
+      } catch {
+        // showPicker 非対応時は click にフォールバック
+      }
+    }
+    input.click()
+  }
+
+  const handlePaletteColorChange = (
+    index: number,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const nextColor = event.target.value
+    setPaletteColors((prev) => {
+      const next = [...prev]
+      next[index] = nextColor
+      return next
+    })
+    setSelectedPaletteIndex(index)
+  }
+
+  const isCanvasInteractive =
+    activeTool !== 'camera' && !isLoading && !showStickerPanel
 
   const statusMessage = error
     ? error
@@ -280,6 +578,17 @@ export function BoardEditPage({
       : isLoading
         ? '読み込み中…'
         : hint
+
+  const draftStroke =
+    draftFillColor != null
+      ? {
+          points: buildBoardFillPoints(),
+          color: draftFillColor,
+          width: BOARD_LIMITS.strokeMaxWidth,
+        }
+      : draftPoints.length > 0
+        ? { points: draftPoints, color: penColor, width: penWidth }
+        : null
 
   return (
     <div className="board-edit">
@@ -293,6 +602,15 @@ export function BoardEditPage({
           <ChevronLeft size={28} strokeWidth={2} />
         </button>
         <h1 className="board-edit__title">編集</h1>
+        <button
+          type="button"
+          className="board-edit__undo-button"
+          onClick={handleUndo}
+          disabled={!canUndo || isLoading}
+          aria-label="一つ戻る"
+        >
+          <Undo2 size={22} strokeWidth={2} />
+        </button>
       </header>
 
       <p
@@ -305,80 +623,144 @@ export function BoardEditPage({
       </p>
 
       <main className="board-edit__main">
-        <BoardCanvas
-          className="board-edit__canvas"
-          orientation={effectiveOrientation}
-          items={items}
-          interactive={isCanvasInteractive}
-          draftStroke={
-            draftPoints.length > 0
-              ? { points: draftPoints, color: penColor, width: penWidth }
-              : null
-          }
-          draftSticker={draftSticker}
-          isItemPickable={activeTool === 'eraser' ? canDeleteItem : undefined}
-          onPickItem={activeTool === 'eraser' ? handlePickItem : undefined}
-          dimUnpickableItems={activeTool === 'eraser'}
-          onBoardPointerDown={handlePointerDown}
-          onBoardPointerMove={handlePointerMove}
-          onBoardPointerUp={handlePointerUp}
-          emptyContent={
-            <span className="board-edit__empty">
-              ここに描いたり
-              <br />
-              ステッカーを貼ろう
-            </span>
-          }
-        />
+        {showStickerPanel ? (
+          <section className="board-edit__sticker-panel" aria-label="ステッカー選択">
+            <div className="board-edit__sticker-panel-header">
+              <h2>ステッカーを選択</h2>
+              <p>ステッカーをタップしてください</p>
+            </div>
+
+            {isLoadingStickers ? (
+              <p className="board-edit__sticker-panel-status">読み込み中…</p>
+            ) : stickersError ? (
+              <p className="board-edit__sticker-panel-status board-edit__sticker-panel-status--error">
+                {stickersError}
+              </p>
+            ) : stickers.length === 0 ? (
+              <p className="board-edit__sticker-panel-status">
+                まだステッカーがありません。カレンダーを開いて集めよう。
+              </p>
+            ) : (
+              <div className="board-edit__sticker-list">
+                {stickers.map((collected) => (
+                  <button
+                    key={collected.grantId}
+                    type="button"
+                    className="board-edit__sticker-item"
+                    onClick={() => handleStickerSelect(collected)}
+                  >
+                    {collected.sticker.imageUrl ? (
+                      <img
+                        src={collected.sticker.imageUrl}
+                        alt={collected.sticker.name}
+                      />
+                    ) : (
+                      <span
+                        className="board-edit__sticker-placeholder"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : (
+          <BoardCanvas
+            className="board-edit__canvas"
+            orientation={effectiveOrientation}
+            items={items}
+            interactive={isCanvasInteractive}
+            draftStroke={draftStroke}
+            draftSticker={draftSticker}
+            isItemPickable={activeTool === 'eraser' ? canDeleteItem : undefined}
+            onPickItem={activeTool === 'eraser' ? handlePickItem : undefined}
+            dimUnpickableItems={activeTool === 'eraser'}
+            onBoardPointerDown={handlePointerDown}
+            onBoardPointerMove={handlePointerMove}
+            onBoardPointerUp={handlePointerUp}
+            emptyContent={
+              <span className="board-edit__empty">
+                ここに描いたり
+                <br />
+                ステッカーを貼ろう
+              </span>
+            }
+          />
+        )}
+
+        {activeTool === 'sticker' && selectedSticker ? (
+          <p className="board-edit__placement-hint">
+            選択中：{selectedSticker.sticker.name}
+          </p>
+        ) : null}
       </main>
 
       <section className="board-edit__panel" aria-label={`${activeTool}の設定`}>
         {activeTool === 'pen' ? (
-          <div className="board-edit__pen-options">
-            <div className="board-edit__swatches">
-              {PEN_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`board-edit__swatch${
-                    penColor === color ? ' board-edit__swatch--active' : ''
-                  }`}
-                  style={{ backgroundColor: color }}
-                  aria-label={`色 ${color}`}
-                  aria-pressed={penColor === color}
-                  onClick={() => setPenColor(color)}
-                />
-              ))}
+          <>
+            <div className="board-edit__size-control">
+              <div className="board-edit__size-header">
+                <span className="board-edit__size-label">ペンの太さ</span>
+                <span className="board-edit__size-value">{penSizeSlider}px</span>
+              </div>
+              <input
+                type="range"
+                className="board-edit__size-slider"
+                min={PEN_SLIDER_MIN}
+                max={PEN_SLIDER_MAX}
+                step={1}
+                value={penSizeSlider}
+                onChange={handlePenSizeChange}
+                disabled={isLoading}
+                aria-label="ペンの太さ"
+              />
             </div>
 
-            <div className="board-edit__widths">
-              {PEN_WIDTHS.map((width) => (
-                <button
-                  key={width.id}
-                  type="button"
-                  className={`board-edit__width${
-                    penWidth === width.value ? ' board-edit__width--active' : ''
-                  }`}
-                  aria-pressed={penWidth === width.value}
-                  onClick={() => setPenWidth(width.value)}
-                >
-                  {width.label}
-                </button>
-              ))}
+            <div className="board-edit__color-control" aria-label="ペンの色">
+              <span className="board-edit__color-label">カラー</span>
+              <div className="board-edit__color-palette">
+                {paletteColors.slice(0, PALETTE_SLOT_COUNT).map((color, index) => (
+                  <button
+                    key={`palette-${index}`}
+                    type="button"
+                    className={`board-edit__color-swatch-wrap${
+                      selectedPaletteIndex === index
+                        ? ' board-edit__color-swatch-wrap--active'
+                        : ''
+                    }`}
+                    aria-label={
+                      selectedPaletteIndex === index
+                        ? `ペンの色 ${index + 1}（もう一度押すと変更）`
+                        : `ペンの色 ${index + 1} を選択`
+                    }
+                    aria-pressed={selectedPaletteIndex === index}
+                    disabled={isLoading}
+                    onClick={() => handlePaletteSwatchClick(index)}
+                  >
+                    <span
+                      className="board-edit__color-swatch-face"
+                      style={{ backgroundColor: color }}
+                      aria-hidden="true"
+                    />
+                    <input
+                      ref={(element) => {
+                        paletteInputRefs.current[index] = element
+                      }}
+                      type="color"
+                      className="board-edit__color-swatch-input"
+                      value={color}
+                      tabIndex={-1}
+                      onChange={(event) =>
+                        handlePaletteColorChange(index, event)
+                      }
+                      aria-hidden="true"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ) : null}
-
-        {activeTool === 'sticker' ? (
-          <div className="board-picker">
-            <BoardStickerPicker
-              stickers={stickers}
-              isLoading={isLoadingStickers}
-              errorMessage={stickersError}
-              selectedStickerId={selectedSticker?.sticker.id ?? null}
-              onSelect={setSelectedSticker}
-            />
-          </div>
+          </>
         ) : null}
 
         {activeTool === 'eraser' ? (
@@ -404,7 +786,18 @@ export function BoardEditPage({
             }`}
             aria-label={label}
             aria-pressed={activeTool === id}
-            onClick={() => selectTool(id)}
+            onClick={() => {
+              if (
+                id === 'sticker' &&
+                activeTool === 'sticker' &&
+                selectedSticker !== null
+              ) {
+                setSelectedSticker(null)
+                setHint(null)
+                return
+              }
+              selectTool(id)
+            }}
           >
             <Icon size={22} strokeWidth={2} />
           </button>

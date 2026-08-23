@@ -61,12 +61,55 @@ type BoardCanvasProps = {
   ariaLabel?: string
 }
 
+/** ペン長押し全面塗り用のストロークか。左右端を往復して y をほぼ全面カバーしている。 */
+export function isBoardFillStroke(payload: StrokePayload): boolean {
+  if (payload.points.length < 4) return false
+
+  let minY = 1
+  let maxY = 0
+  for (const point of payload.points) {
+    if (point.x > 0.02 && point.x < 0.98) return false
+    minY = Math.min(minY, point.y)
+    maxY = Math.max(maxY, point.y)
+  }
+
+  return minY <= 0.05 && maxY >= 0.95
+}
+
 function strokeElements(
   item: Extract<BoardItem, { kind: 'STROKE' }>,
   viewBox: BoardViewBox,
   pickable: boolean,
   onPick: (() => void) | undefined,
 ) {
+  if (isBoardFillStroke(item.payload)) {
+    return (
+      <>
+        <rect
+          x={0}
+          y={0}
+          width={viewBox.width}
+          height={viewBox.height}
+          fill={item.payload.color}
+        />
+        {pickable && onPick ? (
+          <rect
+            className="board-canvas__hit"
+            x={0}
+            y={0}
+            width={viewBox.width}
+            height={viewBox.height}
+            fill="transparent"
+            onPointerDown={(event) => {
+              event.stopPropagation()
+              onPick()
+            }}
+          />
+        ) : null}
+      </>
+    )
+  }
+
   const points = toPolylinePoints(item.payload.points, viewBox)
   const width = item.payload.width * viewBox.width
 
@@ -240,14 +283,24 @@ export function BoardCanvas({
         })}
 
         {draftStroke && draftStroke.points.length > 0 ? (
-          <polyline
-            points={toPolylinePoints(draftStroke.points, viewBox)}
-            fill="none"
-            stroke={draftStroke.color}
-            strokeWidth={draftStroke.width * viewBox.width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          isBoardFillStroke(draftStroke) ? (
+            <rect
+              x={0}
+              y={0}
+              width={viewBox.width}
+              height={viewBox.height}
+              fill={draftStroke.color}
+            />
+          ) : (
+            <polyline
+              points={toPolylinePoints(draftStroke.points, viewBox)}
+              fill="none"
+              stroke={draftStroke.color}
+              strokeWidth={draftStroke.width * viewBox.width}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )
         ) : null}
 
         {draftSticker ? (

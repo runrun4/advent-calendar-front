@@ -1,4 +1,7 @@
 import { createLogger, defineConfig } from 'vite'
+import type { Plugin } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl' 
@@ -15,6 +18,34 @@ logger.info = (message, options) => {
     : message
 
   logInfo(displayedMessage, options)
+}
+
+/**
+ * VitePWA(devOptions.enabled) は /dev-dist/registerSW.js を参照するが、
+ * gitignore された空ディレクトリだと ENOENT になる。無ければ最小スタブを置く。
+ */
+function ensureDevDistRegisterSW(): Plugin {
+  const writeStub = (root: string) => {
+    const dir = path.resolve(root, 'dev-dist')
+    fs.mkdirSync(dir, { recursive: true })
+    const file = path.join(dir, 'registerSW.js')
+    if (fs.existsSync(file)) return
+    fs.writeFileSync(
+      file,
+      "if('serviceWorker' in navigator)navigator.serviceWorker.register('/dev-sw.js?dev-sw',{scope:'/',type:'module'})\n",
+    )
+  }
+
+  return {
+    name: 'ensure-dev-dist-register-sw',
+    apply: 'serve',
+    configResolved(config) {
+      writeStub(config.root)
+    },
+    configureServer() {
+      writeStub(process.cwd())
+    },
+  }
 }
 
 // https://vite.dev/config/
@@ -36,7 +67,8 @@ export default defineConfig({
       },
     },
     react(),
-    basicSsl(), 
+    basicSsl(),
+    ensureDevDistRegisterSW(),
     VitePWA({
       // Web Push を扱うため自前の Service Worker (src/sw.ts) を注入する
       strategies: 'injectManifest',

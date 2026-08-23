@@ -335,7 +335,7 @@ export function useBoard(eventId: string, refreshKey = 0) {
   }, [eventId, loadBoard, mergeItems])
 
   const addItem = useCallback(
-    async (kind: BoardItemKind, payload: BoardItemPayload): Promise<void> => {
+    async (kind: BoardItemKind, payload: BoardItemPayload): Promise<BoardItem> => {
       const clientItemId = crypto.randomUUID()
       const localId = `local:${clientItemId}`
       ownClientItemIdsRef.current.add(clientItemId)
@@ -372,6 +372,7 @@ export function useBoard(eventId: string, refreshKey = 0) {
           ),
         )
         setBoardEdited(true)
+        return saved
       } catch (addError) {
         console.error('POST /v1/events/board/items failed', addError)
         ownClientItemIdsRef.current.delete(clientItemId)
@@ -387,7 +388,8 @@ export function useBoard(eventId: string, refreshKey = 0) {
   )
 
   const addStroke = useCallback(
-    (payload: StrokePayload) => addItem('STROKE', normalizeStrokePayload(payload)),
+    (payload: StrokePayload) =>
+      addItem('STROKE', normalizeStrokePayload(payload)),
     [addItem],
   )
 
