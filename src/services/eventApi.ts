@@ -216,6 +216,44 @@ export async function getEventCollections(
   }
 }
 
+export type BestShot = {
+  id: string
+  user: {
+    id: string
+    displayName: string
+    avatarUrl: string | null
+  }
+  /** サーバーが返す保存パス。未デプロイ時は imageUrl から復元する。 */
+  imagePath?: string
+  imageUrl: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type EventBestShots = {
+  eventId: string
+  shots: BestShot[]
+}
+
+export async function getEventBestShots(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventBestShots> {
+  return apiRequest<EventBestShots>(`/v1/events/${eventId}/best-shots`, {
+    signal,
+  })
+}
+
+export async function putMyBestShot(
+  eventId: string,
+  imagePath: string,
+): Promise<BestShot> {
+  return apiRequest<BestShot>(`/v1/events/${eventId}/best-shots/me`, {
+    method: 'PUT',
+    body: { imagePath },
+  })
+}
+
 /** GET /v1/events の要素に詳細フィールドを足したもの(openapi.yaml の EventDetail)。 */
 export type EventDetail = EventSummary & {
   createdAt: string

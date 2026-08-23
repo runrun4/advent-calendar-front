@@ -10,11 +10,13 @@ import {
   normalizeBoardItemImages,
   normalizeStickerPayload,
   normalizeStrokePayload,
+  normalizePhotoPayload,
   type BoardItem,
   type BoardItemKind,
   type BoardItemPayload,
   type BoardOrientation,
   type BoardUser,
+  type PhotoPayload,
   type StickerPayload,
   type StrokePayload,
 } from '../services/boardApi'
@@ -68,8 +70,7 @@ function itemFromRealtimeRow(
   row: BoardItemRow,
   members: Map<string, BoardUser>,
 ): BoardItem | null {
-  if (row.kind !== 'STROKE' && row.kind !== 'STICKER') {
-    // PHOTO などクライアントが描けない種別は無視する。
+  if (row.kind !== 'STROKE' && row.kind !== 'STICKER' && row.kind !== 'PHOTO') {
     return null
   }
 
@@ -84,13 +85,23 @@ function itemFromRealtimeRow(
     createdAt: normalizeTimestamp(row.created_at),
   }
 
-  return row.kind === 'STROKE'
-    ? { ...base, kind: 'STROKE', payload: row.payload as StrokePayload }
-    : normalizeBoardItemImages({
-        ...base,
-        kind: 'STICKER',
-        payload: row.payload as StickerPayload,
-      })
+  if (row.kind === 'STROKE') {
+    return { ...base, kind: 'STROKE', payload: row.payload as StrokePayload }
+  }
+
+  if (row.kind === 'PHOTO') {
+    return {
+      ...base,
+      kind: 'PHOTO',
+      payload: row.payload as PhotoPayload,
+    }
+  }
+
+  return normalizeBoardItemImages({
+    ...base,
+    kind: 'STICKER',
+    payload: row.payload as StickerPayload,
+  })
 }
 
 function sortItems(items: BoardItem[]): BoardItem[] {
@@ -345,16 +356,39 @@ export function useBoard(eventId: string, refreshKey = 0) {
       const localId = `local:${clientItemId}`
       ownClientItemIdsRef.current.add(clientItemId)
 
-      const optimistic = {
-        id: localId,
-        eventId,
-        createdBy: currentUserRef.current,
-        createdAt: new Date().toISOString(),
-        pending: true,
-        ...(kind === 'STROKE'
-          ? { kind: 'STROKE' as const, payload: payload as StrokePayload }
-          : { kind: 'STICKER' as const, payload: payload as StickerPayload }),
-      }
+      const optimistic: BoardItem =
+        kind === 'STROKE'
+          ? {
+              id: localId,
+              eventId,
+              createdBy: currentUserRef.current,
+              createdAt: new Date().toISOString(),
+              pending: true,
+              zIndex: 0,
+              kind: 'STROKE',
+              payload: payload as StrokePayload,
+            }
+          : kind === 'PHOTO'
+            ? {
+                id: localId,
+                eventId,
+                createdBy: currentUserRef.current,
+                createdAt: new Date().toISOString(),
+                pending: true,
+                zIndex: 0,
+                kind: 'PHOTO',
+                payload: payload as PhotoPayload,
+              }
+            : {
+                id: localId,
+                eventId,
+                createdBy: currentUserRef.current,
+                createdAt: new Date().toISOString(),
+                pending: true,
+                zIndex: 0,
+                kind: 'STICKER',
+                payload: payload as StickerPayload,
+              }
 
       setError(null)
       setPendingCount((count) => count + 1)
@@ -408,6 +442,12 @@ export function useBoard(eventId: string, refreshKey = 0) {
     [addItem],
   )
 
+  const addPhoto = useCallback(
+    (payload: PhotoPayload) =>
+      addItem('PHOTO', normalizePhotoPayload(payload)),
+    [addItem],
+  )
+
   const removeItem = useCallback(
     async (item: BoardItem): Promise<void> => {
       // 確定前のものはサーバー上のidが無いので消せない。
@@ -444,6 +484,7 @@ export function useBoard(eventId: string, refreshKey = 0) {
     currentUserId,
     addStroke,
     addSticker,
+    addPhoto,
     removeItem,
     clearError,
   }
