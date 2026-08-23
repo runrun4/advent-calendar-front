@@ -7,6 +7,8 @@ import {
   Pencil,
   Settings,
 } from 'lucide-react'
+import { BoardCanvas } from '../../components/board/BoardCanvas'
+import { useBoard } from '../../hooks/useBoard'
 import {
   getEventCollections,
   type BoardOrientation,
@@ -20,10 +22,14 @@ type StickerCollectionPageProps = {
   eventTitle: string
   eventDate: string
   boardOrientation?: BoardOrientation
+  /** ボード設定の保存などで再取得させたいときに変える。 */
+  refreshKey?: number
   onBack: () => void
   onOpenSettings?: () => void
   onOpenBoardEdit?: () => void
   onOpenChat?: () => void
+  /** ボードに何か描かれている状態を呼び出し元のキャッシュへ反映する。 */
+  onBoardEditedChange?: (boardEdited: boolean) => void
 }
 
 function boardInnerClass(orientation?: BoardOrientation): string {
@@ -39,10 +45,12 @@ export function StickerCollectionPage({
   eventTitle,
   eventDate,
   boardOrientation = 'PORTRAIT',
+  refreshKey = 0,
   onBack,
   onOpenSettings,
   onOpenBoardEdit,
   onOpenChat,
+  onBoardEditedChange,
 }: StickerCollectionPageProps) {
   const [stickers, setStickers] = useState<CollectedSticker[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -51,6 +59,24 @@ export function StickerCollectionPage({
 
   const titleRef = useRef<HTMLHeadingElement>(null)
   const boardRef = useRef<HTMLElement>(null)
+
+  /*
+   * ボードの実体(線・ステッカー)はここでは読み取り専用。
+   * 編集画面と同じ useBoard を使うので、他メンバーの追加/削除もそのまま反映される。
+   */
+  const {
+    items: boardItems,
+    orientation: serverOrientation,
+    boardEdited,
+    isLoading: isBoardLoading,
+    error: boardError,
+  } = useBoard(eventId, refreshKey)
+
+  useEffect(() => {
+    if (boardEdited) {
+      onBoardEditedChange?.(true)
+    }
+  }, [boardEdited, onBoardEditedChange])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -129,7 +155,12 @@ export function StickerCollectionPage({
     }
   }, [eventTitle])
 
-  const isBoardEmpty = !isLoading && !errorMessage && stickers.length === 0
+  const isBusy = isLoading || isBoardLoading
+  const statusMessage = boardError ?? errorMessage
+  const hasBoardItems = boardItems.length > 0
+  /* ボードに何も無く、獲得ステッカーも無い状態だけ「編集しよう」の案内を出す。 */
+  const isBoardEmpty =
+    !isBusy && !statusMessage && !hasBoardItems && stickers.length === 0
 
   const openBoardEdit = () => {
     onOpenBoardEdit?.()
@@ -182,13 +213,24 @@ export function StickerCollectionPage({
       <section ref={boardRef} className="event-board__card">
         <p className="event-board__card-label">イベントボード</p>
 
-        <div className={`event-board__card-inner ${boardInnerClass(boardOrientation)}`}>
-          {isLoading ? (
+        <div
+          className={`event-board__card-inner ${boardInnerClass(
+            serverOrientation ?? boardOrientation,
+          )}`}
+        >
+          {isBusy ? (
             <p className="event-board__card-status">読み込み中…</p>
-          ) : errorMessage ? (
+          ) : statusMessage ? (
             <p className="event-board__card-status event-board__card-status--error">
-              {errorMessage}
+              {statusMessage}
             </p>
+          ) : hasBoardItems ? (
+            <BoardCanvas
+              className="event-board__canvas"
+              orientation={serverOrientation ?? boardOrientation}
+              items={boardItems}
+              ariaLabel="イベントボードの内容"
+            />
           ) : isBoardEmpty ? (
             <button
               type="button"
@@ -200,6 +242,7 @@ export function StickerCollectionPage({
               ここを押して編集しよう
             </button>
           ) : (
+            /* ボードはまだ空なので、獲得済みステッカーの一覧を出しておく。 */
             <ul className="event-board__sticker-grid">
               {stickers.map((item) => (
                 <li key={item.grantId} className="event-board__sticker-item">
