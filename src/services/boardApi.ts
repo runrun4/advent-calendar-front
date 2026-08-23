@@ -1,10 +1,11 @@
 import { apiRequest } from './apiClient'
+import { resolveStickerImageUrl } from './stickerUrl'
 import type { BoardOrientation } from './eventApi'
 
 export type { BoardOrientation }
 
-/** 今回APIが受け付ける種別。PHOTO はDBの検査制約にはあるがAPIでは422になる。 */
-export type BoardItemKind = 'STROKE' | 'STICKER'
+/** 今回APIが受け付ける種別。 */
+export type BoardItemKind = 'STROKE' | 'STICKER' | 'PHOTO'
 
 /** ボード上の位置。x/y ともに 0..1 の正規化座標(向き変更に耐えるため)。 */
 export type BoardPoint = {
@@ -34,7 +35,18 @@ export type StickerPayload = {
   rotation: number
 }
 
-export type BoardItemPayload = StrokePayload | StickerPayload
+export type PhotoPayload = {
+  /** このイベントのベストショットの保存パス。 */
+  imagePath: string
+  /** サーバーが挿入時に補完する。リクエストでは省略可。 */
+  imageUrl?: string
+  x: number
+  y: number
+  scale: number
+  rotation: number
+}
+
+export type BoardItemPayload = StrokePayload | StickerPayload | PhotoPayload
 
 export type BoardUser = {
   id: string
@@ -63,6 +75,7 @@ type BoardItemBase = {
 export type BoardItem =
   | (BoardItemBase & { kind: 'STROKE'; payload: StrokePayload })
   | (BoardItemBase & { kind: 'STICKER'; payload: StickerPayload })
+  | (BoardItemBase & { kind: 'PHOTO'; payload: PhotoPayload })
 
 export type BoardResponse = {
   eventId: string
@@ -203,11 +216,32 @@ export function normalizeStickerPayload(payload: StickerPayload): StickerPayload
   }
 }
 
+export function normalizePhotoPayload(payload: PhotoPayload): PhotoPayload {
+  return {
+    imagePath: payload.imagePath,
+    ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
+    x: clampUnit(payload.x),
+    y: clampUnit(payload.y),
+    scale: clampRange(
+      payload.scale,
+      BOARD_LIMITS.stickerMinScale,
+      BOARD_LIMITS.stickerMaxScale,
+    ),
+    rotation: normalizeRotation(payload.rotation),
+  }
+}
+
 export async function getBoard(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<BoardResponse> {
-  return apiRequest<BoardResponse>(`/v1/events/${eventId}/board`, { signal })
+  const board = await apiRequest<BoardResponse>(`/v1/events/${eventId}/board`, {
+    signal,
+  })
+  return {
+    ...board,
+    items: board.items.map(normalizeBoardItemImages),
+  }
 }
 
 /** 201=新規 / 200=同一 clientItemId の再送。どちらも BoardItem が返る。 */
@@ -215,10 +249,11 @@ export async function addBoardItem(
   eventId: string,
   request: AddBoardItemRequest,
 ): Promise<BoardItem> {
-  return apiRequest<BoardItem>(`/v1/events/${eventId}/board/items`, {
+  const saved = await apiRequest<BoardItem>(`/v1/events/${eventId}/board/items`, {
     method: 'POST',
     body: request,
   })
+  return normalizeBoardItemImages(saved)
 }
 
 export async function deleteBoardItem(
@@ -229,3 +264,18 @@ export async function deleteBoardItem(
     method: 'DELETE',
   })
 }
+
+function normalizeBoardItemImages(item: BoardItem): BoardItem {
+  if (item.kind === 'STICKER' && item.payload.imageUrl) {
+    return {
+      ...item,
+      payload: {
+        ...item.payload,
+        imageUrl: resolveStickerImageUrl(item.payload.imageUrl),
+      },
+    }
+  }
+  return item
+}
+
+export { normalizeBoardItemImages }

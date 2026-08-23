@@ -3,6 +3,7 @@ import type {
   BoardItem,
   BoardOrientation,
   BoardPoint,
+  PhotoPayload,
   StickerPayload,
   StrokePayload,
 } from '../../services/boardApi'
@@ -129,7 +130,7 @@ function strokeElements(
 }
 
 function stickerTransform(
-  payload: Pick<StickerPayload, 'x' | 'y' | 'rotation'>,
+  payload: Pick<StickerPayload | PhotoPayload, 'x' | 'y' | 'rotation'>,
   viewBox: BoardViewBox,
 ): string {
   const centerX = payload.x * viewBox.width
@@ -137,21 +138,24 @@ function stickerTransform(
   return `translate(${centerX} ${centerY}) rotate(${payload.rotation})`
 }
 
-function stickerElements(
-  item: Extract<BoardItem, { kind: 'STICKER' }>,
+function imageItemElements(
+  payload: Pick<
+    StickerPayload | PhotoPayload,
+    'imageUrl' | 'x' | 'y' | 'scale' | 'rotation'
+  >,
   viewBox: BoardViewBox,
   pickable: boolean,
   onPick: (() => void) | undefined,
 ) {
   // scale はボード幅に対する比率。画像の縦横比は preserveAspectRatio で保つ。
-  const size = item.payload.scale * viewBox.width
+  const size = payload.scale * viewBox.width
   const offset = -size / 2
 
   return (
-    <g transform={stickerTransform(item.payload, viewBox)}>
-      {item.payload.imageUrl ? (
+    <g transform={stickerTransform(payload, viewBox)}>
+      {payload.imageUrl ? (
         <image
-          href={item.payload.imageUrl}
+          href={payload.imageUrl}
           x={offset}
           y={offset}
           width={size}
@@ -275,7 +279,7 @@ export function BoardCanvas({
             >
               {item.kind === 'STROKE'
                 ? strokeElements(item, viewBox, pickable, onPick)
-                : stickerElements(item, viewBox, pickable, onPick)}
+                : imageItemElements(item.payload, viewBox, pickable, onPick)}
             </g>
           )
         })}

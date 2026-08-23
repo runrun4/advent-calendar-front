@@ -166,6 +166,7 @@ export function AppHome({
 
           <div className="page-slider__page">
             <EventMainPage
+              currentUser={user}
               profileIconUrl={user?.iconUrl}
               currentUserId={user?.id ?? null}
               eventsRefreshKey={

@@ -3,11 +3,13 @@ import type { ChangeEvent, PointerEvent as ReactPointerEvent } from 'react'
 import {
   ChevronLeft,
   Eraser,
+  Image as ImageIcon,
   Pencil,
   Sticker,
   Undo2,
 } from 'lucide-react'
 import { BoardCanvas } from '../../components/board/BoardCanvas'
+import { Modal } from '../../components/common/Modal'
 import { useBoard } from '../../hooks/useBoard'
 import {
   BOARD_LIMITS,
@@ -16,10 +18,13 @@ import {
   type BoardPoint,
 } from '../../services/boardApi'
 import {
+  getEventBestShots,
   getEventCollections,
+  type BestShot,
   type BoardOrientation,
   type CollectedSticker,
 } from '../../services/eventApi'
+import { ApiError } from '../../services/apiClient'
 import './BoardEditPage.css'
 
 type BoardEditPageProps = {
@@ -34,7 +39,21 @@ type BoardEditPageProps = {
   onBoardEditedChange?: (boardEdited: boolean) => void
 }
 
-type Tool = 'pen' | 'eraser' | 'sticker'
+type Tool = 'pen' | 'eraser' | 'sticker' | 'photo'
+
+type SelectedStickerPlaceable = {
+  kind: 'sticker'
+  collected: CollectedSticker
+}
+
+type SelectedPhotoPlaceable = {
+  kind: 'photo'
+  shot: BestShot
+}
+
+type SelectedPlaceable = SelectedStickerPlaceable | SelectedPhotoPlaceable
+
+type PickerSheet = 'sticker' | 'photo' | null
 
 /** ペンパレットの初期7色（各スロットは再タップで上書き保存できる） */
 const DEFAULT_PEN_PALETTE = [
@@ -56,6 +75,9 @@ const PEN_SLIDER_MAX = 24
 /** ステッカーの既定サイズ(ボード幅に対する比率)。 */
 const STICKER_SCALE = 0.18
 
+/** ベストショット写真の既定サイズ(ボード幅に対する比率)。 */
+const PHOTO_SCALE = 0.28
+
 /** 手貼りらしさを出すためのランダムな傾き(度)。 */
 const STICKER_MAX_TILT = 8
 
@@ -69,6 +91,18 @@ const BOARD_FILL_LONG_PRESS_MS = 500
 const LONG_PRESS_MOVE_THRESHOLD = 0.012
 
 const MAX_UNDO_STEPS = 40
+
+function resolveBestShotImagePath(shot: BestShot): string {
+  if (shot.imagePath) return shot.imagePath
+  const marker = '/storage/v1/object/public/best-shots/'
+  const index = shot.imageUrl.indexOf(marker)
+  if (index < 0) return ''
+  try {
+    return decodeURIComponent(shot.imageUrl.slice(index + marker.length))
+  } catch {
+    return shot.imageUrl.slice(index + marker.length)
+  }
+}
 
 function randomTilt(): number {
   return (Math.random() * 2 - 1) * STICKER_MAX_TILT
@@ -117,6 +151,7 @@ const TOOLS: { id: Tool; label: string; icon: typeof Pencil }[] = [
   { id: 'pen', label: 'ペン', icon: Pencil },
   { id: 'eraser', label: '消しゴム', icon: Eraser },
   { id: 'sticker', label: 'ステッカー', icon: Sticker },
+  { id: 'photo', label: '写真', icon: ImageIcon },
 ]
 
 export function BoardEditPage({
@@ -136,11 +171,15 @@ export function BoardEditPage({
     strokeWidthToSlider(0.008),
   )
   const penWidth = sliderToStrokeWidth(penSizeSlider)
-  const [selectedSticker, setSelectedSticker] =
-    useState<CollectedSticker | null>(null)
+  const [selectedPlaceable, setSelectedPlaceable] =
+    useState<SelectedPlaceable | null>(null)
+  const [pickerSheet, setPickerSheet] = useState<PickerSheet>(null)
   const [stickers, setStickers] = useState<CollectedSticker[]>([])
   const [isLoadingStickers, setIsLoadingStickers] = useState(true)
   const [stickersError, setStickersError] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<BestShot[]>([])
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(true)
+  const [photosError, setPhotosError] = useState<string | null>(null)
   const [hint, setHint] = useState<string | null>(null)
   const [canUndo, setCanUndo] = useState(false)
 
@@ -174,13 +213,12 @@ export function BoardEditPage({
     currentUserId,
     addStroke,
     addSticker,
+    addPhoto,
     removeItem,
   } = useBoard(eventId, refreshKey)
 
   const effectiveOrientation = orientation ?? boardOrientation
   const isOwner = eventRole === 'OWNER'
-  const showStickerPanel =
-    activeTool === 'sticker' && selectedSticker === null
 
   useEffect(() => {
     if (boardEdited) {
@@ -210,10 +248,47 @@ export function BoardEditPage({
         if (controller.signal.aborted) return
         console.error('GET /v1/events/collections failed', loadError)
         setStickers([])
-        setStickersError('ステッカーの取得に失敗しました')
+        setStickersError(
+          loadError instanceof ApiError
+            ? `ステッカーの取得に失敗しました (${loadError.message})`
+            : 'ステッカーの取得に失敗しました',
+        )
       } finally {
         if (!controller.signal.aborted) {
           setIsLoadingStickers(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      controller.abort()
+    }
+  }, [eventId])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const load = async () => {
+      setIsLoadingPhotos(true)
+      setPhotosError(null)
+
+      try {
+        const result = await getEventBestShots(eventId, controller.signal)
+        setPhotos(result.shots ?? [])
+      } catch (loadError) {
+        if (controller.signal.aborted) return
+        console.error('GET /v1/events/best-shots failed', loadError)
+        setPhotos([])
+        setPhotosError(
+          loadError instanceof ApiError
+            ? `写真の取得に失敗しました (${loadError.message})`
+            : '写真の取得に失敗しました',
+        )
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingPhotos(false)
         }
       }
     }
@@ -323,9 +398,14 @@ export function BoardEditPage({
         return
       }
 
-      if (activeTool === 'sticker') {
-        if (!selectedSticker) {
-          setHint('ステッカーを選んでからボードに貼ろう')
+      if (activeTool === 'sticker' || activeTool === 'photo') {
+        if (!selectedPlaceable || selectedPlaceable.kind !== activeTool) {
+          setHint(
+            activeTool === 'sticker'
+              ? 'ステッカーを選んでからボードに貼ろう'
+              : '写真を選んでからボードに貼ろう',
+          )
+          setPickerSheet(activeTool)
           return
         }
 
@@ -334,10 +414,14 @@ export function BoardEditPage({
         placingRef.current = { pointerId: event.pointerId, rotation }
         setHint(null)
         setDraftSticker({
-          imageUrl: selectedSticker.sticker.imageUrl,
+          imageUrl:
+            selectedPlaceable.kind === 'sticker'
+              ? selectedPlaceable.collected.sticker.imageUrl
+              : selectedPlaceable.shot.imageUrl,
           x: point.x,
           y: point.y,
-          scale: STICKER_SCALE,
+          scale:
+            selectedPlaceable.kind === 'sticker' ? STICKER_SCALE : PHOTO_SCALE,
           rotation,
         })
       }
@@ -346,7 +430,7 @@ export function BoardEditPage({
       activeTool,
       clearLongPressTimer,
       fillBoardWithPenColor,
-      selectedSticker,
+      selectedPlaceable,
     ],
   )
 
@@ -465,17 +549,35 @@ export function BoardEditPage({
       const placing = placingRef.current
       if (placing && placing.pointerId === event.pointerId) {
         placingRef.current = null
-        const sticker = selectedSticker
+        const placeable = selectedPlaceable
         setDraftSticker(null)
 
-        if (!sticker) return
+        if (!placeable) return
 
-        void addSticker({
-          stickerId: sticker.sticker.id,
-          imageUrl: sticker.sticker.imageUrl,
+        if (placeable.kind === 'sticker') {
+          void addSticker({
+            stickerId: placeable.collected.sticker.id,
+            imageUrl: placeable.collected.sticker.imageUrl,
+            x: point.x,
+            y: point.y,
+            scale: STICKER_SCALE,
+            rotation: placing.rotation,
+          })
+            .then((saved) => {
+              pushUndoItem(saved)
+            })
+            .catch(() => {
+              // エラー表示は useBoard の error 側で行う。
+            })
+          return
+        }
+
+        void addPhoto({
+          imagePath: resolveBestShotImagePath(placeable.shot),
+          imageUrl: placeable.shot.imageUrl,
           x: point.x,
           y: point.y,
-          scale: STICKER_SCALE,
+          scale: PHOTO_SCALE,
           rotation: placing.rotation,
         })
           .then((saved) => {
@@ -488,13 +590,14 @@ export function BoardEditPage({
     },
     [
       activeTool,
+      addPhoto,
       addSticker,
       addStroke,
       clearLongPressTimer,
       penColor,
       penWidth,
       pushUndoItem,
-      selectedSticker,
+      selectedPlaceable,
     ],
   )
 
@@ -508,13 +611,34 @@ export function BoardEditPage({
     setDraftPoints([])
     setDraftSticker(null)
     setDraftFillColor(null)
-    if (tool !== 'sticker') {
-      setSelectedSticker(null)
+
+    if (tool === 'sticker' || tool === 'photo') {
+      const matchesSelection =
+        selectedPlaceable !== null && selectedPlaceable.kind === tool
+      if (!matchesSelection) {
+        setSelectedPlaceable(null)
+      }
+      setPickerSheet(tool)
+      return
     }
+
+    setPickerSheet(null)
+    setSelectedPlaceable(null)
   }
 
   const handleStickerSelect = (collected: CollectedSticker) => {
-    setSelectedSticker(collected)
+    setSelectedPlaceable({ kind: 'sticker', collected })
+    setPickerSheet(null)
+    setHint('ボードをタップして貼ろう')
+  }
+
+  const handlePhotoSelect = (shot: BestShot) => {
+    if (!resolveBestShotImagePath(shot)) {
+      setHint('この写真はまだ貼れません')
+      return
+    }
+    setSelectedPlaceable({ kind: 'photo', shot })
+    setPickerSheet(null)
     setHint('ボードをタップして貼ろう')
   }
 
@@ -560,7 +684,7 @@ export function BoardEditPage({
     setSelectedPaletteIndex(index)
   }
 
-  const isCanvasInteractive = !isLoading && !showStickerPanel
+  const isCanvasInteractive = !isLoading && pickerSheet === null
 
   const statusMessage = error
     ? error
@@ -579,6 +703,13 @@ export function BoardEditPage({
         }
       : draftPoints.length > 0
         ? { points: draftPoints, color: penColor, width: penWidth }
+        : null
+
+  const placementLabel =
+    selectedPlaceable?.kind === 'sticker'
+      ? `選択中：${selectedPlaceable.collected.sticker.name}`
+      : selectedPlaceable?.kind === 'photo'
+        ? `選択中：${selectedPlaceable.shot.user.displayName}の写真`
         : null
 
   return (
@@ -614,76 +745,31 @@ export function BoardEditPage({
       </p>
 
       <main className="board-edit__main">
-        {showStickerPanel ? (
-          <section className="board-edit__sticker-panel" aria-label="ステッカー選択">
-            <div className="board-edit__sticker-panel-header">
-              <h2>ステッカーを選択</h2>
-              <p>ステッカーをタップしてください</p>
-            </div>
+        <BoardCanvas
+          className="board-edit__canvas"
+          orientation={effectiveOrientation}
+          items={items}
+          interactive={isCanvasInteractive}
+          draftStroke={draftStroke}
+          draftSticker={draftSticker}
+          isItemPickable={activeTool === 'eraser' ? canDeleteItem : undefined}
+          onPickItem={activeTool === 'eraser' ? handlePickItem : undefined}
+          dimUnpickableItems={activeTool === 'eraser'}
+          onBoardPointerDown={handlePointerDown}
+          onBoardPointerMove={handlePointerMove}
+          onBoardPointerUp={handlePointerUp}
+          emptyContent={
+            <span className="board-edit__empty">
+              ここに描いたり
+              <br />
+              ステッカーや写真を貼ろう
+            </span>
+          }
+        />
 
-            {isLoadingStickers ? (
-              <p className="board-edit__sticker-panel-status">読み込み中…</p>
-            ) : stickersError ? (
-              <p className="board-edit__sticker-panel-status board-edit__sticker-panel-status--error">
-                {stickersError}
-              </p>
-            ) : stickers.length === 0 ? (
-              <p className="board-edit__sticker-panel-status">
-                まだステッカーがありません。カレンダーを開いて集めよう。
-              </p>
-            ) : (
-              <div className="board-edit__sticker-list">
-                {stickers.map((collected) => (
-                  <button
-                    key={collected.grantId}
-                    type="button"
-                    className="board-edit__sticker-item"
-                    onClick={() => handleStickerSelect(collected)}
-                  >
-                    {collected.sticker.imageUrl ? (
-                      <img
-                        src={collected.sticker.imageUrl}
-                        alt={collected.sticker.name}
-                      />
-                    ) : (
-                      <span
-                        className="board-edit__sticker-placeholder"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-        ) : (
-          <BoardCanvas
-            className="board-edit__canvas"
-            orientation={effectiveOrientation}
-            items={items}
-            interactive={isCanvasInteractive}
-            draftStroke={draftStroke}
-            draftSticker={draftSticker}
-            isItemPickable={activeTool === 'eraser' ? canDeleteItem : undefined}
-            onPickItem={activeTool === 'eraser' ? handlePickItem : undefined}
-            dimUnpickableItems={activeTool === 'eraser'}
-            onBoardPointerDown={handlePointerDown}
-            onBoardPointerMove={handlePointerMove}
-            onBoardPointerUp={handlePointerUp}
-            emptyContent={
-              <span className="board-edit__empty">
-                ここに描いたり
-                <br />
-                ステッカーを貼ろう
-              </span>
-            }
-          />
-        )}
-
-        {activeTool === 'sticker' && selectedSticker ? (
-          <p className="board-edit__placement-hint">
-            選択中：{selectedSticker.sticker.name}
-          </p>
+        {placementLabel &&
+        (activeTool === 'sticker' || activeTool === 'photo') ? (
+          <p className="board-edit__placement-hint">{placementLabel}</p>
         ) : null}
       </main>
 
@@ -761,6 +847,15 @@ export function BoardEditPage({
           </p>
         ) : null}
 
+        {activeTool === 'sticker' || activeTool === 'photo' ? (
+          <p className="board-edit__note">
+            {selectedPlaceable?.kind === activeTool
+              ? 'ボードをタップして貼ろう。もう一度アイコンを押すと選び直せます'
+              : activeTool === 'sticker'
+                ? '下からステッカーを選ぼう'
+                : '下からみんなの写真を選ぼう'}
+          </p>
+        ) : null}
       </section>
 
       <footer className="board-edit__toolbar">
@@ -773,23 +868,109 @@ export function BoardEditPage({
             }`}
             aria-label={label}
             aria-pressed={activeTool === id}
-            onClick={() => {
-              if (
-                id === 'sticker' &&
-                activeTool === 'sticker' &&
-                selectedSticker !== null
-              ) {
-                setSelectedSticker(null)
-                setHint(null)
-                return
-              }
-              selectTool(id)
-            }}
+            onClick={() => selectTool(id)}
           >
             <Icon size={22} strokeWidth={2} />
           </button>
         ))}
       </footer>
+
+      <Modal
+        isOpen={pickerSheet === 'sticker'}
+        title="ステッカーを選択"
+        onClose={() => setPickerSheet(null)}
+        variant="sheet"
+      >
+        <div className="board-edit__picker-sheet">
+          <p className="board-edit__picker-lead">
+            ステッカーをタップしてください
+          </p>
+          {isLoadingStickers ? (
+            <p className="board-edit__picker-status">読み込み中…</p>
+          ) : stickersError ? (
+            <p className="board-edit__picker-status board-edit__picker-status--error">
+              {stickersError}
+            </p>
+          ) : stickers.length === 0 ? (
+            <p className="board-edit__picker-status">
+              まだステッカーがありません。カレンダーを開いて集めよう。
+            </p>
+          ) : (
+            <div className="board-edit__picker-grid">
+              {stickers.map((collected) => (
+                <button
+                  key={collected.grantId}
+                  type="button"
+                  className="board-edit__picker-item"
+                  onClick={() => handleStickerSelect(collected)}
+                >
+                  {collected.sticker.imageUrl ? (
+                    <img
+                      src={collected.sticker.imageUrl}
+                      alt={collected.sticker.name}
+                    />
+                  ) : (
+                    <span
+                      className="board-edit__picker-placeholder"
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={pickerSheet === 'photo'}
+        title="みんなの写真"
+        onClose={() => setPickerSheet(null)}
+        variant="sheet"
+      >
+        <div className="board-edit__picker-sheet">
+          <p className="board-edit__picker-lead">
+            貼りたい写真をタップしてください
+          </p>
+          {isLoadingPhotos ? (
+            <p className="board-edit__picker-status">読み込み中…</p>
+          ) : photosError ? (
+            <p className="board-edit__picker-status board-edit__picker-status--error">
+              {photosError}
+            </p>
+          ) : photos.length === 0 ? (
+            <p className="board-edit__picker-status">
+              まだベストショットがありません。ボード画面から写真を投稿しよう。
+            </p>
+          ) : (
+            <div className="board-edit__picker-grid board-edit__picker-grid--photos">
+              {photos.map((shot) => (
+                <button
+                  key={shot.id}
+                  type="button"
+                  className="board-edit__picker-item board-edit__picker-item--photo"
+                  onClick={() => handlePhotoSelect(shot)}
+                >
+                  {shot.imageUrl ? (
+                    <img
+                      src={shot.imageUrl}
+                      alt={`${shot.user.displayName}のベストショット`}
+                    />
+                  ) : (
+                    <span
+                      className="board-edit__picker-placeholder"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="board-edit__picker-caption">
+                    {shot.user.displayName}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

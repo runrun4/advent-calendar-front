@@ -1,23 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
   Camera,
   ChevronLeft,
-  Lightbulb,
   MessageCircle,
   Pencil,
   Settings,
 } from 'lucide-react'
 import { BoardCanvas } from '../../components/board/BoardCanvas'
 import { useBoard } from '../../hooks/useBoard'
+import { ApiError } from '../../services/apiClient'
+import { uploadBestShot } from '../../services/bestShotStorage'
 import {
-  getEventCollections,
+  getEventBestShots,
+  putMyBestShot,
   type BoardOrientation,
-  type CollectedSticker,
+  type BestShot,
 } from '../../services/eventApi'
+import type { User } from '../../types/user'
 import { formatMonthDay } from '../../utils/dateUtils'
 import './StickerCollectionPage.css'
 
 type StickerCollectionPageProps = {
+  currentUser: User | null
   eventId: string
   eventTitle: string
   eventDate: string
@@ -41,6 +45,7 @@ function boardInnerClass(orientation?: BoardOrientation): string {
 const DEFAULT_TITLE_FONT_SIZE = 45
 
 export function StickerCollectionPage({
+  currentUser,
   eventId,
   eventTitle,
   eventDate,
@@ -52,16 +57,18 @@ export function StickerCollectionPage({
   onOpenChat,
   onBoardEditedChange,
 }: StickerCollectionPageProps) {
-  const [stickers, setStickers] = useState<CollectedSticker[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [bestShots, setBestShots] = useState<BestShot[]>([])
+  const [isLoadingBestShots, setIsLoadingBestShots] = useState(true)
+  const [isUploadingBestShot, setIsUploadingBestShot] = useState(false)
+  const [bestShotError, setBestShotError] = useState<string | null>(null)
   const [titleFontSize, setTitleFontSize] = useState(DEFAULT_TITLE_FONT_SIZE)
 
   const titleRef = useRef<HTMLHeadingElement>(null)
   const boardRef = useRef<HTMLElement>(null)
+  const bestShotInputRef = useRef<HTMLInputElement>(null)
 
   /*
-   * ボードの実体(線・ステッカー)はここでは読み取り専用。
+   * ボードの実体(線・貼ったステッカー)はここでは読み取り専用。
    * 編集画面と同じ useBoard を使うので、他メンバーの追加/削除もそのまま反映される。
    */
   const {
@@ -81,33 +88,32 @@ export function StickerCollectionPage({
   useEffect(() => {
     const controller = new AbortController()
 
-    const load = async () => {
-      setIsLoading(true)
-      setErrorMessage(null)
+    const loadBestShots = async () => {
+      await Promise.resolve()
+      if (controller.signal.aborted) return
+      setIsLoadingBestShots(true)
+      setBestShotError(null)
 
       try {
-        const collections = await getEventCollections(
-          eventId,
-          controller.signal,
-        )
-        setStickers(collections.stickers ?? [])
+        const response = await getEventBestShots(eventId, controller.signal)
+        setBestShots(response.shots ?? [])
       } catch (error) {
         if (controller.signal.aborted) return
-        console.error('GET /v1/events/collections failed', error)
-        setStickers([])
-        setErrorMessage('ステッカーの取得に失敗しました')
+        console.error('GET /v1/events/best-shots failed', error)
+        setBestShots([])
+        setBestShotError(
+          error instanceof ApiError && error.status === 404
+            ? 'ベストショットAPIが未デプロイです'
+            : 'ベストショットの取得に失敗しました',
+        )
       } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false)
-        }
+        if (!controller.signal.aborted) setIsLoadingBestShots(false)
       }
     }
 
-    void load()
+    void loadBestShots()
 
-    return () => {
-      controller.abort()
-    }
+    return () => controller.abort()
   }, [eventId])
 
   useEffect(() => {
@@ -139,7 +145,6 @@ export function StickerCollectionPage({
     let disposed = false
 
     adjustTitleSize()
-    // Webフォントの読み込み前に測ると幅がずれるので、確定後にもう一度合わせる。
     void document.fonts.ready.then(() => {
       if (!disposed) adjustTitleSize()
     })
@@ -155,15 +160,49 @@ export function StickerCollectionPage({
     }
   }, [eventTitle])
 
-  const isBusy = isLoading || isBoardLoading
-  const statusMessage = boardError ?? errorMessage
   const hasBoardItems = boardItems.length > 0
-  /* ボードに何も無く、獲得ステッカーも無い状態だけ「編集しよう」の案内を出す。 */
-  const isBoardEmpty =
-    !isBusy && !statusMessage && !hasBoardItems && stickers.length === 0
+  const isBoardEmpty = !isBoardLoading && !boardError && !hasBoardItems
+
+  const myBestShot = currentUser
+    ? bestShots.find((shot) => shot.user.id === currentUser.id)
+    : undefined
 
   const openBoardEdit = () => {
     onOpenBoardEdit?.()
+  }
+
+  const onBestShotFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!currentUser) {
+      setBestShotError('ログイン情報を取得できませんでした')
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      setBestShotError('画像ファイルを選択してください')
+      return
+    }
+
+    setIsUploadingBestShot(true)
+    setBestShotError(null)
+    try {
+      const imagePath = await uploadBestShot(eventId, currentUser.id, file)
+      const saved = await putMyBestShot(eventId, imagePath)
+      setBestShots((shots) => [
+        ...shots.filter((shot) => shot.user.id !== currentUser.id),
+        saved,
+      ])
+    } catch (error) {
+      console.error('best shot upload failed', error)
+      setBestShotError(
+        error instanceof Error
+          ? error.message
+          : 'ベストショットの追加に失敗しました',
+      )
+    } finally {
+      setIsUploadingBestShot(false)
+    }
   }
 
   return (
@@ -218,11 +257,11 @@ export function StickerCollectionPage({
             serverOrientation ?? boardOrientation,
           )}`}
         >
-          {isBusy ? (
+          {isBoardLoading ? (
             <p className="event-board__card-status">読み込み中…</p>
-          ) : statusMessage ? (
+          ) : boardError ? (
             <p className="event-board__card-status event-board__card-status--error">
-              {statusMessage}
+              {boardError}
             </p>
           ) : hasBoardItems ? (
             <BoardCanvas
@@ -241,27 +280,7 @@ export function StickerCollectionPage({
               <br />
               ここを押して編集しよう
             </button>
-          ) : (
-            /* ボードはまだ空なので、獲得済みステッカーの一覧を出しておく。 */
-            <ul className="event-board__sticker-grid">
-              {stickers.map((item) => (
-                <li key={item.grantId} className="event-board__sticker-item">
-                  {item.sticker.imageUrl ? (
-                    <img
-                      src={item.sticker.imageUrl}
-                      alt={item.sticker.name}
-                      className="event-board__sticker-image"
-                    />
-                  ) : (
-                    <div
-                      className="event-board__sticker-placeholder"
-                      aria-hidden="true"
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          ) : null}
 
           <button
             type="button"
@@ -274,15 +293,61 @@ export function StickerCollectionPage({
         </div>
       </section>
 
-      <div className="event-board__actions">
-        <button type="button" className="event-board__action-button">
-          <Lightbulb className="event-board__action-icon" size={22} strokeWidth={2} />
-          <span>豆知識を振り返る</span>
-        </button>
+      <section className="event-board__best-shots" aria-label="ベストショット">
+        <p className="event-board__best-shots-label">ベストショット</p>
+        {isLoadingBestShots ? (
+          <p className="event-board__best-shots-status">読み込み中…</p>
+        ) : bestShotError ? (
+          <p className="event-board__best-shots-error">{bestShotError}</p>
+        ) : bestShots.length === 0 ? (
+          <p className="event-board__best-shots-status">まだ投稿がありません</p>
+        ) : (
+          <ul className="event-board__best-shot-grid">
+            {bestShots.map((shot) => (
+              <li key={shot.id} className="event-board__best-shot-item">
+                {shot.imageUrl ? (
+                  <img
+                    src={shot.imageUrl}
+                    alt={`${shot.user.displayName}のベストショット`}
+                    className="event-board__best-shot-image"
+                  />
+                ) : (
+                  <div
+                    className="event-board__best-shot-placeholder"
+                    aria-hidden="true"
+                  />
+                )}
+                <p className="event-board__best-shot-name">
+                  {shot.user.displayName}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-        <button type="button" className="event-board__action-button">
+      <div className="event-board__actions">
+        <input
+          ref={bestShotInputRef}
+          type="file"
+          accept="image/*"
+          className="event-board__best-shot-input"
+          onChange={onBestShotFileChange}
+        />
+        <button
+          type="button"
+          className="event-board__action-button"
+          disabled={isUploadingBestShot || !currentUser}
+          onClick={() => bestShotInputRef.current?.click()}
+        >
           <Camera className="event-board__action-icon" size={22} strokeWidth={2} />
-          <span>ベストショットを追加</span>
+          <span>
+            {isUploadingBestShot
+              ? 'アップロード中…'
+              : myBestShot
+                ? 'ベストショットを変更'
+                : 'ベストショットを追加'}
+          </span>
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { apiRequest, apiRequestWithStatus } from './apiClient'
+import { resolveStickerImageUrl } from './stickerUrl'
 
 export type BoardOrientation = 'PORTRAIT' | 'LANDSCAPE'
 
@@ -198,8 +199,58 @@ export async function getEventCollections(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<EventCollections> {
-  return apiRequest<EventCollections>(`/v1/events/${eventId}/collections`, {
+  const collections = await apiRequest<EventCollections>(
+    `/v1/events/${eventId}/collections`,
+    { signal },
+  )
+
+  return {
+    ...collections,
+    stickers: (collections.stickers ?? []).map((item) => ({
+      ...item,
+      sticker: {
+        ...item.sticker,
+        imageUrl: resolveStickerImageUrl(item.sticker.imageUrl ?? ''),
+      },
+    })),
+  }
+}
+
+export type BestShot = {
+  id: string
+  user: {
+    id: string
+    displayName: string
+    avatarUrl: string | null
+  }
+  /** サーバーが返す保存パス。未デプロイ時は imageUrl から復元する。 */
+  imagePath?: string
+  imageUrl: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type EventBestShots = {
+  eventId: string
+  shots: BestShot[]
+}
+
+export async function getEventBestShots(
+  eventId: string,
+  signal?: AbortSignal,
+): Promise<EventBestShots> {
+  return apiRequest<EventBestShots>(`/v1/events/${eventId}/best-shots`, {
     signal,
+  })
+}
+
+export async function putMyBestShot(
+  eventId: string,
+  imagePath: string,
+): Promise<BestShot> {
+  return apiRequest<BestShot>(`/v1/events/${eventId}/best-shots/me`, {
+    method: 'PUT',
+    body: { imagePath },
   })
 }
 
