@@ -15,10 +15,8 @@ import { StickerCollectionPage } from './StickerCollectionPage'
 import { BoardEditPage } from './BoardEditPage'
 import { ChatView } from './ChatView'
 import { InstallAppPrompt } from './InstallAppPrompt'
-import type { User } from '../../types/user'
 
 type EventMainPageProps = {
-  currentUser: User | null
   profileIconUrl?: string | null
   eventsRefreshKey?: number
   pendingEvent?: EventSummary | null
@@ -95,7 +93,6 @@ function toAdventTarget(
 }
 
 export function EventMainPage({
-  currentUser,
   profileIconUrl = null,
   eventsRefreshKey = 0,
   pendingEvent = null,
@@ -373,7 +370,6 @@ export function EventMainPage({
       return (
         <>
           <StickerCollectionPage
-            currentUser={currentUser}
             eventId={adventTarget.id}
             eventTitle={adventTarget.title}
             eventDate={adventTarget.startDate}

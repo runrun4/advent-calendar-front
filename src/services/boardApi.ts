@@ -92,8 +92,7 @@ export const BOARD_LIMITS = {
 /** 古い閲覧クライアントでも全面が埋まるよう、線幅の半分以下で往復する。 */
 const BOARD_FILL_POINT_STEP = BOARD_LIMITS.strokeMaxWidth * 0.5
 
-/** 長押し全面塗りを既存の STROKE 契約で表すための決定的な点列。 */
-export function buildBoardFillPoints(): BoardPoint[] {
+function createBoardFillPoints(): BoardPoint[] {
   const points: BoardPoint[] = []
   let leftToRight = true
 
@@ -110,18 +109,25 @@ export function buildBoardFillPoints(): BoardPoint[] {
   return points
 }
 
+/** 判定時に毎回再生成しない、長押し全面塗りの基準点列。 */
+const BOARD_FILL_POINTS = createBoardFillPoints()
+
+/** 長押し全面塗りを既存の STROKE 契約で表す点列。呼び出し側用に複製を返す。 */
+export function buildBoardFillPoints(): BoardPoint[] {
+  return BOARD_FILL_POINTS.map((point) => ({ ...point }))
+}
+
 /** 通常の縁なぞりを誤判定しないよう、幅・点数・左右交互の形まで検証する。 */
 export function isBoardFillStrokePayload(payload: StrokePayload): boolean {
-  const expected = buildBoardFillPoints()
   if (
     payload.width !== BOARD_LIMITS.strokeMaxWidth ||
-    payload.points.length !== expected.length
+    payload.points.length !== BOARD_FILL_POINTS.length
   ) {
     return false
   }
 
   return payload.points.every((point, index) => {
-    const expectedPoint = expected[index]
+    const expectedPoint = BOARD_FILL_POINTS[index]
     return (
       Math.abs(point.x - expectedPoint.x) <= 0.001 &&
       Math.abs(point.y - expectedPoint.y) <= 0.001
