@@ -1,0 +1,9 @@
+# コミット前に「壊れているのが明らかなもの」だけを弾く。
+# テストとビルドは時間がかかるので CI (.github/workflows/ci.yml) に任せる。
+
+# staged の .ts / .tsx に eslint をかける (package.json の lint-staged 設定)
+npx lint-staged
+
+# 型エラーは staged ファイルだけでは判定できないのでプロジェクト全体を検査する。
+# tsc -b は約2秒で終わるためコミット時に回しても支障がない。
+npx tsc -b
