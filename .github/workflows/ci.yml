@@ -1,0 +1,32 @@
+# develop 宛て PR と develop への push で lint・テスト・ビルドを回す。
+# マージ前に壊れているかどうかを機械的に判定し、レビューを内容の議論に集中させる。
+# デプロイは deploy.yml / deploy-preview.yml が別途担当する。
+name: ci
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+# 同じブランチで連続 push したときは古い実行を打ち切る。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: ユニットテスト
+        run: npm run test
+      - name: ビルド (tsc -b による型チェックを兼ねる)
+        run: npm run build
