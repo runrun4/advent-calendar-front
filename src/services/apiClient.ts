@@ -30,7 +30,7 @@ function getBaseUrl(): string {
 }
 
 async function parseError(response: Response): Promise<ApiError> {
-  let body: ApiErrorBody | null = null
+  let body: ApiErrorBody | null
   try {
     body = (await response.json()) as ApiErrorBody
   } catch {

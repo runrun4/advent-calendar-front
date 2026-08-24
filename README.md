@@ -13,6 +13,8 @@ Windows PowerShell／CMD、Windows WSL2、Mac、LinuxからDocker開発環境を
 
 **本番URL・デプロイ手順・バックエンド繋ぎ込み:** [docs/deployment.md](docs/deployment.md)（本番: https://advent-calendar-front.pages.dev/ ）
 
+**ブランチ戦略・テスト・CI・pre-commit フック:** [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ## Docker で開発する（推奨）
 
 ### 準備（Windows）
@@ -77,9 +79,12 @@ npm run dev
 | コマンド | 内容 |
 |---------|------|
 | `npm run dev` | 開発サーバー |
-| `npm run build` | 本番ビルド |
+| `npm run build` | 本番ビルド（型チェック込み） |
 | `npm run preview` | ビルド結果のプレビュー |
 | `npm run lint` | ESLint |
+| `npm run test` | ユニットテスト（Vitest） |
+| `npm run test:watch` | ユニットテスト（監視モード） |
+| `npm run typecheck` | 型チェックのみ |
 
 ## Docker 関連ファイル
 

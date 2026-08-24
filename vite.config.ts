@@ -1,4 +1,7 @@
-import { createLogger, defineConfig } from 'vite'
+// defineConfig は vitest/config 版を使う。vite の同名 API を再輸出しつつ
+// `test` フィールドの型が付くので、ビルド設定とテスト設定を1ファイルで持てる。
+import { defineConfig } from 'vitest/config'
+import { createLogger } from 'vite'
 import type { Plugin } from 'vite'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -130,5 +133,24 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+  },
+  test: {
+    // React コンポーネントを描画するテストがあるので DOM 実装が要る。
+    environment: 'jsdom',
+    // jest-dom のマッチャ追加・後片付け・jsdom に無い API の補完をまとめる。
+    setupFiles: ['./src/test/setup.ts'],
+    // src 配下の *.test.ts(x) のみ。dist や constellation-proto は拾わない。
+    include: ['src/**/*.test.{ts,tsx}'],
+    // describe/it/expect は各テストで vitest から import する方針(globals 無効)。
+    globals: false,
+    // src/services/supabase.ts は import 時に env を要求して throw する。
+    // テストでは通信しないので、読み込みが通るだけのダミー値を渡す。
+    env: {
+      VITE_SUPABASE_URL: 'https://test.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+      VITE_API_BASE_URL: 'https://api.test.invalid',
+    },
+    // CSS は描画結果の検証に使わないので処理コストを省く。
+    css: false,
   },
 })
