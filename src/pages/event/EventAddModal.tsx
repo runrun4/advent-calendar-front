@@ -544,7 +544,7 @@ export function EventAddModal({
     setPrivateCountdownDays(defaultCountdownDays)
     setShowDiscardConfirm(false)
     setIsWaitingCreate(false)
-  }, [isOpen, defaultStartDate])
+  }, [isOpen, defaultStartDate, defaultCountdownDays])
 
   useEffect(() => {
     publicSearchAbortRef.current?.abort()

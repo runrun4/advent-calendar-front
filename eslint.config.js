@@ -33,7 +33,6 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/refs': 'warn',
       'react-hooks/static-components': 'warn',
-      'react-hooks/exhaustive-deps': 'warn',
       // EventNameField.tsx がアイコン定義(定数・関数)も輸出しているため。
       // 別モジュールへ切り出せば error に戻せるが、参照元が5ファイルあり
       // 開発ブランチとの衝突が大きいので、この PR では警告に留める。
