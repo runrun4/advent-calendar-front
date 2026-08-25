@@ -1,3 +1,6 @@
+import type { z } from 'zod'
+import { getApiBaseUrl } from '../config/env'
+import { apiErrorResponseSchema } from '../schemas/common'
 import { getAccessToken } from './authService'
 
 export class ApiError extends Error {
@@ -23,24 +26,30 @@ type ApiErrorBody = {
   traceId?: string
 }
 
-function getBaseUrl(): string {
-  const raw = import.meta.env.VITE_API_BASE_URL
-  if (raw == null || raw === '') return ''
-  return raw.replace(/\/$/, '')
-}
-
 async function parseError(response: Response): Promise<ApiError> {
-  let body: ApiErrorBody | null
+  let body: unknown
   try {
-    body = (await response.json()) as ApiErrorBody
+    body = await response.json()
   } catch {
     body = null
   }
 
-  return new ApiError(body?.message ?? `API error (${response.status})`, {
+  const parsed = apiErrorResponseSchema.safeParse(body)
+  if (parsed.success) {
+    return new ApiError(parsed.data.message, {
+      status: response.status,
+      code: parsed.data.code,
+      traceId: parsed.data.traceId,
+    })
+  }
+
+  // 契約どおりでないエラー本文（プロキシの HTML など）でも握り潰さず、
+  // 取れるものだけ拾って ApiError にする。
+  const fallback = (body ?? null) as ApiErrorBody | null
+  return new ApiError(fallback?.message ?? `API error (${response.status})`, {
     status: response.status,
-    code: body?.code ?? 'UNKNOWN',
-    traceId: body?.traceId ?? null,
+    code: fallback?.code ?? 'UNKNOWN',
+    traceId: fallback?.traceId ?? null,
   })
 }
 
@@ -79,7 +88,7 @@ export async function apiRequestWithStatus<T>(
     headers.set('Authorization', `Bearer ${token}`)
   }
 
-  const response = await fetch(`${getBaseUrl()}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -102,5 +111,46 @@ export async function apiRequest<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const { data } = await apiRequestWithStatus<T>(path, options)
+  return data
+}
+
+/**
+ * apiRequestWithStatus に「レスポンスの実行時検証」を足したもの。
+ *
+ * `as T` のキャストは型が合っている前提でしか正しくないので、契約と違う応答が
+ * 来たときは画面の奥で undefined を触って落ちる。ここで境界を守り、形が違えば
+ * その場で ApiError にする。
+ *
+ * 移行していないサービスは apiRequest / apiRequestWithStatus を使い続けてよい。
+ */
+export async function apiRequestValidatedWithStatus<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  options: RequestOptions = {},
+): Promise<ApiResponse<T>> {
+  const { data, status } = await apiRequestWithStatus<unknown>(path, options)
+  const parsed = schema.safeParse(data)
+
+  if (!parsed.success) {
+    console.error('APIレスポンスが契約と一致しません', {
+      path,
+      status,
+      issues: parsed.error.issues,
+    })
+    throw new ApiError('サーバーから不正な応答を受信しました。', {
+      status,
+      code: 'UNKNOWN',
+    })
+  }
+
+  return { data: parsed.data, status }
+}
+
+export async function apiRequestValidated<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  options: RequestOptions = {},
+): Promise<T> {
+  const { data } = await apiRequestValidatedWithStatus(path, schema, options)
   return data
 }
