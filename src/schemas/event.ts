@@ -71,9 +71,19 @@ export const eventMemberSchema = z.object({
 })
 export type EventMember = z.infer<typeof eventMemberSchema>
 
+export const cooperationProgressSchema = z.object({
+  /** NOT_APPLICABLE | IN_PROGRESS | ACHIEVED | FAILED */
+  status: z.string(),
+  openedCount: z.number(),
+  requiredCount: z.number(),
+  achievedAt: z.string().nullable().default(null),
+})
+export type CooperationProgress = z.infer<typeof cooperationProgressSchema>
+
 export const eventMembersResponseSchema = z.object({
   eventId: z.string(),
   members: z.array(eventMemberSchema),
+  todayCooperation: cooperationProgressSchema.nullable().default(null),
 })
 export type EventMembersResponse = z.infer<typeof eventMembersResponseSchema>
 
@@ -153,15 +163,6 @@ export const calendarDaySummarySchema = z.object({
   openedAt: z.string().nullable().default(null),
 })
 export type CalendarDaySummary = z.infer<typeof calendarDaySummarySchema>
-
-export const cooperationProgressSchema = z.object({
-  /** NOT_APPLICABLE | IN_PROGRESS | ACHIEVED | FAILED */
-  status: z.string(),
-  openedCount: z.number(),
-  requiredCount: z.number(),
-  achievedAt: z.string().nullable().default(null),
-})
-export type CooperationProgress = z.infer<typeof cooperationProgressSchema>
 
 export const eventCalendarSchema = z.object({
   event: eventDetailSchema,

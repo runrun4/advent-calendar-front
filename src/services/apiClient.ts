@@ -103,7 +103,16 @@ export async function apiRequestWithStatus<T>(
     return { data: undefined as T, status: response.status }
   }
 
-  return { data: (await response.json()) as T, status: response.status }
+  let data: unknown
+  try {
+    data = await response.json()
+  } catch {
+    throw new ApiError('サーバーから不正な応答を受信しました。', {
+      status: response.status,
+      code: 'UNKNOWN',
+    })
+  }
+  return { data: data as T, status: response.status }
 }
 
 export async function apiRequest<T>(
