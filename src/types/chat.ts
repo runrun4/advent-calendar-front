@@ -1,18 +1,8 @@
-export type ChatUser = {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-}
+import type { ChatMessage, ChatUser } from '../schemas/chat'
 
-export type ChatMessage = {
-  id: string
-  eventId: string
-  clientMessageId: string
-  sender: ChatUser
-  kind: 'TEXT'
-  text: string
-  sentAt: string
-}
+// 型は schemas/chat.ts の Zod スキーマから導出したものを再輸出する。
+// 呼び出し側は従来どおり types/chat から import できる。
+export type { ChatMessage, ChatUser }
 
 export type ChatConnectionStatus =
   | 'connecting'
