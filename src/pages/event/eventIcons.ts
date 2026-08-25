@@ -579,9 +579,14 @@ export const DEFAULT_EVENT_ICON_ID: EventIconId = 'calendar-days'
  * 参照側ではこの表を直接引く。
  */
 export const EVENT_ICON_MAP: Record<EventIconId, LucideIcon> =
-  Object.fromEntries(
-    EVENT_ICON_OPTIONS.map(
-      ({ id, Icon }): [EventIconId, LucideIcon] => [id, Icon],
+  // iconId はサーバー値がそのまま来る(z.string())。"__proto__" などの
+  // prototype 上のキーを拾わないよう、素の null プロトタイプで持つ。
+  Object.assign(
+    Object.create(null) as Record<EventIconId, LucideIcon>,
+    Object.fromEntries(
+      EVENT_ICON_OPTIONS.map(
+        ({ id, Icon }): [EventIconId, LucideIcon] => [id, Icon],
+      ),
     ),
   )
 

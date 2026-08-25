@@ -318,7 +318,6 @@ function DateSection({
 
       {activeField === 'start' ? (
         <InlineCalendar
-          key={startDate}
           selected={startDate}
           minDate={minStartDate}
           onSelect={(value) => {
@@ -359,7 +358,6 @@ function DateSection({
 
           {activeField === 'end' ? (
             <InlineCalendar
-              key={endDate}
               selected={endDate}
               initialViewDate={startDate}
               minDate={startDate || undefined}
@@ -697,6 +695,8 @@ export function EventAddModal({
    * 開始日を変えた時点で日数を上限に丸める。
    */
   const handlePublicStartDateChange = (value: string) => {
+    // 同じ日の再選択では何も変わっていないので、検索結果を消さない
+    if (value === publicEventStartDate) return
     setPublicEventStartDate(value)
     resetPublicSearchResult()
     const maxPublic = maxCountdownForStart(value)
@@ -954,6 +954,7 @@ export function EventAddModal({
                     <DateSection
                       mode={publicDateMode}
                       onModeChange={(nextMode) => {
+                        if (nextMode === publicDateMode) return
                         setPublicDateMode(nextMode)
                         if (nextMode === 'single') {
                           setPublicEventEndDate('')
@@ -967,6 +968,7 @@ export function EventAddModal({
                         handlePublicStartDateChange
                       }
                       onEndDateChange={(value) => {
+                        if (value === publicEventEndDate) return
                         setPublicEventEndDate(value)
                         resetPublicSearchResult()
                       }}
