@@ -1,4 +1,12 @@
-import { apiRequest } from './apiClient'
+import { apiRequest, apiRequestValidated } from './apiClient'
+import {
+  pushConfigSchema,
+  pushSubscriptionResponseSchema,
+  pushTestResultSchema,
+  type PushConfig,
+  type PushSubscriptionResponse,
+  type PushTestResult,
+} from '../schemas/push'
 
 /**
  * 標準 Web Push (VAPID) の購読まわり。
@@ -7,21 +15,8 @@ import { apiRequest } from './apiClient'
  * 対象は iOS 16.4+ のホーム画面追加 PWA と Android Chrome。
  */
 
-export type PushConfig = {
-  enabled: boolean
-  vapidPublicKey: string | null
-}
-
-export type PushSubscriptionResponse = {
-  id: string
-  endpoint: string
-  createdAt: string
-}
-
-export type PushTestResult = {
-  sent: number
-  failed: number
-}
+// 型は schemas/push.ts の Zod スキーマから導出したものを再輸出する。
+export type { PushConfig, PushSubscriptionResponse, PushTestResult }
 
 export type PushStatus = {
   /** Push API + Service Worker + Notification が揃っているか */
@@ -141,18 +136,23 @@ function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
 // ============================================
 
 export async function fetchPushConfig(): Promise<PushConfig> {
-  return apiRequest<PushConfig>('/v1/push/config')
+  return apiRequestValidated('/v1/push/config', pushConfigSchema)
 }
 
 async function registerSubscription(
   payload: PushSubscriptionPayload,
 ): Promise<PushSubscriptionResponse> {
-  return apiRequest<PushSubscriptionResponse>('/v1/me/push-subscriptions', {
-    method: 'PUT',
-    body: payload,
-  })
+  return apiRequestValidated(
+    '/v1/me/push-subscriptions',
+    pushSubscriptionResponseSchema,
+    {
+      method: 'PUT',
+      body: payload,
+    },
+  )
 }
 
+/** 204 を返すだけで本文が無いので、検証する対象がない。 */
 async function unregisterSubscription(endpoint: string): Promise<void> {
   await apiRequest<void>(
     `/v1/me/push-subscriptions?endpoint=${encodeURIComponent(endpoint)}`,
@@ -162,9 +162,11 @@ async function unregisterSubscription(endpoint: string): Promise<void> {
 
 /** サーバ側から自分の全購読へテスト通知を送る */
 export async function sendTestNotification(): Promise<PushTestResult> {
-  return apiRequest<PushTestResult>('/v1/me/push-subscriptions/test', {
-    method: 'POST',
-  })
+  return apiRequestValidated(
+    '/v1/me/push-subscriptions/test',
+    pushTestResultSchema,
+    { method: 'POST' },
+  )
 }
 
 // ============================================
