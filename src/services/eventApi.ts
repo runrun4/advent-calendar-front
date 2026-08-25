@@ -12,7 +12,6 @@ import {
   eventCollectionsSchema,
   eventDetailSchema,
   eventMembersResponseSchema,
-  eventSummarySchema,
   invitationSchema,
   listEventsResponseSchema,
   openDayResponseSchema,
@@ -119,12 +118,13 @@ export async function searchEventCandidates(
   return data.candidates
 }
 
+/** 201 で EventDetail が返る（EventSummary のスーパーセット）。 */
 export async function createEvent(
   input: CreateEventInput,
-): Promise<EventSummary> {
+): Promise<EventDetail> {
   const countdownDays = Math.min(29, Math.max(0, input.countdownDays))
 
-  return apiRequestValidated('/v1/events', eventSummarySchema, {
+  return apiRequestValidated('/v1/events', eventDetailSchema, {
     method: 'POST',
     body: {
       name: input.name.trim(),
@@ -148,8 +148,8 @@ export async function updateEventSettings(
     iconId?: string
     clearBoard?: boolean
   },
-): Promise<EventSummary> {
-  return apiRequestValidated(`/v1/events/${eventId}`, eventSummarySchema, {
+): Promise<EventDetail> {
+  return apiRequestValidated(`/v1/events/${eventId}`, eventDetailSchema, {
     method: 'PATCH',
     body: input,
   })
