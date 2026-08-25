@@ -311,12 +311,12 @@ describe('eventCollectionsSchema', () => {
     eventId: '00000000-0000-4000-8000-0000000000b2',
     knowledgeCards: [
       {
-        grantId: '00000000-0000-4000-8000-0000000000g1',
+        grantId: '00000000-0000-4000-8000-0000000000c1',
         grantedAt: '2026-08-07T22:15:00Z',
         dayId: '00000000-0000-4000-8000-0000000000d1',
         content: {
           kind: 'KNOWLEDGE',
-          knowledgeId: '00000000-0000-4000-8000-0000000000k1',
+          knowledgeId: '00000000-0000-4000-8000-0000000000b1',
           title: '花火の豆知識',
           body: '玉の大きさで開く直径が変わる。',
           imageUrl: null,
@@ -326,12 +326,12 @@ describe('eventCollectionsSchema', () => {
     ],
     stickers: [
       {
-        grantId: '00000000-0000-4000-8000-0000000000g2',
+        grantId: '00000000-0000-4000-8000-0000000000c2',
         grantedAt: '2026-08-08T09:00:00Z',
         source: 'COOPERATION',
         dayId: '00000000-0000-4000-8000-0000000000d2',
         sticker: {
-          id: '00000000-0000-4000-8000-0000000000s1',
+          id: '00000000-0000-4000-8000-0000000000f2',
           name: 'ねこ',
           imageUrl: 'https://example.test/stickers/neko.png',
           rarity: 'DELUXE',
@@ -402,7 +402,7 @@ describe('invitationSchema', () => {
   it('バックエンドが返す招待をそのまま受け入れる', () => {
     // POST /v1/events/{eventId}/invitations が返す形(invitationResponse)。
     const parsed = invitationSchema.parse({
-      id: '00000000-0000-4000-8000-0000000000i1',
+      id: '00000000-0000-4000-8000-0000000000a1',
       eventId: '00000000-0000-4000-8000-0000000000b2',
       token: 'BQ1x9pQ7Tn4kZm2rLd8vYaHc0sJfWuEoNbXgKiPtRzA',
       expiresAt: '2026-08-10T03:00:00Z',
@@ -460,14 +460,14 @@ describe('openedDayResponseSchema', () => {
       dayId: '00000000-0000-4000-8000-0000000000d1',
       date: '2026-08-07',
       opening: {
-        id: '00000000-0000-4000-8000-0000000000o1',
+        id: '00000000-0000-4000-8000-0000000000e1',
         dayId: '00000000-0000-4000-8000-0000000000d1',
         openedAt: '2026-08-07T22:15:00Z',
         contentVersion: 1,
       },
       content: {
         kind: 'KNOWLEDGE',
-        knowledgeId: '00000000-0000-4000-8000-0000000000k1',
+        knowledgeId: '00000000-0000-4000-8000-0000000000b1',
         title: '花火の豆知識',
         body: '玉の大きさで開く直径が変わる。',
         imageUrl: null,

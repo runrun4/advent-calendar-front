@@ -1,88 +1,33 @@
-import { apiRequest } from './apiClient'
+import { apiRequest, apiRequestValidated } from './apiClient'
 import { resolveStickerImageUrl } from './stickerUrl'
-import type { BoardOrientation } from './eventApi'
+import {
+  boardItemSchema,
+  boardResponseSchema,
+  type BoardItem,
+  type BoardItemKind,
+  type BoardItemPayload,
+  type BoardPoint,
+  type BoardResponse,
+  type BoardUser,
+  type PhotoPayload,
+  type StickerPayload,
+  type StrokePayload,
+} from '../schemas/board'
+import type { BoardOrientation } from '../schemas/event'
 
-export type { BoardOrientation }
-
-/** 今回APIが受け付ける種別。 */
-export type BoardItemKind = 'STROKE' | 'STICKER' | 'PHOTO'
-
-/** ボード上の位置。x/y ともに 0..1 の正規化座標(向き変更に耐えるため)。 */
-export type BoardPoint = {
-  x: number
-  y: number
-}
-
-export type StrokePayload = {
-  /** 2〜2000点。各成分は 0..1。 */
-  points: BoardPoint[]
-  /** "#rrggbb"。 */
-  color: string
-  /** ボード幅に対する比率(0.001..0.05)。 */
-  width: number
-}
-
-export type StickerPayload = {
-  stickerId: string
-  /** サーバーが挿入時に補完する。リクエストでは省略可(送っても無視される)。 */
-  imageUrl?: string
-  /** ステッカー中心の正規化座標。 */
-  x: number
-  y: number
-  /** ボード幅に対する比率(0.05..1)。 */
-  scale: number
-  /** -180..180 度。 */
-  rotation: number
-}
-
-export type PhotoPayload = {
-  /** このイベントのベストショットの保存パス。 */
-  imagePath: string
-  /** サーバーが挿入時に補完する。リクエストでは省略可。 */
-  imageUrl?: string
-  x: number
-  y: number
-  scale: number
-  rotation: number
-}
-
-export type BoardItemPayload = StrokePayload | StickerPayload | PhotoPayload
-
-export type BoardUser = {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-}
-
-type BoardItemBase = {
-  id: string
-  eventId: string
-  createdBy: BoardUser
-  /** サーバー採番(イベント内 max+1)。大きいほど手前。 */
-  zIndex: number
-  createdAt: string
-  /**
-   * 楽観的追加でローカルにだけ存在する間 true。
-   * サーバーは返さないフィールドで、確定したレスポンスに差し替わると消える。
-   */
-  pending?: boolean
-}
-
-/**
- * kind と payload を対にした判別可能ユニオン。
- * 描画側で `item.kind === 'STROKE'` と絞り込めば payload が確定する。
- */
-export type BoardItem =
-  | (BoardItemBase & { kind: 'STROKE'; payload: StrokePayload })
-  | (BoardItemBase & { kind: 'STICKER'; payload: StickerPayload })
-  | (BoardItemBase & { kind: 'PHOTO'; payload: PhotoPayload })
-
-export type BoardResponse = {
-  eventId: string
-  boardOrientation: BoardOrientation
-  boardEdited: boolean
-  /** zIndex 昇順。 */
-  items: BoardItem[]
+// 型は schemas/board.ts の Zod スキーマから導出したものを再輸出する。
+// 呼び出し側は従来どおり services/boardApi から import できる。
+export type {
+  BoardItem,
+  BoardItemKind,
+  BoardItemPayload,
+  BoardOrientation,
+  BoardPoint,
+  BoardResponse,
+  BoardUser,
+  PhotoPayload,
+  StickerPayload,
+  StrokePayload,
 }
 
 export type AddBoardItemRequest = {
@@ -235,9 +180,11 @@ export async function getBoard(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<BoardResponse> {
-  const board = await apiRequest<BoardResponse>(`/v1/events/${eventId}/board`, {
-    signal,
-  })
+  const board = await apiRequestValidated(
+    `/v1/events/${eventId}/board`,
+    boardResponseSchema,
+    { signal },
+  )
   return {
     ...board,
     items: board.items.map(normalizeBoardItemImages),
@@ -249,13 +196,18 @@ export async function addBoardItem(
   eventId: string,
   request: AddBoardItemRequest,
 ): Promise<BoardItem> {
-  const saved = await apiRequest<BoardItem>(`/v1/events/${eventId}/board/items`, {
-    method: 'POST',
-    body: request,
-  })
+  const saved = await apiRequestValidated(
+    `/v1/events/${eventId}/board/items`,
+    boardItemSchema,
+    {
+      method: 'POST',
+      body: request,
+    },
+  )
   return normalizeBoardItemImages(saved)
 }
 
+/** 204 を返すだけで本文が無いので、検証する対象がない。 */
 export async function deleteBoardItem(
   eventId: string,
   itemId: string,

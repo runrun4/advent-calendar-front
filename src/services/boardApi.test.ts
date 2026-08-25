@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   BOARD_LIMITS,
+  addBoardItem,
   buildBoardFillPoints,
   clampRange,
   clampUnit,
+  getBoard,
   isBoardFillStrokePayload,
   normalizePhotoPayload,
   normalizeRotation,
@@ -12,6 +14,11 @@ import {
   type BoardPoint,
   type StrokePayload,
 } from './boardApi'
+import { ApiError } from './apiClient'
+
+vi.mock('./authService', () => ({
+  getAccessToken: async () => 'test-token',
+}))
 
 describe('clampUnit', () => {
   it('0..1 の値はそのまま通す', () => {
@@ -240,5 +247,117 @@ describe('全面塗りストローク', () => {
     payload.points[0] = { x: 0.05, y: 0 }
 
     expect(isBoardFillStrokePayload(payload)).toBe(false)
+  })
+})
+
+/** GET / POST が返す BoardItem の形(boardItemResponse)。 */
+const boardItem = {
+  id: 'i1',
+  eventId: 'b2',
+  clientItemId: 'c1',
+  kind: 'STICKER',
+  payload: {
+    stickerId: 's1',
+    imageUrl: 'https://cdn.test.invalid/neko.png',
+    x: 0.5,
+    y: 0.5,
+    scale: 0.2,
+    rotation: 0,
+  },
+  createdBy: { id: 'u1', displayName: 'たろう', avatarUrl: null },
+  zIndex: 1,
+  version: 1,
+  createdAt: '2026-08-08T09:00:00Z',
+}
+
+function mockResponse(body: unknown, status = 200) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify(body), {
+          status,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    ),
+  )
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
+
+describe('getBoard', () => {
+  it('契約どおりの応答は検証して返す', async () => {
+    mockResponse({
+      eventId: 'b2',
+      boardOrientation: 'PORTRAIT',
+      boardEdited: true,
+      items: [boardItem],
+    })
+
+    const board = await getBoard('b2')
+
+    expect(board.items).toHaveLength(1)
+    expect(board.items[0].kind).toBe('STICKER')
+  })
+
+  it('ボード自体の形が違う応答は ApiError にする', async () => {
+    mockResponse({
+      eventId: 'b2',
+      boardOrientation: 'SQUARE',
+      boardEdited: true,
+      items: [boardItem],
+    })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await expect(getBoard('b2')).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('契約外の要素は読み飛ばし、残りを返す(画面を空にしない)', async () => {
+    mockResponse({
+      eventId: 'b2',
+      boardOrientation: 'PORTRAIT',
+      boardEdited: true,
+      items: [{ ...boardItem, zIndex: '1' }, boardItem],
+    })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const board = await getBoard('b2')
+
+    expect(board.items).toHaveLength(1)
+  })
+})
+
+describe('addBoardItem', () => {
+  const request = {
+    clientItemId: 'c1',
+    kind: 'STICKER' as const,
+    payload: {
+      stickerId: 's1',
+      x: 0.5,
+      y: 0.5,
+      scale: 0.2,
+      rotation: 0,
+    },
+  }
+
+  it('201 の BoardItem を検証して返す', async () => {
+    mockResponse(boardItem, 201)
+
+    const saved = await addBoardItem('b2', request)
+
+    expect(saved.kind).toBe('STICKER')
+    expect(saved.id).toBe(boardItem.id)
+  })
+
+  // POST の応答も検証していないと、契約と違う BoardItem がそのまま
+  // useBoard の状態に入り、描画の奥で落ちる。
+  it('形が違う応答は ApiError にする', async () => {
+    mockResponse({ ...boardItem, zIndex: '1' }, 201)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await expect(addBoardItem('b2', request)).rejects.toBeInstanceOf(ApiError)
   })
 })
