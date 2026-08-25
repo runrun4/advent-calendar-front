@@ -62,9 +62,16 @@ export function ProfileModal({
   const pushSupported = isPushSupported()
   const needsHomeScreen = pushSupported && isIOS() && !isStandalone()
 
+  /*
+   * 開いた時点のユーザー情報でフォームを組み直す。
+   *
+   * Modal は閉じるアニメーションのあいだも中身を描画し続けるため
+   * アンマウントで state を捨てられず、isOpen を見て初期化するしかない。
+   */
   useEffect(() => {
     if (!isOpen) return
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 上記コメントの通り、開いた時のフォーム初期化はここでしかできない
     setNickname(user?.displayName ?? '')
     setEmail(user?.email ?? '')
     setIconUrl(user?.iconUrl ?? null)

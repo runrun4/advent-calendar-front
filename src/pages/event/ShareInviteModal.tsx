@@ -11,27 +11,45 @@ type ShareInviteModalProps = {
   onClose: () => void
 }
 
+/*
+ * 開いている間だけ中身をマウントする。
+ *
+ * 閉じたときに state を effect でリセットする代わりに、
+ * アンマウントで初期状態へ戻す。招待リンクの取得も
+ * マウント時の一度きりになる。
+ */
 export function ShareInviteModal({
   isOpen,
   eventId,
   eventName,
   onClose,
 }: ShareInviteModalProps) {
+  if (!isOpen) return null
+
+  return (
+    <ShareInviteModalContent
+      key={eventId}
+      eventId={eventId}
+      eventName={eventName}
+      onClose={onClose}
+    />
+  )
+}
+
+type ShareInviteModalContentProps = Omit<ShareInviteModalProps, 'isOpen'>
+
+function ShareInviteModalContent({
+  eventId,
+  eventName,
+  onClose,
+}: ShareInviteModalContentProps) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) {
-      setInviteUrl(null)
-      setErrorMessage(null)
-      setCopied(false)
-      return
-    }
-
     let cancelled = false
-    setIsLoading(true)
 
     const load = async () => {
       try {
@@ -57,9 +75,7 @@ export function ShareInviteModal({
     return () => {
       cancelled = true
     }
-  }, [isOpen, eventId])
-
-  if (!isOpen) return null
+  }, [eventId])
 
   const handleCopy = async () => {
     if (!inviteUrl) return

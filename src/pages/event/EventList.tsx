@@ -1,4 +1,4 @@
-import { getEventIcon } from './EventNameField'
+import { DEFAULT_EVENT_ICON, EVENT_ICON_MAP } from './eventIcons'
 import type { BoardOrientation } from '../../services/eventApi'
 
 export type EventListItem = {
@@ -47,7 +47,7 @@ export function EventList({
       ) : null}
 
       {events.map((event) => {
-        const Icon = getEventIcon(event.iconId)
+        const Icon = EVENT_ICON_MAP[event.iconId] ?? DEFAULT_EVENT_ICON
         const isUpcoming = event.phase === 'UPCOMING'
 
         return (

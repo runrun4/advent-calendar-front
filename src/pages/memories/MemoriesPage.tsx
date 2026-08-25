@@ -1,5 +1,5 @@
 import type { BoardOrientation } from '../../services/eventApi'
-import { getEventIcon } from '../event/EventNameField'
+import { DEFAULT_EVENT_ICON, EVENT_ICON_MAP } from '../event/eventIcons'
 
 export type MemoryItem = {
   id: string
@@ -42,7 +42,7 @@ export function MemoriesPage({
       ) : null}
 
       {memories.map((memory) => {
-        const Icon = getEventIcon(memory.iconId)
+        const Icon = EVENT_ICON_MAP[memory.iconId] ?? DEFAULT_EVENT_ICON
 
         return (
           <button

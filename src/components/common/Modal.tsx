@@ -99,9 +99,15 @@ export function Modal({
 
   /*
    * モーダルの開閉状態を管理
+   *
+   * isOpen(props)から、閉じるアニメーションを挟んで
+   * DOMから取り除くまでの内部状態を組み立てる。
+   * アニメーションのために「閉じた後もしばらく描画し続ける」必要があり、
+   * レンダー中の導出では表せないので effect で state を更新する。
    */
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 上記コメントの通り、開閉アニメーションの状態機械はレンダー中に導出できない
       setIsRendered(true)
       setIsClosing(false)
       setDragY(0)
@@ -388,15 +394,15 @@ export function Modal({
 
   /*
    * シートの位置
+   *
+   * 下スワイプで閉じている最中(dragFromGesture)は
+   * 必ず dragY が閾値以上に残っているので、
+   * ここでは dragY だけを見ればよい。
+   * (レンダー中に ref を読まないため)
    */
   const sheetStyle: CSSProperties | undefined =
     variant === 'sheet' &&
-    (
-      isDragging ||
-      dragY > 0 ||
-      isSnapping ||
-      dragFromGesture.current
-    )
+    (isDragging || dragY > 0 || isSnapping)
       ? {
           transform: `translateY(${dragY}px)`,
           transition: isDragging
