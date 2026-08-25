@@ -4,25 +4,22 @@ import {
   getCurrentUser,
   mapUser,
 } from './authService'
-import { apiRequest } from './apiClient'
+import { apiRequestValidated } from './apiClient'
 import { uploadAvatar } from './avatarStorage'
 import { supabase } from './supabase'
+import { meResponseSchema, type MeResponse } from '../schemas/user'
 
-export type MeResponse = {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-}
+export type { MeResponse }
 
 export async function getMe(): Promise<MeResponse> {
-  return apiRequest<MeResponse>('/v1/me')
+  return apiRequestValidated('/v1/me', meResponseSchema)
 }
 
 export async function updateMe(body: {
   displayName?: string
   avatarPath?: string | null
 }): Promise<MeResponse> {
-  return apiRequest<MeResponse>('/v1/me', {
+  return apiRequestValidated('/v1/me', meResponseSchema, {
     method: 'PATCH',
     body,
   })

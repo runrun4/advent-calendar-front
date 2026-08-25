@@ -1,27 +1,67 @@
-import { apiRequest, apiRequestWithStatus } from './apiClient'
+import {
+  apiRequest,
+  apiRequestValidated,
+  apiRequestValidatedWithStatus,
+} from './apiClient'
 import { resolveStickerImageUrl } from './stickerUrl'
+import {
+  bestShotSchema,
+  eventBestShotsSchema,
+  eventCalendarSchema,
+  eventCandidatesResponseSchema,
+  eventCollectionsSchema,
+  eventDetailSchema,
+  eventMembersResponseSchema,
+  eventSummarySchema,
+  invitationSchema,
+  listEventsResponseSchema,
+  openDayResponseSchema,
+  openedDayResponseSchema,
+  type BestShot,
+  type BoardOrientation,
+  type CalendarDayState,
+  type CalendarDaySummary,
+  type CollectedSticker,
+  type CooperationProgress,
+  type EventBestShots,
+  type EventCalendar,
+  type EventCollections,
+  type EventDetail,
+  type EventMember,
+  type EventMemberUser,
+  type EventMembersResponse,
+  type EventNameCandidate,
+  type EventSummary,
+  type Invitation,
+  type OpenDayResponse,
+  type OpenedDayContent,
+  type OpenedDayResponse,
+  type StickerItem,
+} from '../schemas/event'
 
-export type BoardOrientation = 'PORTRAIT' | 'LANDSCAPE'
-
-export type EventSummary = {
-  id: string
-  name: string
-  startDate: string
-  endDate: string
-  timezone: string
-  mode: string
-  status: 'ACTIVE' | 'COMPLETED' | 'CANCELED' | string
-  role: string
-  daysRemaining: number
-  phase?: 'UPCOMING' | 'ONGOING' | 'ENDED' | string
-  coverImageUrl: string | null
-  boardOrientation: BoardOrientation
-  iconId: string
-  boardEdited: boolean
-}
-
-type ListEventsResponse = {
-  events: EventSummary[]
+// 型は schemas/event.ts の Zod スキーマから導出したものを再輸出する。
+// 呼び出し側は従来どおり services/eventApi から import できる。
+export type {
+  BestShot,
+  BoardOrientation,
+  CalendarDayState,
+  CalendarDaySummary,
+  CollectedSticker,
+  CooperationProgress,
+  EventBestShots,
+  EventCalendar,
+  EventCollections,
+  EventDetail,
+  EventMember,
+  EventMemberUser,
+  EventMembersResponse,
+  EventNameCandidate,
+  EventSummary,
+  Invitation,
+  OpenDayResponse,
+  OpenedDayContent,
+  OpenedDayResponse,
+  StickerItem,
 }
 
 export type CreateEventInput = {
@@ -37,13 +77,10 @@ export type CreateEventInput = {
 }
 
 export async function listEvents(signal?: AbortSignal): Promise<EventSummary[]> {
-  const data = await apiRequest<ListEventsResponse>('/v1/events', { signal })
-  return data.events ?? []
-}
-
-export type EventNameCandidate = {
-  name: string
-  sourceUrl: string | null
+  const data = await apiRequestValidated('/v1/events', listEventsResponseSchema, {
+    signal,
+  })
+  return data.events
 }
 
 export type SearchEventCandidatesInput = {
@@ -51,10 +88,6 @@ export type SearchEventCandidatesInput = {
   startDate: string
   endDate: string
   location?: string
-}
-
-type EventCandidatesResponse = {
-  candidates: EventNameCandidate[]
 }
 
 export async function searchEventCandidates(
@@ -73,8 +106,9 @@ export async function searchEventCandidates(
     body.location = location
   }
 
-  const data = await apiRequest<EventCandidatesResponse>(
+  const data = await apiRequestValidated(
     '/v1/event-candidates',
+    eventCandidatesResponseSchema,
     {
       method: 'POST',
       body,
@@ -82,7 +116,7 @@ export async function searchEventCandidates(
     },
   )
 
-  return data.candidates ?? []
+  return data.candidates
 }
 
 export async function createEvent(
@@ -90,7 +124,7 @@ export async function createEvent(
 ): Promise<EventSummary> {
   const countdownDays = Math.min(29, Math.max(0, input.countdownDays))
 
-  return apiRequest<EventSummary>('/v1/events', {
+  return apiRequestValidated('/v1/events', eventSummarySchema, {
     method: 'POST',
     body: {
       name: input.name.trim(),
@@ -115,151 +149,89 @@ export async function updateEventSettings(
     clearBoard?: boolean
   },
 ): Promise<EventSummary> {
-  return apiRequest<EventSummary>(`/v1/events/${eventId}`, {
+  return apiRequestValidated(`/v1/events/${eventId}`, eventSummarySchema, {
     method: 'PATCH',
     body: input,
   })
-}
-
-export type EventMemberUser = {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-}
-
-export type EventMember = {
-  user: EventMemberUser
-  role: string
-  joinedAt: string
-  openedToday: boolean | null
-}
-
-type EventMembersResponse = {
-  eventId: string
-  members: EventMember[]
 }
 
 export async function listEventMembers(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<EventMembersResponse> {
-  return apiRequest<EventMembersResponse>(`/v1/events/${eventId}/members`, {
-    signal,
-  })
+  return apiRequestValidated(
+    `/v1/events/${eventId}/members`,
+    eventMembersResponseSchema,
+    { signal },
+  )
 }
 
+/** 204 を返すだけで本文が無いので、検証する対象がない。 */
 export async function leaveEvent(eventId: string): Promise<void> {
   await apiRequest<void>(`/v1/events/${eventId}/leave`, {
     method: 'POST',
   })
 }
 
-export type Invitation = {
-  id: string
-  eventId: string
-  token: string
-  expiresAt: string
-  inviteUrl: string
-}
-
 export async function createInvitation(
   eventId: string,
   expiresInHours = 168,
 ): Promise<Invitation> {
-  return apiRequest<Invitation>(`/v1/events/${eventId}/invitations`, {
-    method: 'POST',
-    body: { expiresInHours },
-  })
-}
-
-export type StickerItem = {
-  id: string
-  name: string
-  imageUrl: string
-  rarity: string
-  flavorText: string
-  source: string
-}
-
-export type CollectedSticker = {
-  grantId: string
-  grantedAt: string
-  source: string
-  dayId: string | null
-  sticker: StickerItem
-}
-
-export type EventCollections = {
-  eventId: string
-  knowledgeCards: unknown[]
-  stickers: CollectedSticker[]
+  return apiRequestValidated(
+    `/v1/events/${eventId}/invitations`,
+    invitationSchema,
+    {
+      method: 'POST',
+      body: { expiresInHours },
+    },
+  )
 }
 
 export async function getEventCollections(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<EventCollections> {
-  const collections = await apiRequest<EventCollections>(
+  const collections = await apiRequestValidated(
     `/v1/events/${eventId}/collections`,
+    eventCollectionsSchema,
     { signal },
   )
 
   return {
     ...collections,
-    stickers: (collections.stickers ?? []).map((item) => ({
+    stickers: collections.stickers.map((item) => ({
       ...item,
       sticker: {
         ...item.sticker,
-        imageUrl: resolveStickerImageUrl(item.sticker.imageUrl ?? ''),
+        imageUrl: resolveStickerImageUrl(item.sticker.imageUrl),
       },
     })),
   }
-}
-
-export type BestShot = {
-  id: string
-  user: {
-    id: string
-    displayName: string
-    avatarUrl: string | null
-  }
-  /** サーバーが返す保存パス。未デプロイ時は imageUrl から復元する。 */
-  imagePath?: string
-  imageUrl: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type EventBestShots = {
-  eventId: string
-  shots: BestShot[]
 }
 
 export async function getEventBestShots(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<EventBestShots> {
-  return apiRequest<EventBestShots>(`/v1/events/${eventId}/best-shots`, {
-    signal,
-  })
+  return apiRequestValidated(
+    `/v1/events/${eventId}/best-shots`,
+    eventBestShotsSchema,
+    { signal },
+  )
 }
 
 export async function putMyBestShot(
   eventId: string,
   imagePath: string,
 ): Promise<BestShot> {
-  return apiRequest<BestShot>(`/v1/events/${eventId}/best-shots/me`, {
-    method: 'PUT',
-    body: { imagePath },
-  })
-}
-
-/** GET /v1/events の要素に詳細フィールドを足したもの(openapi.yaml の EventDetail)。 */
-export type EventDetail = EventSummary & {
-  createdAt: string
-  calendarStartDate: string
-  visibleDayCount: number
-  groupId?: string | null
+  return apiRequestValidated(
+    `/v1/events/${eventId}/best-shots/me`,
+    bestShotSchema,
+    {
+      method: 'PUT',
+      body: { imagePath },
+    },
+  )
 }
 
 export type AcceptInvitationResult = {
@@ -272,13 +244,14 @@ export type AcceptInvitationResult = {
  * 招待トークンを承認してイベントへ参加する。
  *
  * 200(既に参加済み)と201(参加完了)で文言を変えるため、
- * ステータスまで見られる apiRequestWithStatus を使う。
+ * ステータスまで見られる apiRequestValidatedWithStatus を使う。
  */
 export async function acceptInvitation(
   token: string,
 ): Promise<AcceptInvitationResult> {
-  const { data, status } = await apiRequestWithStatus<EventDetail>(
+  const { data, status } = await apiRequestValidatedWithStatus(
     `/v1/invitations/${encodeURIComponent(token)}/accept`,
+    eventDetailSchema,
     { method: 'POST' },
   )
 
@@ -286,78 +259,15 @@ export async function acceptInvitation(
 }
 
 /** GET /v1/events/{eventId}/calendar */
-export type CalendarDayState = 'LOCKED' | 'AVAILABLE' | 'OPENED' | 'EXPIRED' | string
-
-export type CalendarDaySummary = {
-  id: string
-  date: string
-  position: number
-  state: CalendarDayState
-  contentKind: 'KNOWLEDGE' | 'STICKER' | null
-  isCooperationDay: boolean
-  openedAt: string | null
-}
-
-export type CooperationProgress = {
-  status: 'NOT_APPLICABLE' | 'IN_PROGRESS' | 'ACHIEVED' | 'FAILED' | string
-  openedCount: number
-  requiredCount: number
-  achievedAt: string | null
-}
-
-export type EventCalendar = {
-  event: EventDetail
-  serverNow: string
-  today: string
-  days: CalendarDaySummary[]
-  todayCooperation: CooperationProgress | null
-}
-
 export async function getEventCalendar(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<EventCalendar> {
-  return apiRequest<EventCalendar>(`/v1/events/${eventId}/calendar`, { signal })
-}
-
-export type OpenedDayContent =
-  | {
-      kind: 'KNOWLEDGE'
-      knowledgeId: string
-      title: string
-      body: string
-      imageUrl?: string | null
-      category?: string | null
-    }
-  | {
-      kind: 'STICKER'
-      sticker: {
-        id: string
-        name: string
-        imageUrl: string
-        rarity: string
-        flavorText: string
-      }
-    }
-
-export type OpenedDayResponse = {
-  eventId: string
-  dayId: string
-  date: string
-  content: OpenedDayContent
-}
-
-export type OpenDayResponse = OpenedDayResponse & {
-  grant?: {
-    id: string
-    kind: string
-    grantedAt: string
-    source: string
-  }
-  cooperation: {
-    progress: CooperationProgress
-    newlyAchieved: boolean
-  } | null
+  return apiRequestValidated(
+    `/v1/events/${eventId}/calendar`,
+    eventCalendarSchema,
+    { signal },
+  )
 }
 
 /** POST /v1/events/{eventId}/days/{dayId}/open */
@@ -365,8 +275,9 @@ export async function openEventDay(
   eventId: string,
   dayId: string,
 ): Promise<OpenDayResponse> {
-  return apiRequest<OpenDayResponse>(
+  return apiRequestValidated(
     `/v1/events/${eventId}/days/${dayId}/open`,
+    openDayResponseSchema,
     { method: 'POST' },
   )
 }
@@ -377,9 +288,9 @@ export async function getOpenedDay(
   dayId: string,
   signal?: AbortSignal,
 ): Promise<OpenedDayResponse> {
-  return apiRequest<OpenedDayResponse>(
+  return apiRequestValidated(
     `/v1/events/${eventId}/days/${dayId}`,
+    openedDayResponseSchema,
     { signal },
   )
 }
-
