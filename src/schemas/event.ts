@@ -132,10 +132,11 @@ export const bestShotSchema = z.object({
   id: z.string(),
   user: userSchema,
   /**
-   * Storage の保存パス。現行のバックエンド（best_shots.go の bestShotResponse）
-   * にも openapi の BestShot にも無いフィールドなので、実際には常に undefined
-   * になる。画面は imageUrl からパスを復元して凌いでいる（BoardEditPage の
-   * resolveBestShotImagePath）。サーバーが返すようになったら required 化を検討する。
+   * Storage の保存パス。バックエンドは imagePath を返す PR（番号は back の続報参照）
+   * 以降これを返すが、バックエンドは手動デプロイでフロントと反映時期がずれるため、
+   * 未デプロイの環境では欠ける。画面はこの値を優先し、無ければ imageUrl から
+   * 復元する（bestShotImagePath の resolveBestShotImagePath）。
+   * 全環境のデプロイを確認したら required 化し、フォールバックを消すこと。
    */
   imagePath: z.string().optional(),
   imageUrl: z.string(),

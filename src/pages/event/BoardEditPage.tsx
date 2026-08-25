@@ -25,6 +25,7 @@ import {
   type CollectedSticker,
 } from '../../services/eventApi'
 import { ApiError } from '../../services/apiClient'
+import { resolveBestShotImagePath } from './bestShotImagePath'
 import './BoardEditPage.css'
 
 type BoardEditPageProps = {
@@ -91,18 +92,6 @@ const BOARD_FILL_LONG_PRESS_MS = 500
 const LONG_PRESS_MOVE_THRESHOLD = 0.012
 
 const MAX_UNDO_STEPS = 40
-
-function resolveBestShotImagePath(shot: BestShot): string {
-  if (shot.imagePath) return shot.imagePath
-  const marker = '/storage/v1/object/public/best-shots/'
-  const index = shot.imageUrl.indexOf(marker)
-  if (index < 0) return ''
-  try {
-    return decodeURIComponent(shot.imageUrl.slice(index + marker.length))
-  } catch {
-    return shot.imageUrl.slice(index + marker.length)
-  }
-}
 
 function randomTilt(): number {
   return (Math.random() * 2 - 1) * STICKER_MAX_TILT
