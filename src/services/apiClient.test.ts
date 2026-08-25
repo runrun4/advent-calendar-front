@@ -23,6 +23,22 @@ function mockResponse(body: unknown, status = 200) {
   return fetchMock
 }
 
+/**
+ * mockResponse と違い、本文を JSON.stringify に通さない生の Response を返す。
+ * 「200 だが本文が JSON ではない」= レスポンスの JSON パースが失敗する経路を作る。
+ */
+function mockRawResponse(body: string, status = 200) {
+  const fetchMock = vi.fn(
+    async () =>
+      new Response(body, {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+  )
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -89,6 +105,36 @@ describe('apiRequestValidated', () => {
     }).catch((thrown: unknown) => thrown)) as ApiError
 
     expect(error.status).toBe(502)
+    expect(error.code).toBe('UNKNOWN')
+  })
+
+  it('契約に無いエラーコードでもそのまま保つ', async () => {
+    // バックエンドが code を増やしても、フロントが握り潰して UNKNOWN に
+    // すり替えないこと（enum 外は fallback で生の文字列を素通しする）。
+    mockResponse({ code: 'SOMETHING_NEW', message: 'x', traceId: 't' }, 400)
+
+    const error = (await apiRequestValidated('/v1/things', schema, {
+      auth: false,
+    }).catch((thrown: unknown) => thrown)) as ApiError
+
+    expect(error.code).toBe('SOMETHING_NEW')
+    expect(error.message).toBe('x')
+    expect(error.traceId).toBe('t')
+    expect(error.status).toBe(400)
+  })
+
+  it('成功応答でも本文が JSON でなければ ApiError にする', async () => {
+    // 200 なのに本文が空（プロキシやリバースプロキシの事故で起きる）。
+    // response.json() が投げるので、検証まで届かず apiRequestWithStatus で止まる。
+    mockRawResponse('', 200)
+
+    const error = (await apiRequestValidated('/v1/things', schema, {
+      auth: false,
+    }).catch((thrown: unknown) => thrown)) as ApiError
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.message).toBe('サーバーから不正な応答を受信しました。')
+    expect(error.status).toBe(200)
     expect(error.code).toBe('UNKNOWN')
   })
 })

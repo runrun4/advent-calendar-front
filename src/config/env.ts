@@ -16,17 +16,42 @@ export type Env = z.infer<typeof envSchema>
 
 const FALLBACK_ENV: Env = { VITE_API_BASE_URL: '' }
 
+// 環境変数はビルド時に埋め込まれるので実行中に変わらない。fetch のたびに
+// safeParse を回す意味は無いため、初回の評価結果を持ち回す（遅延初期化）。
+let cachedEnv: Env | null = null
+let cachedApiBaseUrl: string | null = null
+
 export function getEnv(): Env {
+  if (cachedEnv !== null) {
+    return cachedEnv
+  }
+
   const parsed = envSchema.safeParse(import.meta.env)
   if (!parsed.success) {
     console.error('環境変数の検証に失敗しました', parsed.error.issues)
-    return FALLBACK_ENV
+    cachedEnv = FALLBACK_ENV
+    return cachedEnv
   }
 
-  return parsed.data
+  cachedEnv = parsed.data
+  return cachedEnv
 }
 
 /** API のベースURL。末尾のスラッシュは落とす。 */
 export function getApiBaseUrl(): string {
-  return getEnv().VITE_API_BASE_URL.replace(/\/$/, '')
+  if (cachedApiBaseUrl === null) {
+    cachedApiBaseUrl = getEnv().VITE_API_BASE_URL.replace(/\/$/, '')
+  }
+  return cachedApiBaseUrl
+}
+
+/**
+ * キャッシュを捨てる。テスト専用。
+ *
+ * 本番では import.meta.env が動かないので呼ぶ必要は無いが、テストは
+ * `vi.stubEnv` で環境変数を差し替えるため、その前後で明示的にリセットする。
+ */
+export function resetEnvCache(): void {
+  cachedEnv = null
+  cachedApiBaseUrl = null
 }

@@ -82,7 +82,7 @@ export type CooperationProgress = z.infer<typeof cooperationProgressSchema>
 
 export const eventMembersResponseSchema = z.object({
   eventId: z.string(),
-  members: z.array(eventMemberSchema),
+  members: nullableArray(eventMemberSchema),
   todayCooperation: cooperationProgressSchema.nullable().default(null),
 })
 export type EventMembersResponse = z.infer<typeof eventMembersResponseSchema>
@@ -123,7 +123,7 @@ export type CollectedSticker = z.infer<typeof collectedStickerSchema>
 export const eventCollectionsSchema = z.object({
   eventId: z.string(),
   // ナレッジカードは画面が未実装。中身は見ないので形も決めない。
-  knowledgeCards: z.array(z.unknown()),
+  knowledgeCards: nullableArray(z.unknown()),
   stickers: nullableArray(collectedStickerSchema),
 })
 export type EventCollections = z.infer<typeof eventCollectionsSchema>
@@ -131,7 +131,12 @@ export type EventCollections = z.infer<typeof eventCollectionsSchema>
 export const bestShotSchema = z.object({
   id: z.string(),
   user: userSchema,
-  /** サーバーが返す保存パス。未デプロイ時は imageUrl から復元する。 */
+  /**
+   * Storage の保存パス。現行のバックエンド（best_shots.go の bestShotResponse）
+   * にも openapi の BestShot にも無いフィールドなので、実際には常に undefined
+   * になる。画面は imageUrl からパスを復元して凌いでいる（BoardEditPage の
+   * resolveBestShotImagePath）。サーバーが返すようになったら required 化を検討する。
+   */
   imagePath: z.string().optional(),
   imageUrl: z.string(),
   createdAt: z.string(),
@@ -141,7 +146,7 @@ export type BestShot = z.infer<typeof bestShotSchema>
 
 export const eventBestShotsSchema = z.object({
   eventId: z.string(),
-  shots: z.array(bestShotSchema),
+  shots: nullableArray(bestShotSchema),
 })
 export type EventBestShots = z.infer<typeof eventBestShotsSchema>
 
@@ -168,7 +173,7 @@ export const eventCalendarSchema = z.object({
   event: eventDetailSchema,
   serverNow: z.string(),
   today: z.string(),
-  days: z.array(calendarDaySummarySchema),
+  days: nullableArray(calendarDaySummarySchema),
   todayCooperation: cooperationProgressSchema.nullable().default(null),
 })
 export type EventCalendar = z.infer<typeof eventCalendarSchema>
