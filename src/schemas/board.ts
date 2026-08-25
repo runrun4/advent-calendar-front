@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { nullableArray, userSchema } from './common'
+import { userSchema } from './common'
 import { boardOrientationSchema } from './event'
 
 /**
@@ -7,7 +7,13 @@ import { boardOrientationSchema } from './event'
  *
  * 正本は runrun-backend の `docs/api/openapi.yaml`（BoardResponse / BoardItem）。
  * schemas/event.ts と同じく「画面が実際に読むフィールド」だけを写している
- * （契約の clientItemId / version は画面が使っていないので写していない）。
+ * （契約の clientItemId / version は今の画面が読まないので写していない）。
+ *
+ * ただし version は「使っていないから省いた」だけで、要らないわけではない。
+ * PATCH（ステッカー移動など）を実装するときは version を必ずここへ写し戻すこと。
+ * 楽観ロックのキーであり、409（BOARD_ITEM_VERSION_CONFLICT）で再試行するには
+ * サーバーが返した version を握っている必要がある
+ * （runrun-backend の internal/httpapi/board.go 参照）。
  *
  * payload の値域（点数・色・スケールなど）はサーバーが書き込み時に検証済みなので、
  * ここでは形だけを見る。送信前の丸めは services/boardApi.ts の normalize* が担当する。
@@ -101,11 +107,38 @@ export type BoardItem = z.infer<typeof boardItemSchema>
 /** 今回APIが受け付ける種別。 */
 export type BoardItemKind = BoardItem['kind']
 
+/**
+ * 一覧は「要素単位で許容」する。
+ *
+ * 配列ごと boardItemSchema で検証すると、契約外の要素が1つ混ざっただけで
+ * 一覧全体が ApiError になり、ボードが真っ白になってしまう。将来サーバーが
+ * kind を増やしても、読めなかったその要素だけ落として画面全体は生かす。
+ *
+ * Realtime 側（hooks/useBoard.ts の itemFromRealtimeRow）も未知の kind の行を
+ * null で捨てて描画を続けているので、REST 側もそれに揃えた方針。
+ *
+ * null / 未指定を空配列として受ける点は common.ts の nullableArray と同じ。
+ */
+const boardItemsSchema = z
+  .array(z.unknown())
+  .nullable()
+  .default([])
+  .transform((items) =>
+    (items ?? []).flatMap((item) => {
+      const parsed = boardItemSchema.safeParse(item)
+      if (!parsed.success) {
+        console.error('契約に合わないボード要素を無視します', parsed.error.issues)
+        return []
+      }
+      return [parsed.data]
+    }),
+  )
+
 export const boardResponseSchema = z.object({
   eventId: z.string(),
   boardOrientation: boardOrientationSchema,
   boardEdited: z.boolean(),
   /** zIndex 昇順。 */
-  items: nullableArray(boardItemSchema),
+  items: boardItemsSchema,
 })
 export type BoardResponse = z.infer<typeof boardResponseSchema>

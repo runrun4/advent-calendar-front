@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { nullableArray, userSchema } from './common'
+import { userSchema } from './common'
 
 /**
  * チャット系エンドポイントのレスポンススキーマ。
@@ -21,9 +21,37 @@ export const chatMessageSchema = z.object({
 })
 export type ChatMessage = z.infer<typeof chatMessageSchema>
 
+/**
+ * 一覧は「要素単位で許容」する。
+ *
+ * 配列ごと chatMessageSchema で検証すると、契約外のメッセージが1件混ざっただけで
+ * 一覧全体が ApiError になり、チャットが空になってしまう。将来サーバーが kind を
+ * 増やしても、読めなかったその1件だけ落として画面全体は生かす。
+ * ボード（schemas/board.ts）や Realtime 側（hooks/useBoard.ts）と同じ方針。
+ *
+ * null / 未指定を空配列として受ける点は common.ts の nullableArray と同じ。
+ */
+const chatMessagesSchema = z
+  .array(z.unknown())
+  .nullable()
+  .default([])
+  .transform((messages) =>
+    (messages ?? []).flatMap((message) => {
+      const parsed = chatMessageSchema.safeParse(message)
+      if (!parsed.success) {
+        console.error(
+          '契約に合わないチャットメッセージを無視します',
+          parsed.error.issues,
+        )
+        return []
+      }
+      return [parsed.data]
+    }),
+  )
+
 export const messagesResponseSchema = z.object({
   /** sentAt、id の昇順。 */
-  messages: nullableArray(chatMessageSchema),
+  messages: chatMessagesSchema,
   nextCursor: z.string().nullable().default(null),
 })
 export type MessagesResponse = z.infer<typeof messagesResponseSchema>

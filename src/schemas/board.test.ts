@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   boardItemSchema,
   boardResponseSchema,
@@ -8,7 +8,7 @@ import {
 
 /** GET /v1/events/{eventId}/board が返す形(boardResponse / boardItemResponse)。 */
 const strokeItem = {
-  id: '00000000-0000-4000-8000-0000000000i1',
+  id: '00000000-0000-4000-8000-0000000000a1',
   eventId: '00000000-0000-4000-8000-0000000000b2',
   clientItemId: '00000000-0000-4000-8000-0000000000c1',
   kind: 'STROKE',
@@ -21,7 +21,7 @@ const strokeItem = {
     width: 0.01,
   },
   createdBy: {
-    id: '00000000-0000-4000-8000-0000000000u1',
+    id: '00000000-0000-4000-8000-0000000000e1',
     displayName: 'たろう',
     avatarUrl: null,
   },
@@ -32,10 +32,10 @@ const strokeItem = {
 
 const stickerItem = {
   ...strokeItem,
-  id: '00000000-0000-4000-8000-0000000000i2',
+  id: '00000000-0000-4000-8000-0000000000a2',
   kind: 'STICKER',
   payload: {
-    stickerId: '00000000-0000-4000-8000-0000000000s1',
+    stickerId: '00000000-0000-4000-8000-0000000000f1',
     imageUrl: 'stickers/neko.png',
     x: 0.5,
     y: 0.5,
@@ -145,12 +145,33 @@ describe('boardResponseSchema', () => {
     ).toBe(false)
   })
 
-  it('要素が契約と違えば拒否する', () => {
-    const result = boardResponseSchema.safeParse({
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('契約外の要素が混ざっていても、その要素だけ除外して成功する', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const parsed = boardResponseSchema.parse({
       ...boardResponse,
-      items: [{ ...strokeItem, zIndex: '1' }],
+      items: [strokeItem, { ...stickerItem, zIndex: '2' }],
     })
 
-    expect(result.success).toBe(false)
+    // 一覧全体を落とさない(1件の契約外要素でボードが真っ白にならない)。
+    expect(parsed.items).toHaveLength(1)
+    expect(parsed.items[0].id).toBe(strokeItem.id)
+    expect(errorSpy).toHaveBeenCalled()
+  })
+
+  it('契約外の kind の要素も同じように読み飛ばす(将来の種別追加に耐える)', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const parsed = boardResponseSchema.parse({
+      ...boardResponse,
+      items: [{ ...strokeItem, kind: 'VIDEO' }, stickerItem],
+    })
+
+    expect(parsed.items).toHaveLength(1)
+    expect(parsed.items[0].kind).toBe('STICKER')
   })
 })

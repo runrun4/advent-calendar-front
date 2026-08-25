@@ -37,7 +37,7 @@ describe('pushSubscriptionResponseSchema', () => {
   it('バックエンドが返す購読をそのまま受け入れる', () => {
     // PUT /v1/me/push-subscriptions が返す形(pushSubscriptionResponse)。
     const parsed = pushSubscriptionResponseSchema.parse({
-      id: '00000000-0000-4000-8000-0000000000p1',
+      id: '00000000-0000-4000-8000-0000000000a1',
       endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
       createdAt: '2026-08-08T09:00:00Z',
     })

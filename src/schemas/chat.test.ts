@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { chatMessageSchema, messagesResponseSchema } from './chat'
 
 /** GET /v1/events/{eventId}/messages が返す形(chatMessageResponse)。 */
 const chatMessage = {
-  id: '00000000-0000-4000-8000-0000000000m1',
+  id: '00000000-0000-4000-8000-0000000000d1',
   eventId: '00000000-0000-4000-8000-0000000000b2',
   clientMessageId: '00000000-0000-4000-8000-0000000000c1',
   sender: {
-    id: '00000000-0000-4000-8000-0000000000u1',
+    id: '00000000-0000-4000-8000-0000000000e1',
     displayName: 'たろう',
     avatarUrl: null,
   },
@@ -65,12 +65,21 @@ describe('messagesResponseSchema', () => {
     expect(messagesResponseSchema.parse({}).messages).toEqual([])
   })
 
-  it('要素が契約と違えば拒否する', () => {
-    const result = messagesResponseSchema.safeParse({
-      messages: [{ ...chatMessage, sentAt: 12345 }],
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('契約外の要素が混ざっていても、その要素だけ除外して成功する', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const parsed = messagesResponseSchema.parse({
+      messages: [{ ...chatMessage, sentAt: 12345 }, chatMessage],
       nextCursor: null,
     })
 
-    expect(result.success).toBe(false)
+    // 一覧全体を落とさない(1件の契約外メッセージでチャットが空にならない)。
+    expect(parsed.messages).toHaveLength(1)
+    expect(parsed.messages[0].text).toBe('あしたたのしみ')
+    expect(errorSpy).toHaveBeenCalled()
   })
 })

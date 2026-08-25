@@ -13,7 +13,7 @@ import {
   type StickerPayload,
   type StrokePayload,
 } from '../schemas/board'
-import type { BoardOrientation } from './eventApi'
+import type { BoardOrientation } from '../schemas/event'
 
 // 型は schemas/board.ts の Zod スキーマから導出したものを再輸出する。
 // 呼び出し側は従来どおり services/boardApi から import できる。

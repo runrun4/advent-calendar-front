@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from './apiClient'
-import { createEvent } from './eventApi'
+import { createEvent, updateEventSettings } from './eventApi'
 
 vi.mock('./authService', () => ({
   getAccessToken: async () => 'test-token',
@@ -72,5 +72,40 @@ describe('createEvent', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await expect(createEvent(createInput)).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('updateEventSettings', () => {
+  it('200 の EventDetail を検証して返す', async () => {
+    mockResponse(eventDetail, 200)
+
+    const updated = await updateEventSettings(eventDetail.id, {
+      boardOrientation: 'LANDSCAPE',
+    })
+
+    expect(updated.calendarStartDate).toBe('2026-08-07')
+  })
+
+  /**
+   * PATCH の応答は EventDetail。eventSummarySchema で検証していると
+   * EventDetail 固有のフィールド(createdAt / calendarStartDate / visibleDayCount)が
+   * 欠けた応答を素通しし、画面が undefined を触って落ちる。
+   * ここでは「eventSummarySchema なら通るが eventDetailSchema では落ちる」応答を
+   * 使い、スキーマの巻き戻しを検出できるようにしている。
+   */
+  it('EventSummary 止まりの応答は ApiError にする', async () => {
+    const {
+      createdAt: _createdAt,
+      calendarStartDate: _calendarStartDate,
+      visibleDayCount: _visibleDayCount,
+      groupId: _groupId,
+      ...summaryOnly
+    } = eventDetail
+    mockResponse(summaryOnly, 200)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await expect(
+      updateEventSettings(eventDetail.id, { boardOrientation: 'LANDSCAPE' }),
+    ).rejects.toBeInstanceOf(ApiError)
   })
 })
