@@ -5,7 +5,7 @@ import {
   type BoardOrientation,
   type EventSummary,
 } from '../../services/eventApi'
-import { DEFAULT_EVENT_ICON_ID } from './EventNameField'
+import { DEFAULT_EVENT_ICON_ID } from './eventIcons'
 import { EventList, type EventListItem } from './EventList'
 import {
   MemoriesPage,
@@ -190,11 +190,19 @@ export function EventMainPage({
     onDetailOpenChange,
   ])
 
+  /*
+   * 作成直後のイベントを親から受け取ったら、その詳細を開いて
+   * 少し待ってから共有モーダルを出す。
+   *
+   * 開く対象はこの画面が持つ state なので、親のハンドラ側では書けない。
+   * 描画の落ち着きを待つ rAF / タイマーも含めて effect で扱う。
+   */
   useEffect(() => {
     if (!pendingEvent) {
       return
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 上記コメントの通り、親から渡されたイベントを開く処理はここでしか書けない
     setShowShareInvite(false)
     setAdventView('calendar')
     setAdventTarget(

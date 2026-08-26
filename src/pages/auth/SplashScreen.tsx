@@ -6,30 +6,34 @@ type SplashScreenProps = {
   onWebContinue?: () => void
 }
 
+function detectPWA(): boolean {
+  const standalone = window.matchMedia(
+    '(display-mode: standalone)',
+  ).matches
+
+  const iosStandalone =
+    'standalone' in navigator &&
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+
+  return standalone || iosStandalone
+}
+
 export function SplashScreen({
   onLoadingComplete,
   onWebContinue,
 }: SplashScreenProps) {
-  const [isPWA, setIsPWA] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    const standalone = window.matchMedia(
-      '(display-mode: standalone)',
-    ).matches
-
-    const iosStandalone =
-      'standalone' in navigator &&
-      (navigator as Navigator & { standalone?: boolean }).standalone === true
-
-    setIsPWA(standalone || iosStandalone)
-  }, [])
+  /*
+   * PWA判定はマウント時に一度だけ行えば十分なので、
+   * useState の遅延初期化で済ませる。
+   */
+  const [isPWA] = useState(detectPWA)
 
   /*
    * PWA化済みの場合のみ、
    * 2秒後に次の画面へ進む
    */
   useEffect(() => {
-    if (isPWA !== true) {
+    if (!isPWA) {
       return
     }
 
@@ -41,11 +45,6 @@ export function SplashScreen({
       window.clearTimeout(timer)
     }
   }, [isPWA, onLoadingComplete])
-
-  // PWA判定中
-  if (isPWA === null) {
-    return null
-  }
 
   // ================================
   // PWA化済み

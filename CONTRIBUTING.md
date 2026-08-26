@@ -174,7 +174,7 @@ husky + lint-staged を使っている。`npm ci` / `npm install` 時に `prepar
 | `npm run test` | ユニットテスト |
 | `npm run build` | ビルド（`tsc -b` による型チェックを兼ねる） |
 
-**警告（warning）について:** ハッカソン期間に溜まった既存の規則違反を `eslint.config.js` で一時的に `warn` へ落としている（`react-hooks/set-state-in-effect` など）。CI は警告では落ちないが、**新しく警告を増やさないこと**。既存分は別 PR で順次 `error` に戻していく。
+**警告（warning）について:** ハッカソン期間に `warn` へ落としていた規則（`react-hooks/set-state-in-effect` など）は解消済みで、すべて `error` に戻っている。どうしても避けられない箇所だけ、理由コメント付きの `eslint-disable-next-line` を置いている。**新しく警告や disable を増やさないこと。**
 
 ## デプロイの流れ
 

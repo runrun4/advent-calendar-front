@@ -12,11 +12,12 @@ import {
   type EventMember,
 } from '../../services/eventApi'
 import {
+  DEFAULT_EVENT_ICON,
   DEFAULT_EVENT_ICON_ID,
+  EVENT_ICON_MAP,
   EVENT_ICON_OPTIONS,
-  getEventIcon,
   type EventIconId,
-} from './EventNameField'
+} from './eventIcons'
 import './EventSettingsModal.css'
 
 const ROOM_NAME_MAX = 10
@@ -82,7 +83,7 @@ export function EventSettingsModal({
   const isGroupEvent = eventMode === 'GROUP'
   // PATCH /v1/events/{id} は OWNER 限定。MEMBER には編集UI自体を出さない。
   const isOwner = eventRole === 'OWNER'
-  const SelectedIcon = getEventIcon(selectedIconId)
+  const SelectedIcon = EVENT_ICON_MAP[selectedIconId] ?? DEFAULT_EVENT_ICON
 
   const hasNameChange = trimmedName !== eventTitle
   const hasIconChange = selectedIconId !== eventIconId
@@ -92,8 +93,17 @@ export function EventSettingsModal({
   const canSave = isNameValid && hasChanges && !isSaving && !isLeaving
   const isFormDisabled = isSaving || !isOwner
 
+  /*
+   * 開いた時点のイベント情報でフォームを組み直し、
+   * メンバーと招待リンクを取り直す。
+   *
+   * Modal は閉じるアニメーションのあいだも中身を描画し続けるため
+   * アンマウントで state を捨てられず、isOpen を見て初期化するしかない。
+   * 以下3つの effect の eslint-disable はいずれもこの理由による。
+   */
   useEffect(() => {
     if (!isOpen) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 開いた時のフォーム初期化はここでしかできない
     setRoomName(eventTitle)
     setSelectedIconId(eventIconId || DEFAULT_EVENT_ICON_ID)
     setSelectedOrientation(boardOrientation)
@@ -112,6 +122,7 @@ export function EventSettingsModal({
     if (!isOpen || !isGroupEvent) return
 
     let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 開いた時に読み込み中表示へ戻すのはここでしかできない
     setIsLoadingInvite(true)
 
     void createInvitation(eventId)
@@ -137,6 +148,7 @@ export function EventSettingsModal({
     if (!isOpen) return
 
     const controller = new AbortController()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 開いた時に読み込み中表示へ戻すのはここでしかできない
     setIsLoadingMembers(true)
 
     void listEventMembers(eventId, controller.signal)

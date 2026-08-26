@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import './InstallAppPrompt.css'
 
@@ -19,27 +19,27 @@ function isPWA(): boolean {
   return standalone || iosStandalone
 }
 
+/*
+ * イベント画面ではない場合は何も出さない。
+ *
+ * 表示状態を effect で isActive に追従させる代わりに、
+ * イベント画面を開いている間だけ中身をマウントする。
+ * こうすると開き直すたびに初期状態（＝表示）へ戻り、
+ * 閉じた状態はイベント画面を開いている間だけ保たれる。
+ */
 export function InstallAppPrompt({
   isActive,
 }: InstallAppPromptProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  if (!isActive) {
+    return null
+  }
 
-  useEffect(() => {
-    // イベント画面ではない場合は非表示
-    if (!isActive) {
-      setIsVisible(false)
-      return
-    }
+  return <InstallAppPromptDialog />
+}
 
-    // PWAとして起動している場合は表示しない
-    if (isPWA()) {
-      setIsVisible(false)
-      return
-    }
-
-    // イベント画面を開いたら表示
-    setIsVisible(true)
-  }, [isActive])
+function InstallAppPromptDialog() {
+  // PWAとして起動している場合は表示しない
+  const [isVisible, setIsVisible] = useState(() => !isPWA())
 
   const handleClose = () => {
     setIsVisible(false)

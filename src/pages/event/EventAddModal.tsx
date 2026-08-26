@@ -8,11 +8,8 @@ import {
   type EventSummary,
   searchEventCandidates,
 } from '../../services/eventApi'
-import {
-  DEFAULT_EVENT_ICON_ID,
-  EventNameField,
-  type EventIconId,
-} from './EventNameField'
+import { EventNameField } from './EventNameField'
+import { DEFAULT_EVENT_ICON_ID, type EventIconId } from './eventIcons'
 import { PrivateEventDetailPage } from './PrivateEventDetailPage'
 import { PublicEventRequestPage } from './PublicEventRequestPage'
 import './EventAddModal.css'
@@ -99,6 +96,11 @@ type InlineCalendarProps = {
   onSelect: (value: string) => void
 }
 
+/*
+ * 表示中の年月は内部 state だが、選択日が変わったら
+ * その月へ戻す。呼び出し側で key={selected} を渡して
+ * 選択のたびに作り直すことで、effect での同期を避けている。
+ */
 function InlineCalendar({
   selected,
   initialViewDate,
@@ -111,13 +113,6 @@ function InlineCalendar({
     new Date()
   const [viewYear, setViewYear] = useState(initial.getFullYear())
   const [viewMonth, setViewMonth] = useState(initial.getMonth())
-
-  useEffect(() => {
-    const next = parseDateValue(selected)
-    if (!next) return
-    setViewYear(next.getFullYear())
-    setViewMonth(next.getMonth())
-  }, [selected])
 
   const goPrevMonth = () => {
     if (viewMonth === 0) {
@@ -486,6 +481,22 @@ export function EventAddModal({
     privateEventLocation !== '' ||
     privateCountdownDays !== defaultCountdownDays
 
+  /*
+   * 検索条件を変えたら前回の検索結果は捨てる。
+   *
+   * 条件の変化を effect で監視する代わりに、
+   * 条件を変える操作の側から呼ぶ。
+   */
+  const resetPublicSearchResult = () => {
+    publicSearchAbortRef.current?.abort()
+    publicSearchAbortRef.current = null
+    setPublicCandidates([])
+    setPublicSearchPerformed(false)
+    setPublicSearchError(null)
+    setSelectedCandidate(null)
+    setIsSearchingPublic(false)
+  }
+
   const resetForm = () => {
     publicSearchAbortRef.current?.abort()
     publicSearchAbortRef.current = null
@@ -515,11 +526,20 @@ export function EventAddModal({
     setIsWaitingCreate(false)
   }
 
+  /*
+   * 開いた瞬間にフォームを初期化する。
+   *
+   * 閉じるアニメーションのあいだも中身を出したままにする必要があり、
+   * アンマウントで state を捨てられない。開いた側(カレンダーの日付タップ)から
+   * 渡される initialStartDate もここで反映するため、
+   * isOpen を見て初期化する effect が要る。
+   */
   useEffect(() => {
     if (!isOpen) return
 
     publicSearchAbortRef.current?.abort()
     publicSearchAbortRef.current = null
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 上記コメントの通り、開いた時のフォーム初期化はここでしかできない
     setEventType('public')
     setShowPublicRequest(false)
     setPublicCandidates([])
@@ -545,22 +565,6 @@ export function EventAddModal({
     setShowDiscardConfirm(false)
     setIsWaitingCreate(false)
   }, [isOpen, defaultStartDate, defaultCountdownDays])
-
-  useEffect(() => {
-    publicSearchAbortRef.current?.abort()
-    publicSearchAbortRef.current = null
-    setPublicCandidates([])
-    setPublicSearchPerformed(false)
-    setPublicSearchError(null)
-    setSelectedCandidate(null)
-    setIsSearchingPublic(false)
-  }, [
-    publicEventName,
-    publicEventLocation,
-    publicEventStartDate,
-    publicEventEndDate,
-    publicDateMode,
-  ])
 
   const resolvePublicEndDate = () =>
     publicDateMode === 'single'
@@ -674,7 +678,6 @@ export function EventAddModal({
 
   const countdownDragOriginX = useRef<number | null>(null)
   const countdownDragOriginValue = useRef(0)
-  const currentCountdownDaysRef = useRef(15)
 
   const currentCountdownDays =
     eventType === 'public'
@@ -687,17 +690,24 @@ export function EventAddModal({
       : privateEventStartDate
   const maxCountdownDays = maxCountdownForStart(currentStartDate)
 
-  currentCountdownDaysRef.current = currentCountdownDays
-
-  useEffect(() => {
-    const maxPublic = maxCountdownForStart(publicEventStartDate)
+  /*
+   * 開始日が近づくとカウントダウンの上限も縮むので、
+   * 開始日を変えた時点で日数を上限に丸める。
+   */
+  const handlePublicStartDateChange = (value: string) => {
+    // 同じ日の再選択では何も変わっていないので、検索結果を消さない
+    if (value === publicEventStartDate) return
+    setPublicEventStartDate(value)
+    resetPublicSearchResult()
+    const maxPublic = maxCountdownForStart(value)
     setPublicCountdownDays((days) => clampCountdownDays(days, maxPublic))
-  }, [publicEventStartDate])
+  }
 
-  useEffect(() => {
-    const maxPrivate = maxCountdownForStart(privateEventStartDate)
+  const handlePrivateStartDateChange = (value: string) => {
+    setPrivateEventStartDate(value)
+    const maxPrivate = maxCountdownForStart(value)
     setPrivateCountdownDays((days) => clampCountdownDays(days, maxPrivate))
-  }, [privateEventStartDate])
+  }
 
   const setCurrentCountdownDays = (value: number) => {
     const next = clampCountdownDays(value, maxCountdownDays)
@@ -713,8 +723,7 @@ export function EventAddModal({
   ) => {
     event.currentTarget.setPointerCapture(event.pointerId)
     countdownDragOriginX.current = event.clientX
-    countdownDragOriginValue.current =
-      currentCountdownDaysRef.current
+    countdownDragOriginValue.current = currentCountdownDays
   }
 
   const handleCountdownPointerMove = (
@@ -735,7 +744,7 @@ export function EventAddModal({
       maxCountdownDays,
     )
 
-    if (next !== currentCountdownDaysRef.current) {
+    if (next !== currentCountdownDays) {
       setCurrentCountdownDays(next)
     }
   }
@@ -767,8 +776,7 @@ export function EventAddModal({
     }
 
     setCurrentCountdownDays(
-      currentCountdownDaysRef.current +
-        (delta > 0 ? 1 : -1),
+      currentCountdownDays + (delta > 0 ? 1 : -1),
     )
   }
 
@@ -931,7 +939,10 @@ export function EventAddModal({
                     <EventNameField
                       id="public-event-name"
                       value={publicEventName}
-                      onChange={setPublicEventName}
+                      onChange={(nextName) => {
+                        setPublicEventName(nextName)
+                        resetPublicSearchResult()
+                      }}
                       iconId={publicEventIconId}
                       onIconChange={setPublicEventIconId}
                       onKeyDown={handleInputKeyDown}
@@ -943,20 +954,24 @@ export function EventAddModal({
                     <DateSection
                       mode={publicDateMode}
                       onModeChange={(nextMode) => {
+                        if (nextMode === publicDateMode) return
                         setPublicDateMode(nextMode)
                         if (nextMode === 'single') {
                           setPublicEventEndDate('')
                         }
+                        resetPublicSearchResult()
                       }}
                       startDate={publicEventStartDate}
                       endDate={publicEventEndDate}
                       minStartDate={minStartDate}
                       onStartDateChange={
-                        setPublicEventStartDate
+                        handlePublicStartDateChange
                       }
-                      onEndDateChange={
-                        setPublicEventEndDate
-                      }
+                      onEndDateChange={(value) => {
+                        if (value === publicEventEndDate) return
+                        setPublicEventEndDate(value)
+                        resetPublicSearchResult()
+                      }}
                     />
                   </div>
 
@@ -974,11 +989,12 @@ export function EventAddModal({
                       type="text"
                       className="event-add-modal__input"
                       value={publicEventLocation}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setPublicEventLocation(
                           e.target.value,
                         )
-                      }
+                        resetPublicSearchResult()
+                      }}
                       onKeyDown={handleInputKeyDown}
                       placeholder="会場名などを入力"
                       inputMode="text"
@@ -1124,7 +1140,7 @@ export function EventAddModal({
                       endDate={privateEventEndDate}
                       minStartDate={minStartDate}
                       onStartDateChange={
-                        setPrivateEventStartDate
+                        handlePrivateStartDateChange
                       }
                       onEndDateChange={
                         setPrivateEventEndDate
