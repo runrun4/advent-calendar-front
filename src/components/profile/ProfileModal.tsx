@@ -32,6 +32,13 @@ type ProfileModalProps = {
   onUserUpdated?: (user: AppUser) => void
 }
 
+/*
+ * 開いている間だけ中身をマウントする。
+ *
+ * 開いたときに state を effect で組み直す代わりに、
+ * マウント時の初期値としてフォームを組み立てる。
+ * 最新プロフィールの取得もマウント時の一度きりになる。
+ */
 export function ProfileModal({
   isOpen,
   user,
@@ -39,9 +46,31 @@ export function ProfileModal({
   onLoggedOut,
   onUserUpdated,
 }: ProfileModalProps) {
-  const [nickname, setNickname] = useState('')
-  const [email, setEmail] = useState('')
-  const [iconUrl, setIconUrl] = useState<string | null>(null)
+  if (!isOpen) return null
+
+  return (
+    <ProfileModalContent
+      user={user}
+      onClose={onClose}
+      onLoggedOut={onLoggedOut}
+      onUserUpdated={onUserUpdated}
+    />
+  )
+}
+
+type ProfileModalContentProps = Omit<ProfileModalProps, 'isOpen'>
+
+function ProfileModalContent({
+  user,
+  onClose,
+  onLoggedOut,
+  onUserUpdated,
+}: ProfileModalContentProps) {
+  const [nickname, setNickname] = useState(() => user?.displayName ?? '')
+  const [email] = useState(() => user?.email ?? '')
+  const [iconUrl, setIconUrl] = useState<string | null>(
+    () => user?.iconUrl ?? null,
+  )
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [nicknameError, setNicknameError] = useState<string | null>(null)
@@ -62,29 +91,8 @@ export function ProfileModal({
   const pushSupported = isPushSupported()
   const needsHomeScreen = pushSupported && isIOS() && !isStandalone()
 
-  /*
-   * 開いた時点のユーザー情報でフォームを組み直す。
-   *
-   * Modal は閉じるアニメーションのあいだも中身を描画し続けるため
-   * アンマウントで state を捨てられず、isOpen を見て初期化するしかない。
-   */
+  // 開いたタイミングだけ最新プロフィールを取りに行く
   useEffect(() => {
-    if (!isOpen) return
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 上記コメントの通り、開いた時のフォーム初期化はここでしかできない
-    setNickname(user?.displayName ?? '')
-    setEmail(user?.email ?? '')
-    setIconUrl(user?.iconUrl ?? null)
-    setAvatarFile(null)
-    setPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev)
-      return null
-    })
-    setNicknameError(null)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    setShowLogoutConfirm(false)
-
     let cancelled = false
 
     const load = async () => {
@@ -92,8 +100,9 @@ export function ProfileModal({
       try {
         const me = await getMe()
         if (cancelled) return
-        setNickname(me.displayName || user?.displayName || '')
-        setIconUrl(me.avatarUrl ?? user?.iconUrl ?? null)
+        // 取れなかった項目は開いた時点の値（初期値）のまま残す
+        setNickname((prev) => me.displayName || prev)
+        setIconUrl((prev) => me.avatarUrl ?? prev)
       } catch (error) {
         if (cancelled) return
         console.error('GET /v1/me failed in profile modal', error)
@@ -107,9 +116,7 @@ export function ProfileModal({
     return () => {
       cancelled = true
     }
-    // 開いたタイミングだけ最新プロフィールを取りに行く
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional open-only fetch
-  }, [isOpen])
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -119,8 +126,6 @@ export function ProfileModal({
 
   // モーダルを開くたびに、この端末の通知許可状態と購読有無を読み直す
   useEffect(() => {
-    if (!isOpen) return
-
     let cancelled = false
 
     void getPushStatus().then((status) => {
@@ -134,7 +139,7 @@ export function ProfileModal({
     return () => {
       cancelled = true
     }
-  }, [isOpen])
+  }, [])
 
   const handlePickImage = () => {
     fileInputRef.current?.click()
@@ -285,7 +290,7 @@ export function ProfileModal({
   return (
     <>
     <Modal
-      isOpen={isOpen}
+      isOpen
       title="プロフィール"
       onClose={onClose}
       variant="light"
