@@ -15,6 +15,9 @@ type ErrorBoundaryState = {
  * 受け止めないと React がツリーごと外してしまい、
  * 利用者には真っ白な画面だけが残る。
  * エラー境界は今のところクラスコンポーネントでしか書けない。
+ *
+ * 注意: 捕捉できるのはレンダー中と lifecycle 内の throw だけ。
+ * イベントハンドラ・setTimeout・Promise の中の例外はここに来ない。
  */
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,

@@ -50,6 +50,7 @@ export function ProfileModal({
 
   return (
     <ProfileModalContent
+      key={user?.id ?? 'no-user'}
       user={user}
       onClose={onClose}
       onLoggedOut={onLoggedOut}

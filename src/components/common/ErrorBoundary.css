@@ -3,6 +3,8 @@
   place-items: center;
   width: 100%;
   min-height: 100dvh;
+  /* #root が overflow: hidden なので、低い viewport でもボタンへ届くように */
+  overflow-y: auto;
   padding: 1.5rem;
   background: #fff;
   color: #000;
