@@ -368,7 +368,7 @@ describe('eventCollectionsSchema', () => {
 
 describe('eventBestShotsSchema', () => {
   // GET /v1/events/{eventId}/best-shots が返す形(bestShotsResponse)。
-  // imagePath はサーバーが返さないので fixture にも入れない。
+  // imagePath は未デプロイのバックエンドだと欠けるので、fixture にも入れない。
   const bestShotsResponse = {
     eventId: '00000000-0000-4000-8000-0000000000b2',
     shots: [
