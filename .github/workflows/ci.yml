@@ -1,17 +1,19 @@
 # develop 宛て PR と develop への push で lint・テスト・ビルドを回す。
 # マージ前に壊れているかどうかを機械的に判定し、レビューを内容の議論に集中させる。
-# デプロイは deploy.yml / deploy-preview.yml が別途担当する。
+# deploy.yml / deploy-preview.yml は workflow_call でこのワークフローを呼び、
+# 成功した場合だけ、ここで作った dist(アーティファクト)をデプロイする(RR-03)。
 name: ci
 
 on:
   pull_request:
     branches: [develop]
-  push:
-    branches: [develop]
+  # develop への push は deploy.yml が本ワークフローを呼ぶので、ここでは二重に走らせない。
+  workflow_call:
 
+# 呼び出し元ごとに別グループにする(github.workflow は呼び出し元名)。
 # 同じブランチで連続 push したときは古い実行を打ち切る。
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -26,7 +28,16 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
+      - name: 型チェック
+        run: npm run typecheck
       - name: ユニットテスト
         run: npm run test
       - name: ビルド (tsc -b による型チェックを兼ねる)
         run: npm run build
+      - name: 検査済みの dist を保存 (デプロイ側が同じ成果物を使う)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 3
