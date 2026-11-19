@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Camera, ChevronLeft, Eraser, Pencil, Sticker } from 'lucide-react'
 import { BoardCanvas } from '../../components/board/BoardCanvas'
 import { BoardStickerPicker } from '../../components/board/BoardStickerPicker'
+import { clampStickerCenter } from '../../components/board/boardGeometry'
 import { useBoard } from '../../hooks/useBoard'
 import type { BoardItem, BoardPoint } from '../../services/boardApi'
 import {
@@ -77,7 +78,7 @@ export function BoardEditPage({
 
   const [draftPoints, setDraftPoints] = useState<BoardPoint[]>([])
   const [draftSticker, setDraftSticker] = useState<{
-    imageUrl: string
+    imageUrl?: string
     x: number
     y: number
     scale: number
@@ -88,7 +89,12 @@ export function BoardEditPage({
   const strokeRef = useRef<{ pointerId: number; points: BoardPoint[] } | null>(
     null,
   )
-  const placingRef = useRef<{ pointerId: number; rotation: number } | null>(null)
+  const placingRef = useRef<{
+    pointerId: number
+    rotation: number
+    stickerId: string
+    imageUrl?: string
+  } | null>(null)
 
   const {
     items,
@@ -105,6 +111,33 @@ export function BoardEditPage({
 
   const effectiveOrientation = orientation ?? boardOrientation
   const isOwner = eventRole === 'OWNER'
+
+  /**
+   * 古いボードデータなど payload.imageUrl を持たないステッカーでも、
+   * コレクションに同じ stickerId があれば取得済みの画像URLで描画する。
+   */
+  const visibleItems = useMemo(() => {
+    const imageUrls = new Map(
+      stickers
+        .filter((collected) => collected.sticker.imageUrl)
+        .map((collected) => [
+          collected.sticker.id,
+          collected.sticker.imageUrl,
+        ]),
+    )
+
+    return items.map((item) => {
+      if (item.kind !== 'STICKER' || item.payload.imageUrl) return item
+
+      const imageUrl = imageUrls.get(item.payload.stickerId)
+      if (!imageUrl) return item
+
+      return {
+        ...item,
+        payload: { ...item.payload, imageUrl },
+      }
+    })
+  }, [items, stickers])
 
   useEffect(() => {
     if (boardEdited) {
@@ -176,18 +209,29 @@ export function BoardEditPage({
 
         event.currentTarget.setPointerCapture(event.pointerId)
         const rotation = randomTilt()
-        placingRef.current = { pointerId: event.pointerId, rotation }
+        const stickerPoint = clampStickerCenter(
+          point,
+          STICKER_SCALE,
+          rotation,
+          effectiveOrientation,
+        )
+        placingRef.current = {
+          pointerId: event.pointerId,
+          rotation,
+          stickerId: selectedSticker.sticker.id,
+          imageUrl: selectedSticker.sticker.imageUrl || undefined,
+        }
         setHint(null)
         setDraftSticker({
-          imageUrl: selectedSticker.sticker.imageUrl,
-          x: point.x,
-          y: point.y,
+          imageUrl: selectedSticker.sticker.imageUrl || undefined,
+          x: stickerPoint.x,
+          y: stickerPoint.y,
           scale: STICKER_SCALE,
           rotation,
         })
       }
     },
-    [activeTool, selectedSticker],
+    [activeTool, effectiveOrientation, selectedSticker],
   )
 
   const handlePointerMove = useCallback(
@@ -204,12 +248,20 @@ export function BoardEditPage({
       const placing = placingRef.current
       if (placing && placing.pointerId === event.pointerId) {
         // 指を離すまでは位置合わせだけ。POST は pointerup で1回だけ。
+        const stickerPoint = clampStickerCenter(
+          point,
+          STICKER_SCALE,
+          placing.rotation,
+          effectiveOrientation,
+        )
         setDraftSticker((current) =>
-          current ? { ...current, x: point.x, y: point.y } : current,
+          current
+            ? { ...current, x: stickerPoint.x, y: stickerPoint.y }
+            : current,
         )
       }
     },
-    [],
+    [effectiveOrientation],
   )
 
   const handlePointerUp = useCallback(
@@ -242,16 +294,19 @@ export function BoardEditPage({
       const placing = placingRef.current
       if (placing && placing.pointerId === event.pointerId) {
         placingRef.current = null
-        const sticker = selectedSticker
         setDraftSticker(null)
-
-        if (!sticker) return
+        const stickerPoint = clampStickerCenter(
+          point,
+          STICKER_SCALE,
+          placing.rotation,
+          effectiveOrientation,
+        )
 
         void addSticker({
-          stickerId: sticker.sticker.id,
-          imageUrl: sticker.sticker.imageUrl,
-          x: point.x,
-          y: point.y,
+          stickerId: placing.stickerId,
+          imageUrl: placing.imageUrl,
+          x: stickerPoint.x,
+          y: stickerPoint.y,
           scale: STICKER_SCALE,
           rotation: placing.rotation,
         }).catch(() => {
@@ -259,8 +314,32 @@ export function BoardEditPage({
         })
       }
     },
-    [addSticker, addStroke, penColor, penWidth, selectedSticker],
+    [addSticker, addStroke, effectiveOrientation, penColor, penWidth],
   )
+
+  const handlePointerCancel = useCallback(
+    (event: ReactPointerEvent<SVGSVGElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+
+      if (strokeRef.current?.pointerId === event.pointerId) {
+        strokeRef.current = null
+        setDraftPoints([])
+      }
+
+      if (placingRef.current?.pointerId === event.pointerId) {
+        placingRef.current = null
+        setDraftSticker(null)
+      }
+    },
+    [],
+  )
+
+  const handleStickerSelect = useCallback((sticker: CollectedSticker) => {
+    setSelectedSticker(sticker)
+    setHint('ボードをタップしてステッカーを貼ろう')
+  }, [])
 
   const selectTool = (tool: Tool) => {
     setActiveTool(tool)
@@ -308,7 +387,7 @@ export function BoardEditPage({
         <BoardCanvas
           className="board-edit__canvas"
           orientation={effectiveOrientation}
-          items={items}
+          items={visibleItems}
           interactive={isCanvasInteractive}
           draftStroke={
             draftPoints.length > 0
@@ -322,6 +401,7 @@ export function BoardEditPage({
           onBoardPointerDown={handlePointerDown}
           onBoardPointerMove={handlePointerMove}
           onBoardPointerUp={handlePointerUp}
+          onBoardPointerCancel={handlePointerCancel}
           emptyContent={
             <span className="board-edit__empty">
               ここに描いたり
@@ -376,7 +456,7 @@ export function BoardEditPage({
               isLoading={isLoadingStickers}
               errorMessage={stickersError}
               selectedStickerId={selectedSticker?.sticker.id ?? null}
-              onSelect={setSelectedSticker}
+              onSelect={handleStickerSelect}
             />
           </div>
         ) : null}

@@ -20,6 +20,8 @@ export function dayContentFromApi(content: OpenedDayContent): DayContent {
   return {
     message: content.sticker.flavorText || content.sticker.name,
     itemName: content.sticker.name,
+    imageUrl: content.sticker.imageUrl || undefined,
+    rarity: content.sticker.rarity || undefined,
   }
 }
 

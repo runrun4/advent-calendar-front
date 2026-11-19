@@ -21,7 +21,7 @@ const STROKE_HIT_WIDTH = 18
 export type BoardDraftStroke = StrokePayload
 
 export type BoardDraftSticker = {
-  imageUrl: string
+  imageUrl?: string
   x: number
   y: number
   scale: number
@@ -54,6 +54,8 @@ type BoardCanvasProps = {
     point: BoardPoint,
     event: ReactPointerEvent<SVGSVGElement>,
   ) => void
+  /** pointercancel は保存せず、編集中の下書きを破棄するため別イベントで通知する。 */
+  onBoardPointerCancel?: (event: ReactPointerEvent<SVGSVGElement>) => void
   /** ポインタ操作を受け付けるか。閲覧ビューでは false。 */
   interactive?: boolean
   /** アイテムが1つも無いときに重ねて出す案内。 */
@@ -175,6 +177,7 @@ export function BoardCanvas({
   onBoardPointerDown,
   onBoardPointerMove,
   onBoardPointerUp,
+  onBoardPointerCancel,
   interactive = false,
   emptyContent,
   ariaLabel = 'イベントボード',
@@ -218,7 +221,7 @@ export function BoardCanvas({
         onPointerDown={interactive ? handlePointer(onBoardPointerDown) : undefined}
         onPointerMove={interactive ? handlePointer(onBoardPointerMove) : undefined}
         onPointerUp={interactive ? handlePointer(onBoardPointerUp) : undefined}
-        onPointerCancel={interactive ? handlePointer(onBoardPointerUp) : undefined}
+        onPointerCancel={interactive ? onBoardPointerCancel : undefined}
       >
         {items.map((item) => {
           const pickable = isItemPickable ? isItemPickable(item) : false
@@ -255,14 +258,25 @@ export function BoardCanvas({
             className="board-canvas__draft-sticker"
             transform={stickerTransform(draftSticker, viewBox)}
           >
-            <image
-              href={draftSticker.imageUrl}
-              x={(-draftSticker.scale * viewBox.width) / 2}
-              y={(-draftSticker.scale * viewBox.width) / 2}
-              width={draftSticker.scale * viewBox.width}
-              height={draftSticker.scale * viewBox.width}
-              preserveAspectRatio="xMidYMid meet"
-            />
+            {draftSticker.imageUrl ? (
+              <image
+                href={draftSticker.imageUrl}
+                x={(-draftSticker.scale * viewBox.width) / 2}
+                y={(-draftSticker.scale * viewBox.width) / 2}
+                width={draftSticker.scale * viewBox.width}
+                height={draftSticker.scale * viewBox.width}
+                preserveAspectRatio="xMidYMid meet"
+              />
+            ) : (
+              <rect
+                x={(-draftSticker.scale * viewBox.width) / 2}
+                y={(-draftSticker.scale * viewBox.width) / 2}
+                width={draftSticker.scale * viewBox.width}
+                height={draftSticker.scale * viewBox.width}
+                rx={draftSticker.scale * viewBox.width * 0.12}
+                fill="#e6e6e6"
+              />
+            )}
           </g>
         ) : null}
       </svg>

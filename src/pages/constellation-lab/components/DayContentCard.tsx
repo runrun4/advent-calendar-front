@@ -30,11 +30,25 @@ export const DayContentCard = ({ day, content, isFinaleDay, onClose, onReveal }:
 
         <p className="day-content-card__label">DAY {day}</p>
 
-        <svg className="day-content-card__icon" width="52" height="52" viewBox="-14 -14 28 28">
-          <circle r="12" fill="var(--star, #ffd98a)" fillOpacity="0.12" className="day-content-card__icon-halo" />
-          <path d={sparklePath(9)} fill="var(--star, #ffd98a)" />
-          <circle r="1.6" fill="#ffffff" />
-        </svg>
+        {content.imageUrl ? (
+          <div className="day-content-card__sticker">
+            <img
+              src={content.imageUrl}
+              alt=""
+              className="day-content-card__sticker-image"
+              draggable={false}
+            />
+            {content.rarity === 'DELUXE' ? (
+              <span className="day-content-card__sticker-rarity">DELUXE</span>
+            ) : null}
+          </div>
+        ) : (
+          <svg className="day-content-card__icon" width="52" height="52" viewBox="-14 -14 28 28">
+            <circle r="12" fill="var(--star, #ffd98a)" fillOpacity="0.12" className="day-content-card__icon-halo" />
+            <path d={sparklePath(9)} fill="var(--star, #ffd98a)" />
+            <circle r="1.6" fill="#ffffff" />
+          </svg>
+        )}
 
         <h2 className="day-content-card__title">{day}日目のおくりもの</h2>
 

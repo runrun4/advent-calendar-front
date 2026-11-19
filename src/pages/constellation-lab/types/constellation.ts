@@ -12,6 +12,10 @@ export type DayState = 'locked' | 'openable' | 'opened'
 export type DayContent = {
   message: string
   itemName: string
+  /** ステッカーデイの絵柄。豆知識デイやモックでは無い。 */
+  imageUrl?: string
+  /** ステッカーのレアリティ(NORMAL / DELUXE など)。 */
+  rarity?: string
 }
 
 /** 星座カレンダーの1日分のデータ */
