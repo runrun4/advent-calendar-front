@@ -26,7 +26,7 @@ HTTPS 標準対応のため PWA 要件（TR-804）を満たす。SPA フォー�
 
 ## 自動デプロイ（develop マージで本番反映）
 
-`develop` へ push（PRマージ含む）されると、GitHub Actions（[.github/workflows/deploy.yml](../.github/workflows/deploy.yml)）がビルドして本番URLへ自動デプロイする。手動実行も Actions タブの `deploy` > Run workflow から可能。
+`develop` へ push（PRマージ含む）されると、GitHub Actions（[.github/workflows/deploy.yml](../.github/workflows/deploy.yml)）が、まず ci.yml（lint・型チェック・テスト・ビルド）を実行し、成功した場合だけ、その検査で作った `dist` を本番URLへ自動デプロイする（RR-03）。手動実行も Actions タブの `deploy` > Run workflow から可能。
 
 **初回セットアップ（1回だけ・要人間操作）:**
 
@@ -37,7 +37,7 @@ Secret 未設定の間はワークフローのデプロイステップが失敗�
 
 ## PRプレビュー（マージ前の実装確認）
 
-`develop` 宛ての PR を作成・更新すると、[.github/workflows/deploy-preview.yml](../.github/workflows/deploy-preview.yml) がプレビューURLへデプロイし、**PRコメントでURLを知らせる**。マージ前の実装をスマホ含む誰でも確認できる。本番URLには影響しない。
+`develop` 宛ての PR を作成・更新すると、[.github/workflows/deploy-preview.yml](../.github/workflows/deploy-preview.yml) がプレビューURLへデプロイし、**PRコメントでURLを知らせる**。検査（ci.yml）成功後にだけ動く。マージ前の実装をスマホ含む誰でも確認できる。本番URLには影響しないが、ビルドは本番と同じ `.env.production`（本番API）を使う。
 
 ## 手動デプロイ手順
 
