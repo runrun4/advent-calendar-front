@@ -165,14 +165,17 @@ husky + lint-staged を使っている。`npm ci` / `npm install` 時に `prepar
 
 ## CI
 
-`develop` 宛ての PR と `develop` への push で [.github/workflows/ci.yml](.github/workflows/ci.yml) が動く。
+`develop` 宛ての PR で [.github/workflows/ci.yml](.github/workflows/ci.yml) が動く。
 
 | ステップ | 内容 |
 |---------|------|
 | `npm ci` | 依存インストール（Node 22） |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | 型チェック |
 | `npm run test` | ユニットテスト |
-| `npm run build` | ビルド（`tsc -b` による型チェックを兼ねる） |
+| `npm run build` | ビルド。成果物 `dist` をアーティファクトとして保存する |
+
+ci.yml は `workflow_call` でも呼べる。`develop` への push 時は deploy.yml が呼ぶため、ci.yml 自体は push では動かさない（二重実行を避ける）。必須チェック名 `verify` は変わらない。
 
 **警告（warning）について:** ハッカソン期間に `warn` へ落としていた規則（`react-hooks/set-state-in-effect` など）は解消済みで、すべて `error` に戻っている。どうしても避けられない箇所だけ、理由コメント付きの `eslint-disable-next-line` を置いている。**新しく警告や disable を増やさないこと。**
 
@@ -183,9 +186,13 @@ husky + lint-staged を使っている。`npm ci` / `npm install` 時に `prepar
 | きっかけ | 動くもの | 結果 |
 |---------|---------|------|
 | `develop` 宛ての PR 作成・更新 | [deploy-preview.yml](.github/workflows/deploy-preview.yml) | プレビューURLへデプロイし、PR にコメントで URL を通知 |
-| `develop` へ push（PR マージ含む） | [deploy.yml](.github/workflows/deploy.yml) | 本番 https://advent-calendar-front.pages.dev/ へ反映 |
+| `develop` へ push（PR マージ含む） | [deploy.yml](.github/workflows/deploy.yml)（検査 → デプロイ） | 本番 https://advent-calendar-front.pages.dev/ へ反映 |
 
-プレビューURLは本番に影響しない。スマホでの確認はプレビューURLを使うのが早い。
+**デプロイは検査の成功が前提（RR-03）。** どちらの workflow も、まず ci.yml（`verify`: lint / 型チェック / テスト / ビルド）を呼び、成功したあとの `needs:` でデプロイジョブが動く。デプロイするのは、検査で作った `dist` アーティファクトそのもの（デプロイ側で再ビルドしない）。検査が落ちれば本番もプレビューも更新されない。
+
+プレビューも本番と同じ `.env.production`（本番API・本番 Supabase）でビルドされる。検証用の接続先ができたら、`vite build --mode preview` と `.env.preview` を用意する形に切り替える（現時点では未対応）。プレビューから行った操作は本番データに反映されるので注意。
+
+プレビューURLは本番に影響しない（ホスティング上は別URL。接続先のデータは本番と共通）。スマホでの確認はプレビューURLを使うのが早い。
 
 ## 環境変数
 

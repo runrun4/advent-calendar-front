@@ -13,7 +13,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # lint / テスト / ビルドが同じコミットで成功した場合だけデプロイする(RR-03)。
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,8 +26,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run build
+      - name: 検査済みの dist を取得
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       - name: Cloudflare Pages へデプロイ
         run: npx wrangler@4 pages deploy ./dist --project-name advent-calendar-front --branch main
         env:
