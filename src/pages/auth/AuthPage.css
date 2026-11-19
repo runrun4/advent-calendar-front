@@ -160,3 +160,21 @@
 .auth-page__link:hover {
   opacity: 0.7;
 }
+
+.auth-page__link--sub {
+  margin-top: 1.4rem;
+  font-size: 0.95rem;
+}
+
+.auth-page__link--sub + .auth-page__link {
+  margin-top: 1.4rem;
+}
+
+.auth-page__message {
+  margin: 1.6rem 0 0;
+  color: var(--auth-title);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

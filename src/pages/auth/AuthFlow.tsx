@@ -1,11 +1,12 @@
 import type { AuthPhase } from '../../hooks/useAuth'
 import type { User } from '../../types/user'
 import { AuthPage } from './AuthPage'
+import { ForgotPasswordPage } from './ForgotPasswordPage'
 import { InitialSetup } from './InitialSetup'
 import { RegisterPage } from './RegisterPage'
 import { SplashScreen } from './SplashScreen'
 
-export type AuthView = 'login' | 'register'
+export type AuthView = 'login' | 'register' | 'forgot'
 
 type AuthFlowProps = {
   phase: AuthPhase
@@ -46,6 +47,7 @@ export function AuthFlow({
           setPhase('app')
         }}
         onGoRegister={() => setAuthView('register')}
+        onGoForgotPassword={() => setAuthView('forgot')}
       />
     )
   }
@@ -60,6 +62,10 @@ export function AuthFlow({
         onGoLogin={() => setAuthView('login')}
       />
     )
+  }
+
+  if (phase === 'auth' && authView === 'forgot') {
+    return <ForgotPasswordPage onGoLogin={() => setAuthView('login')} />
   }
 
   if (phase === 'setup') {

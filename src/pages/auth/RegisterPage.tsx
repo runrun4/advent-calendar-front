@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { registerWithEmailPassword } from '../../services/authService'
+import {
+  registerWithEmailPassword,
+  resendSignupConfirmation,
+} from '../../services/authService'
+import { toAuthErrorMessage } from '../../services/authErrors'
 import type { User } from '../../types/user'
 import './AuthPage.css'
 
@@ -19,6 +23,24 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  // メール確認が有効なとき、確認メールを送った宛先
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [resendNotice, setResendNotice] = useState<string | null>(null)
+
+  const handleResend = async () => {
+    if (!pendingEmail || isSubmitting) return
+    setFormError(null)
+    setResendNotice(null)
+    setIsSubmitting(true)
+    try {
+      await resendSignupConfirmation(pendingEmail)
+      setResendNotice('確認メールを再送しました。')
+    } catch (error) {
+      setFormError(toAuthErrorMessage(error, '再送に失敗しました'))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -43,15 +65,63 @@ export function RegisterPage({ onRegistered, onGoLogin }: RegisterPageProps) {
     setIsSubmitting(true)
 
     try {
-      const user = await registerWithEmailPassword(email, password)
-      onRegistered?.(user)
+      const result = await registerWithEmailPassword(email, password)
+      if (result.status === 'confirmation_required') {
+        setPendingEmail(result.email)
+        return
+      }
+      onRegistered?.(result.user)
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '新規作成に失敗しました'
-      setFormError(message)
+      setFormError(toAuthErrorMessage(error, '新規作成に失敗しました'))
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (pendingEmail) {
+    return (
+      <div className="auth-page auth-page--register">
+        <main className="auth-page__main">
+          <div className="auth-page__form">
+            <h1 className="auth-page__title">
+              確認メールを
+              <br />
+              送りました
+            </h1>
+            <p className="auth-page__message">
+              {pendingEmail} 宛に確認メールを送りました。メール内のリンクを開いてください。
+              リンクを開いたあと、ログインできます。
+            </p>
+            {resendNotice ? (
+              <p className="auth-page__message" role="status">
+                {resendNotice}
+              </p>
+            ) : null}
+            {formError ? (
+              <p className="auth-page__field-error" role="alert">
+                {formError}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="auth-page__submit"
+              onClick={handleResend}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? '送信中…' : '確認メールを再送'}
+            </button>
+            <button
+              type="button"
+              className="auth-page__link"
+              onClick={onGoLogin}
+              disabled={isSubmitting}
+            >
+              ログインはこちら
+            </button>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (

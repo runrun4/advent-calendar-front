@@ -1,5 +1,6 @@
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js'
 import type { User } from '../types/user'
+import { RESET_PASSWORD_PATH } from './recoveryLink'
 import { supabase } from './supabase'
 
 function mapUser(supabaseUser: SupabaseUser): User {
@@ -50,22 +51,51 @@ export async function loginWithEmailPassword(
   return mapUser(data.user)
 }
 
+export type RegisterResult =
+  | { status: 'signed_in'; user: User }
+  /** メール確認が有効で、確認メールのリンクを開くまでログインできない */
+  | { status: 'confirmation_required'; email: string }
+
 export async function registerWithEmailPassword(
   email: string,
   password: string,
-): Promise<User> {
+): Promise<RegisterResult> {
+  const trimmed = email.trim()
   const { data, error } = await supabase.auth.signUp({
-    email: email.trim(),
+    email: trimmed,
     password,
   })
   if (error) throw error
 
   if (!data.session || !data.user) {
-    throw new Error(
-      'アカウントは作成されましたが、メール確認が有効なためまだログインできていません。Supabase Dashboard で Confirm email をオフにしてから再度お試しください。',
-    )
+    return { status: 'confirmation_required', email: trimmed }
   }
 
+  return { status: 'signed_in', user: mapUser(data.user) }
+}
+
+/** 登録確認メールの再送 */
+export async function resendSignupConfirmation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim(),
+  })
+  if (error) throw error
+}
+
+/** パスワード再設定メールを送る。アカウントの有無は Supabase 側も区別しない。 */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${window.location.origin}${RESET_PASSWORD_PATH}`,
+  })
+  if (error) throw error
+}
+
+/** リカバリーセッションで新しいパスワードを設定する */
+export async function updatePassword(password: string): Promise<User> {
+  const { data, error } = await supabase.auth.updateUser({ password })
+  if (error) throw error
+  if (!data.user) throw new Error('パスワードの更新に失敗しました')
   return mapUser(data.user)
 }
 
