@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { loginWithEmailPassword } from '../../services/authService'
+import { toAuthErrorMessage } from '../../services/authErrors'
 import { getMe, mergeMeIntoUser } from '../../services/userApi'
 import type { User } from '../../types/user'
 import './AuthPage.css'
@@ -7,13 +8,18 @@ import './AuthPage.css'
 type AuthPageProps = {
   onAuthenticated?: (user: User) => void
   onGoRegister?: () => void
+  onGoForgotPassword?: () => void
 }
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-export function AuthPage({ onAuthenticated, onGoRegister }: AuthPageProps) {
+export function AuthPage({
+  onAuthenticated,
+  onGoRegister,
+  onGoForgotPassword,
+}: AuthPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -53,9 +59,7 @@ export function AuthPage({ onAuthenticated, onGoRegister }: AuthPageProps) {
       }
       onAuthenticated?.(nextUser)
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'ログインに失敗しました'
-      setFormError(message)
+      setFormError(toAuthErrorMessage(error, 'ログインに失敗しました'))
     } finally {
       setIsSubmitting(false)
     }
@@ -134,6 +138,15 @@ export function AuthPage({ onAuthenticated, onGoRegister }: AuthPageProps) {
             disabled={isSubmitting}
           >
             {isSubmitting ? 'ログイン中…' : 'ログイン →'}
+          </button>
+
+          <button
+            type="button"
+            className="auth-page__link auth-page__link--sub"
+            onClick={onGoForgotPassword}
+            disabled={isSubmitting}
+          >
+            パスワードを忘れた方
           </button>
 
           <button
